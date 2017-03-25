@@ -1,0 +1,8 @@
+postgres:
+  user: "kubecos"
+  dbName: "kubecos"
+  host: "localhost"
+  port: 8585
+  sslMode: "disable"
+  maxIdleConns: 10
+  maxOpenConns: 10
