@@ -1,0 +1,13 @@
+{
+    "dependencies": {
+        "github.com/satori/go.uuid": {
+            "branch": "master"
+        },
+        "github.com/spf13/cobra": {
+            "branch": "master"
+        },
+        "github.com/spf13/viper": {
+            "branch": "master"
+        }
+    }
+}
