@@ -38,6 +38,7 @@
             "version": "v1.0.0",
             "revision": "8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13",
             "packages": [
+                "internal",
                 "redis"
             ]
         },
@@ -62,7 +63,15 @@
             "branch": "master",
             "revision": "630949a3c5fa3c613328e1b8256052cbc2327c9b",
             "packages": [
-                "."
+                ".",
+                "hcl/ast",
+                "hcl/parser",
+                "hcl/scanner",
+                "hcl/strconv",
+                "hcl/token",
+                "json/parser",
+                "json/scanner",
+                "json/token"
             ]
         },
         {
@@ -78,7 +87,8 @@
             "branch": "master",
             "revision": "8ed836a8adb659e8492bcaa49e0880bb84075fe2",
             "packages": [
-                "."
+                ".",
+                "reflectx"
             ]
         },
         {
@@ -86,7 +96,8 @@
             "branch": "master",
             "revision": "2704adc878c21e1329f46f6e56a1c387d788ff94",
             "packages": [
-                "."
+                ".",
+                "oid"
             ]
         },
         {
@@ -182,7 +193,8 @@
             "branch": "master",
             "revision": "9be650865eab0c12963d8753212f4f9c66cdcf12",
             "packages": [
-                "."
+                ".",
+                "mem"
             ]
         },
         {
@@ -251,7 +263,11 @@
             "branch": "master",
             "revision": "fc7fa097411d30e6708badff276c4c164425590c",
             "packages": [
+                "internal/gen",
+                "internal/triegen",
+                "internal/ucd",
                 "transform",
+                "unicode/cldr",
                 "unicode/norm"
             ]
         },
@@ -260,7 +276,11 @@
             "branch": "v2",
             "revision": "98858ed6797785792b13dad45ce45abad036c6b7",
             "packages": [
+                "common",
                 "dat",
+                "kvs",
+                "postgres",
+                "reflectx",
                 "sqlx-runner"
             ]
         },
