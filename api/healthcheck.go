@@ -10,7 +10,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/topfreegames/kubecos/errors"
+	"github.com/topfreegames/kubecos/kubecos-controller/errors"
 )
 
 //HealthcheckHandler handler

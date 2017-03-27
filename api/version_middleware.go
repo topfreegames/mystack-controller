@@ -8,7 +8,7 @@
 package api
 
 import (
-	"github.com/topfreegames/kubecos/metadata"
+	"github.com/topfreegames/kubecos/kubecos-controller/metadata"
 	"net/http"
 )
 

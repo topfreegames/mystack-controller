@@ -1,5 +1,5 @@
-// kubecos api
-// https://github.com/topfreegames/kubecos
+// kubecos/kubecos-cli api
+// https://github.com/topfreegames/kubecos/kubecos-cli
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -7,7 +7,7 @@
 
 package main
 
-import "github.com/topfreegames/kubecos/cmd"
+import "github.com/topfreegames/kubecos/kubecos-controller/cmd"
 
 func main() {
 	cmd.Execute(cmd.RootCmd)

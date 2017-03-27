@@ -16,9 +16,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/kubecos/errors"
-	"github.com/topfreegames/kubecos/metadata"
-	"github.com/topfreegames/kubecos/models"
+	"github.com/topfreegames/kubecos/kubecos-controller/errors"
+	"github.com/topfreegames/kubecos/kubecos-controller/metadata"
+	"github.com/topfreegames/kubecos/kubecos-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 

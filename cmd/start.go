@@ -10,7 +10,7 @@ package cmd
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/kubecos/api"
+	"github.com/topfreegames/kubecos/kubecos-controller/api"
 )
 
 var host string
