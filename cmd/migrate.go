@@ -1,5 +1,5 @@
 // mystack api
-// https://github.com/topfreegames/mystack
+// https://github.com/topfreegames/mystack/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
