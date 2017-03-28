@@ -30,7 +30,7 @@ func (e *AccessError) Error() string {
 //Serialize returns the error serialized
 func (e *AccessError) Serialize() []byte {
 	g, _ := json.Marshal(map[string]interface{}{
-		"code":        "OFF-003",
+		"code":        "OFF-002",
 		"error":       e.Message,
 		"description": e.SourceError.Error(),
 	})
