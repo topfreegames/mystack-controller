@@ -1,6 +1,6 @@
 postgres:
-  user: "mystack_controller"
-  dbName: "mystack_controller"
+  user: "mystack_controller_test"
+  dbName: "mystack_controller_test"
   host: "localhost"
   port: 8585
   sslMode: "disable"
