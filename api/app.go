@@ -123,7 +123,7 @@ func (a *App) getDB() (runner.Connection, error) {
 
 func (a *App) configureLogger() {
 	a.Logger = a.Logger.WithFields(logrus.Fields{
-		"source":    "mystack-api",
+		"source":    "api/app.go",
 		"operation": "initializeApp",
 		"version":   metadata.Version,
 	})
