@@ -11,8 +11,8 @@ import (
 
 	"testing"
 
-	"github.com/topfreegames/kubecos/kubecos-controller/api"
-	oTesting "github.com/topfreegames/kubecos/kubecos-controller/testing"
+	"github.com/topfreegames/mystack/mystack-controller/api"
+	oTesting "github.com/topfreegames/mystack/mystack-controller/testing"
 )
 
 var app *api.App

@@ -1,5 +1,5 @@
-// kubecos api
-// https://github.com/topfreegames/kubecos
+// mystack api
+// https://github.com/topfreegames/mystack
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"github.com/GuiaBolso/darwin"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/kubecos/kubecos-controller/migrations"
-	"github.com/topfreegames/kubecos/kubecos-controller/models"
+	"github.com/topfreegames/mystack/mystack-controller/migrations"
+	"github.com/topfreegames/mystack/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 	"io"
 	"log"

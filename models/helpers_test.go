@@ -10,7 +10,7 @@ package models_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/topfreegames/kubecos/kubecos-controller/models"
+	"github.com/topfreegames/mystack/mystack-controller/models"
 )
 
 var _ = Describe("Helpers", func() {

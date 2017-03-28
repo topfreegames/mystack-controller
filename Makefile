@@ -10,7 +10,7 @@ setup-hooks:
 	@cd .git/hooks && ln -sf ../../hooks/pre-commit.sh pre-commit
 
 build:
-	@go build -o ./bin/kubecos main.go
+	@go build -o ./bin/mystack main.go
 
 assets:
 	@go-bindata -o migrations/migrations.go -pkg migrations migrations/*.sql
@@ -25,19 +25,19 @@ deps: start-deps wait-for-pg
 
 start-deps:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
-	@env MY_IP=${MY_IP} docker-compose --project-name kubecos up -d
+	@env MY_IP=${MY_IP} docker-compose --project-name mystack up -d
 	@sleep 10
 	@echo "Dependencies started successfully."
 
 stop-deps:
-	@env MY_IP=${MY_IP} docker-compose --project-name kubecos down
+	@env MY_IP=${MY_IP} docker-compose --project-name mystack down
 
 wait-for-pg:
-	@until docker exec kubecos_postgres_1 pg_isready; do echo 'Waiting for Postgres...' && sleep 1; done
+	@until docker exec mystack_postgres_1 pg_isready; do echo 'Waiting for Postgres...' && sleep 1; done
 	@sleep 2
 
 drop:
-	@-psql -d postgres -h localhost -p 8585 -U postgres -c "SELECT pg_terminate_backend(pid.pid) FROM pg_stat_activity, (SELECT pid FROM pg_stat_activity where pid <> pg_backend_pid()) pid WHERE datname='kubecos';"
+	@-psql -d postgres -h localhost -p 8585 -U postgres -c "SELECT pg_terminate_backend(pid.pid) FROM pg_stat_activity, (SELECT pid FROM pg_stat_activity where pid <> pg_backend_pid()) pid WHERE datname='mystack';"
 	@psql -d postgres -h localhost -p 8585 -U postgres -f scripts/drop.sql > /dev/null
 	@echo "Database created successfully!"
 

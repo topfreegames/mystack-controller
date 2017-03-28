@@ -1,5 +1,5 @@
-// kubecos-controller api
-// https://github.com/topfreegames/kubecos
+// mystack-controller api
+// https://github.com/topfreegames/mystack
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -10,7 +10,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/topfreegames/kubecos/kubecos-controller/errors"
+	"github.com/topfreegames/mystack/mystack-controller/errors"
 )
 
 //HealthcheckHandler handler

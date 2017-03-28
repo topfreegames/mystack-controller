@@ -2,7 +2,7 @@ package testing
 
 import (
 	"github.com/go-testfixtures/testfixtures"
-	"github.com/topfreegames/kubecos/kubecos-controller/models"
+	"github.com/topfreegames/mystack/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 

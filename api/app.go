@@ -1,5 +1,5 @@
-// kubecos-controller api
-// https://github.com/topfreegames/kubecos
+// mystack-controller api
+// https://github.com/topfreegames/mystack
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -16,9 +16,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/kubecos/kubecos-controller/errors"
-	"github.com/topfreegames/kubecos/kubecos-controller/metadata"
-	"github.com/topfreegames/kubecos/kubecos-controller/models"
+	"github.com/topfreegames/mystack/mystack-controller/errors"
+	"github.com/topfreegames/mystack/mystack-controller/metadata"
+	"github.com/topfreegames/mystack/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 
@@ -117,7 +117,7 @@ func (a *App) getDB() (runner.Connection, error) {
 
 func (a *App) configureLogger() {
 	a.Logger = a.Logger.WithFields(logrus.Fields{
-		"source":    "kubecos-api",
+		"source":    "mystack-api",
 		"operation": "initializeApp",
 		"version":   metadata.Version,
 	})
