@@ -24,12 +24,12 @@ FROM alpine
 MAINTAINER TFG Co <backend@tfgco.com>
 
 RUN mkdir /app
-ADD ./bin/kubecos-controller-linux-amd64 /app/kubecos-controller
+ADD ./bin/mystack-controller-linux-amd64 /app/mystack-controller
 
 WORKDIR /app
 
 EXPOSE 8080
 
-ENV PG_URL postgues://postgres@localhost:5432/kubecos
+ENV PG_URL postgues://postgres@localhost:5432/mystack
 
-CMD /app/kubecos-controller
+CMD /app/mystack-controller
