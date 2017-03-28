@@ -1,4 +1,4 @@
-// kubecos api
+// kubecos-controller api
 // https://github.com/topfreegames/kubecos
 //
 // Licensed under the MIT license:
@@ -50,23 +50,12 @@ func NewApp(host string, port int, config *viper.Viper, debug bool, logger logru
 
 func (a *App) getRouter() *mux.Router {
 	r := mux.NewRouter()
+
 	r.Handle("/healthcheck", Chain(
 		&HealthcheckHandler{App: a},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
 	)).Methods("GET").Name("healthcheck")
-
-	r.Handle("/login", Chain(
-		&OAuthLoginHandler{},
-		&LoggingMiddleware{App: a},
-		&VersionMiddleware{},
-	)).Methods("GET").Name("oauth2")
-
-	r.Handle("/cbgoogle", Chain(
-		&OAuthCallbackHandler{},
-		&LoggingMiddleware{App: a},
-		&VersionMiddleware{},
-	)).Methods("GET").Name("oauth2")
 
 	return r
 }

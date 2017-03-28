@@ -7,5 +7,5 @@
 
 package metadata
 
-//Version of the Offers API
+//Version of the Kubecos API
 var Version = "0.1.0"

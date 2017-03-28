@@ -9,28 +9,28 @@ package errors
 
 import "encoding/json"
 
-//GenericError happens when an unidentified error occurs
-type GenericError struct {
+//AccessError happens when an unidentified error occurs
+type AccessError struct {
 	Message     string
 	SourceError error
 }
 
-//NewGenericError ctor
-func NewGenericError(message string, err error) *GenericError {
-	return &GenericError{
+//NewAccessError ctor
+func NewAccessError(message string, err error) *AccessError {
+	return &AccessError{
 		Message:     message,
 		SourceError: err,
 	}
 }
 
-func (e *GenericError) Error() string {
+func (e *AccessError) Error() string {
 	return e.SourceError.Error()
 }
 
 //Serialize returns the error serialized
-func (e *GenericError) Serialize() []byte {
+func (e *AccessError) Serialize() []byte {
 	g, _ := json.Marshal(map[string]interface{}{
-		"code":        "OFF-001",
+		"code":        "OFF-003",
 		"error":       e.Message,
 		"description": e.SourceError.Error(),
 	})

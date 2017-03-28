@@ -1,10 +1,9 @@
-// kubecos api
+// Package api kubecos-controller
 // https://github.com/topfreegames/kubecos
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
 // Copyright © 2017 Top Free Games <backend@tfgco.com>
-
 package api
 
 import (
@@ -19,7 +18,7 @@ type VersionMiddleware struct {
 
 //ServeHTTP method
 func (m *VersionMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("X-Offers-Version", metadata.Version)
+	w.Header().Set("X-Kubecos-Version", metadata.Version)
 	m.next.ServeHTTP(w, r)
 }
 

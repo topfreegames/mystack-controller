@@ -1,4 +1,4 @@
-// kubecos api
+// kubecos-controller api
 // https://github.com/topfreegames/kubecos
 //
 // Licensed under the MIT license:
