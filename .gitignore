@@ -25,6 +25,7 @@ _testmain.go
 *.exe
 *.test
 *.prof
+*.coverprofile
 
 # Vim temporary files
 *.swp
