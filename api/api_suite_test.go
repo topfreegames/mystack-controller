@@ -33,9 +33,6 @@ var _ = BeforeSuite(func() {
 	db, err = oTesting.GetTestDB()
 	Expect(err).NotTo(HaveOccurred())
 
-	err = oTesting.LoadFixtures(db)
-	Expect(err).NotTo(HaveOccurred())
-
 	config, err = oTesting.GetDefaultConfig()
 	Expect(err).NotTo(HaveOccurred())
 	app, err = api.NewApp("0.0.0.0", 8889, config, false, l)
