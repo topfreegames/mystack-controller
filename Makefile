@@ -10,7 +10,14 @@ setup-hooks:
 	@cd .git/hooks && ln -sf ../../hooks/pre-commit.sh pre-commit
 
 build:
-	@go build -o ./bin/mystack main.go
+	@mkdir -p bin && go build -o ./bin/mystack main.go
+
+build-docker: cross-build-linux-amd64
+	@docker build -t mystack-controller .
+
+cross-build-linux-amd64:
+	@env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/mystack-controller-linux-amd64
+	@chmod a+x ./bin/mystack-controller-linux-amd64
 
 assets:
 	@go-bindata -o migrations/migrations.go -pkg migrations migrations/*.sql
