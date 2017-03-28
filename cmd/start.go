@@ -1,5 +1,5 @@
-// kubecos
-// https://github.com/topfreegames/kubecos
+// mystack
+// https://github.com/topfreegames/mystack/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -10,7 +10,7 @@ package cmd
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/kubecos/api"
+	"github.com/topfreegames/mystack/mystack-controller/api"
 )
 
 var host string
@@ -21,8 +21,8 @@ var quiet bool
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "starts the kubecos-api server",
-	Long: `Starts kubecos-api server with the specified arguments. You can use
+	Short: "starts the mystack-api server",
+	Long: `Starts mystack-api server with the specified arguments. You can use
 environment variables to override configuration keys.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		InitConfig()
@@ -75,8 +75,8 @@ environment variables to override configuration keys.`,
 func init() {
 	RootCmd.AddCommand(startCmd)
 
-	startCmd.Flags().StringVarP(&host, "bind", "b", "0.0.0.0", "Host to bind kubecos to")
-	startCmd.Flags().IntVarP(&port, "port", "p", 8888, "Port to bind kubecos to")
+	startCmd.Flags().StringVarP(&host, "bind", "b", "0.0.0.0", "Host to bind mystack to")
+	startCmd.Flags().IntVarP(&port, "port", "p", 8888, "Port to bind mystack to")
 	startCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Debug mode")
 	startCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet mode (log level error)")
 }

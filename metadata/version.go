@@ -1,5 +1,5 @@
-// kubecos api
-// https://github.com/topfreegames/kubecos
+// mystack api
+// https://github.com/topfreegames/mystack/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -7,5 +7,5 @@
 
 package metadata
 
-//Version of the Offers API
+//Version of the Kubecos API
 var Version = "0.1.0"

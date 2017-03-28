@@ -1,5 +1,5 @@
-// kubecos
-// https://github.com/topfreegames/kubecos
+// mystack
+// https://github.com/topfreegames/mystack/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -21,17 +21,17 @@ var config *viper.Viper
 // ConfigFile is the configuration file used for running a command
 var ConfigFile string
 
-// Verbose determines how verbose kubecos will run under
+// Verbose determines how verbose mystack will run under
 var Verbose int
 
-// RootCmd is the root command for kubecos CLI application
+// RootCmd is the root command for mystack CLI application
 var RootCmd = &cobra.Command{
-	Use:   "kubecos",
-	Short: "kubecos handles manages your personal cluster",
-	Long:  `Use kubecos to start your services on kubernetes.`,
+	Use:   "mystack",
+	Short: "mystack handles manages your personal cluster",
+	Long:  `Use mystack to start your services on kubernetes.`,
 }
 
-// Execute runs RootCmd to initialize kubecos CLI application
+// Execute runs RootCmd to initialize mystack CLI application
 func Execute(cmd *cobra.Command) {
 	if err := cmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -58,7 +58,7 @@ func InitConfig() {
 		config.SetConfigFile(ConfigFile)
 	}
 	config.SetConfigType("yaml")
-	config.SetEnvPrefix("kubecos")
+	config.SetEnvPrefix("mystack")
 	config.AddConfigPath(".")
 	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	config.AutomaticEnv()
