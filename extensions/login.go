@@ -16,15 +16,15 @@ import (
 )
 
 const (
-	clientIDEnvVar     = "MYSTACKS_GOOGLE_CLIENT_ID"
-	clientSecretEnvVar = "MYSTACKS_GOOGLE_CLIENT_SECRET"
+	clientIDEnvVar     = "MYSTACK_GOOGLE_CLIENT_ID"
+	clientSecretEnvVar = "MYSTACK_GOOGLE_CLIENT_SECRET"
 )
 
 var (
 	googleOauthConfig = &oauth2.Config{
 		ClientID:     os.Getenv(clientIDEnvVar),
 		ClientSecret: os.Getenv(clientSecretEnvVar),
-		RedirectURL:  "http://localhost:8989/google-callback",
+		RedirectURL:  "http://localhost:57459/google-callback",
 		Scopes: []string{"https://www.googleapis.com/auth/userinfo.profile",
 			"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint: google.Endpoint,
