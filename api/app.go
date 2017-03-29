@@ -58,10 +58,16 @@ func (a *App) getRouter() *mux.Router {
 	)).Methods("GET").Name("healthcheck")
 
 	r.Handle("/logins", Chain(
-		&LoginHandler{App: a},
+		&LoginHandler{App: a, Method: "login"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-	)).Methods("GET").Name("login")
+	)).Methods("GET").Name("oauth")
+
+	r.Handle("/access", Chain(
+		&LoginHandler{App: a, Method: "access"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+	)).Methods("GET").Name("oauth")
 
 	return r
 }
