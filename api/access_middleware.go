@@ -7,6 +7,8 @@
 package api
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/topfreegames/mystack/mystack-controller/errors"
 	"io/ioutil"
@@ -18,6 +20,13 @@ import (
 type AccessMiddleware struct {
 	App  *App
 	next http.Handler
+}
+
+const emailKey = contextKey("emailKey")
+
+func newContextWithEmail(ctx context.Context, email string) context.Context {
+	c := context.WithValue(ctx, emailKey, email)
+	return c
 }
 
 //ServeHTTP methods
@@ -55,6 +64,25 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m.App.HandleError(w, resp.StatusCode, "Error validating access token", err)
 		return
 	}
+
+	var bodyObj map[string]interface{}
+	json.Unmarshal(body, &bodyObj)
+	email := bodyObj["email"].(string)
+	if !m.verifyEmailDomain(email) {
+		logger.WithError(err).Error("Invalid email")
+		err := errors.NewAccessError(
+			fmt.Sprintf("The email on OAuth authorization is not from domain %s", m.App.EmailDomain),
+			fmt.Errorf("Invalid email"),
+		)
+		m.App.HandleError(w, http.StatusUnauthorized, "Error validating access token", err)
+		return
+	}
+	ctx := newContextWithEmail(r.Context(), email)
+	m.next.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func (m *AccessMiddleware) verifyEmailDomain(email string) bool {
+	return strings.HasSuffix(email, m.App.EmailDomain)
 }
 
 //SetNext handler

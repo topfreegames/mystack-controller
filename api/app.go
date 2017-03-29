@@ -24,22 +24,24 @@ import (
 
 //App is our API application
 type App struct {
-	Address string
-	Config  *viper.Viper
-	DB      runner.Connection
-	Debug   bool
-	Logger  logrus.FieldLogger
-	Router  *mux.Router
-	Server  *http.Server
+	Address     string
+	Config      *viper.Viper
+	DB          runner.Connection
+	Debug       bool
+	Logger      logrus.FieldLogger
+	Router      *mux.Router
+	Server      *http.Server
+	EmailDomain string
 }
 
 //NewApp ctor
 func NewApp(host string, port int, config *viper.Viper, debug bool, logger logrus.FieldLogger) (*App, error) {
 	a := &App{
-		Config:  config,
-		Address: fmt.Sprintf("%s:%d", host, port),
-		Debug:   debug,
-		Logger:  logger,
+		Config:      config,
+		Address:     fmt.Sprintf("%s:%d", host, port),
+		Debug:       debug,
+		Logger:      logger,
+		EmailDomain: config.GetString("email.domain"),
 	}
 	err := a.configureApp()
 	if err != nil {

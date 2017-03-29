@@ -6,3 +6,5 @@ postgres:
   sslMode: "disable"
   maxIdleConns: 10
   maxOpenConns: 10
+email:
+  domain: "tfgco.com"
