@@ -1,5 +1,5 @@
 // mystack-controller api
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -16,9 +16,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/mystack/mystack-controller/errors"
-	"github.com/topfreegames/mystack/mystack-controller/metadata"
-	"github.com/topfreegames/mystack/mystack-controller/models"
+	"github.com/topfreegames/mystack-controller/errors"
+	"github.com/topfreegames/mystack-controller/metadata"
+	"github.com/topfreegames/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 

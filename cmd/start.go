@@ -1,5 +1,5 @@
 // mystack
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -10,7 +10,7 @@ package cmd
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/mystack/mystack-controller/api"
+	"github.com/topfreegames/mystack-controller/api"
 )
 
 var host string

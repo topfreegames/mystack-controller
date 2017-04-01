@@ -1,5 +1,5 @@
 // Package api mystack-controller
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -7,7 +7,7 @@
 package api
 
 import (
-	"github.com/topfreegames/mystack/mystack-controller/metadata"
+	"github.com/topfreegames/mystack-controller/metadata"
 	"net/http"
 )
 

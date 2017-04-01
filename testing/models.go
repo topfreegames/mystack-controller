@@ -1,7 +1,7 @@
 package testing
 
 import (
-	"github.com/topfreegames/mystack/mystack-controller/models"
+	"github.com/topfreegames/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 

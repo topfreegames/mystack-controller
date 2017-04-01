@@ -1,5 +1,5 @@
 // mystack-controller api
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -9,7 +9,7 @@ package api
 
 import (
 	"fmt"
-	"github.com/topfreegames/mystack/mystack-controller/extensions"
+	"github.com/topfreegames/mystack-controller/extensions"
 	"net/http"
 )
 

@@ -11,8 +11,8 @@ import (
 
 	"testing"
 
-	"github.com/topfreegames/mystack/mystack-controller/api"
-	oTesting "github.com/topfreegames/mystack/mystack-controller/testing"
+	"github.com/topfreegames/mystack-controller/api"
+	oTesting "github.com/topfreegames/mystack-controller/testing"
 )
 
 var app *api.App

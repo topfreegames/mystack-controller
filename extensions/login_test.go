@@ -1,7 +1,7 @@
 package extensions_test
 
 import (
-	. "github.com/topfreegames/mystack/mystack-controller/extensions"
+	. "github.com/topfreegames/mystack-controller/extensions"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

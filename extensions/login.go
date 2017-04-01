@@ -1,5 +1,5 @@
 // mystack-controller api
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -9,7 +9,7 @@ package extensions
 
 import (
 	"fmt"
-	"github.com/topfreegames/mystack/mystack-controller/errors"
+	"github.com/topfreegames/mystack-controller/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"os"

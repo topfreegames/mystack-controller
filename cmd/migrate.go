@@ -1,5 +1,5 @@
 // mystack api
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"github.com/GuiaBolso/darwin"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/mystack/mystack-controller/migrations"
-	"github.com/topfreegames/mystack/mystack-controller/models"
+	"github.com/topfreegames/mystack-controller/migrations"
+	"github.com/topfreegames/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 	"io"
 	"log"

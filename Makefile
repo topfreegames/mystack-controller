@@ -10,7 +10,7 @@ setup-hooks:
 	@cd .git/hooks && ln -sf ../../hooks/pre-commit.sh pre-commit
 
 build:
-	@mkdir -p bin && go build -o ./bin/mystack main.go
+	@mkdir -p bin && go build -o ./bin/mystack-controller main.go
 
 build-docker: cross-build-linux-amd64
 	@docker build -t mystack-controller .
