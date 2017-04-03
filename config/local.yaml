@@ -7,4 +7,6 @@ postgres:
   maxIdleConns: 10
   maxOpenConns: 10
 email:
-  domain: "tfgco.com"
+  domain: 
+  - "tfgco.com"
+  - "topfreegames.com"

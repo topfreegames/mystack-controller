@@ -31,7 +31,7 @@ type App struct {
 	Logger      logrus.FieldLogger
 	Router      *mux.Router
 	Server      *http.Server
-	EmailDomain string
+	EmailDomain []string
 }
 
 //NewApp ctor
@@ -41,7 +41,7 @@ func NewApp(host string, port int, config *viper.Viper, debug bool, logger logru
 		Address:     fmt.Sprintf("%s:%d", host, port),
 		Debug:       debug,
 		Logger:      logger,
-		EmailDomain: config.GetString("email.domain"),
+		EmailDomain: config.GetStringSlice("email.domain"),
 	}
 	err := a.configureApp()
 	if err != nil {

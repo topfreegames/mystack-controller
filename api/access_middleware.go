@@ -82,7 +82,12 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *AccessMiddleware) verifyEmailDomain(email string) bool {
-	return strings.HasSuffix(email, m.App.EmailDomain)
+	for _, domain := range m.App.EmailDomain {
+		if strings.HasSuffix(email, domain) {
+			return true
+		}
+	}
+	return false
 }
 
 //SetNext handler
