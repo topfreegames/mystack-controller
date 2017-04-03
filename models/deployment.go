@@ -26,7 +26,7 @@ kind: Deployment
 metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
-	labels:
+  labels:
     mystack/routable: "true"
     mystack/owner: {{.Username}}
     app: {{.Name}}
