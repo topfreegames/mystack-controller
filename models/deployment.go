@@ -9,6 +9,8 @@ package models
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 	"text/template"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +26,10 @@ kind: Deployment
 metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
+	labels:
+    mystack/routable: "true"
+    mystack/owner: {{.Username}}
+    app: {{.Name}}
 spec:
   replicas: 1
   template:
@@ -35,14 +41,27 @@ spec:
         - name: {{.Name}}
           image: {{.Image}}
           ports:
-            - containerPort: 80
+            - containerPort: 5000
 `
 
 //Deployment represents a deployment
 type Deployment struct {
 	Name      string
 	Namespace string
+	Username  string
 	Image     string
+}
+
+//NewDeployment is the deployment ctor
+func NewDeployment(name, username, image string) *Deployment {
+	username = strings.Replace(username, ".", "-", -1)
+	namespace := fmt.Sprintf("mystack-%s", username)
+	return &Deployment{
+		Name:      name,
+		Namespace: namespace,
+		Username:  username,
+		Image:     image,
+	}
 }
 
 //Deploy creates a deployment from yaml
@@ -77,6 +96,7 @@ func (d *Deployment) Deploy(clientset *kubernetes.Clientset) (*v1beta1.Deploymen
 
 //Delete deletes deployment from cluster
 func (d *Deployment) Delete(clientset *kubernetes.Clientset) error {
+	//TODO: get newest pkg DeleteOptions
 	deleteOptions := &v1.DeleteOptions{}
 	return clientset.ExtensionsV1beta1().Deployments(d.Namespace).Delete(d.Namespace, deleteOptions)
 }
