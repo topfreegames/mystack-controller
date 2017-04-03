@@ -7,5 +7,5 @@
 
 package metadata
 
-//Version of the Kubecos API
+//Version of the mystack-controller API
 var Version = "0.1.0"

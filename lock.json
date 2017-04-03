@@ -238,19 +238,6 @@
             ]
         },
         {
-            "name": "github.com/topfreegames/kubecos",
-            "branch": "master",
-            "revision": "0e6cd832cfacc8f8f23b1f086e3c359353b720b3",
-            "packages": [
-                "api",
-                "cmd",
-                "errors",
-                "metadata",
-                "migrations",
-                "models"
-            ]
-        },
-        {
             "name": "golang.org/x/sys",
             "branch": "master",
             "revision": "afadfcc7779c1f4db0f6f6438afcb108d9c9c7cd",

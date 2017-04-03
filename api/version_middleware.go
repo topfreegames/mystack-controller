@@ -18,7 +18,7 @@ type VersionMiddleware struct {
 
 //ServeHTTP method
 func (m *VersionMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("X-Kubecos-Version", metadata.Version)
+	w.Header().Set("x-mystack-controller-version", metadata.Version)
 	m.next.ServeHTTP(w, r)
 }
 

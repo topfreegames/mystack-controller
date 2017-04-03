@@ -59,7 +59,7 @@ func (a *App) getRouter() *mux.Router {
 		&VersionMiddleware{},
 	)).Methods("GET").Name("healthcheck")
 
-	r.Handle("/logins", Chain(
+	r.Handle("/login", Chain(
 		&LoginHandler{App: a, Method: "login"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
