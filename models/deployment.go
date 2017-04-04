@@ -13,9 +13,9 @@ import (
 	"strings"
 	"text/template"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -65,7 +65,7 @@ func NewDeployment(name, username, image string) *Deployment {
 }
 
 //Deploy creates a deployment from yaml
-func (d *Deployment) Deploy(clientset *kubernetes.Clientset) (*v1beta1.Deployment, error) {
+func (d *Deployment) Deploy(clientset kubernetes.Interface) (*v1beta1.Deployment, error) {
 	tmpl, err := template.New("deploy").Parse(deployYaml)
 	if err != nil {
 		return nil, err
@@ -95,8 +95,7 @@ func (d *Deployment) Deploy(clientset *kubernetes.Clientset) (*v1beta1.Deploymen
 }
 
 //Delete deletes deployment from cluster
-func (d *Deployment) Delete(clientset *kubernetes.Clientset) error {
-	//TODO: get newest pkg DeleteOptions
+func (d *Deployment) Delete(clientset kubernetes.Interface) error {
 	deleteOptions := &v1.DeleteOptions{}
 	return clientset.ExtensionsV1beta1().Deployments(d.Namespace).Delete(d.Namespace, deleteOptions)
 }

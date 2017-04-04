@@ -9,29 +9,45 @@ package models_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	//	. "github.com/onsi/gomega"
-	//	"github.com/topfreegames/mystack-controller/models"
-	//
-	//	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//	"k8s.io/client-go/kubernetes/fake"
+	. "github.com/onsi/gomega"
+	. "github.com/topfreegames/mystack-controller/models"
+
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/fields"
+	"k8s.io/client-go/pkg/labels"
 )
 
 var _ = Describe("Deployment", func() {
 	Describe("Create deployment", func() {
-		It("should create and delete a deployment", func() {
-			//deployment := &models.Deployment{
-			//	Name:      "test",
-			//	Namespace: "test",
-			//	Image:     "hello-world",
-			//}
+		var (
+			clientset   *fake.Clientset
+			name        = "test"
+			namespace   = "mystack-user"
+			username    = "user"
+			image       = "hello-world"
+			labelMap    = labels.Set{"mystack/routable": "true"}
+			listOptions = v1.ListOptions{
+				LabelSelector: labelMap.AsSelector().String(),
+				FieldSelector: fields.Everything().String(),
+			}
+		)
 
-			//clientset := fake.NewSimpleClientset()
+		BeforeEach(func() {
+			clientset = fake.NewSimpleClientset()
+		})
 
-			//_, err := deployment.Deploy(clientset)
-			//Expect(err).NotTo(HaveOccurred())
-			//pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
-			//Expect(err).NotTo(HaveOccurred())
-			//Expect(pods.Items).To(HaveLen(1))
+		It("should create a deployment", func() {
+			deployment := NewDeployment(name, username, image)
+
+			deploy, err := deployment.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploy).NotTo(BeNil())
+			Expect(deploy.ObjectMeta.Namespace).To(Equal(namespace))
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(1))
 		})
 	})
 })

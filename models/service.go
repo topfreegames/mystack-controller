@@ -32,7 +32,7 @@ type Service struct {
 }
 
 //Expose exposes a deployment
-func (s *Service) Expose(clientset *kubernetes.Clientset) (*v1.Service, error) {
+func (s *Service) Expose(clientset kubernetes.Interface) (*v1.Service, error) {
 	tmpl, err := template.New("expose").Parse(serviceYaml)
 	if err != nil {
 		return nil, err
