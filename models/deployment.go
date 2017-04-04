@@ -41,7 +41,7 @@ spec:
         - name: {{.Name}}
           image: {{.Image}}
           ports:
-            - containerPort: 5000
+            - containerPort: {{.Port}}
 `
 
 //Deployment represents a deployment
@@ -50,10 +50,11 @@ type Deployment struct {
 	Namespace string
 	Username  string
 	Image     string
+	Port      int
 }
 
 //NewDeployment is the deployment ctor
-func NewDeployment(name, username, image string) *Deployment {
+func NewDeployment(name, username, image string, port int) *Deployment {
 	username = strings.Replace(username, ".", "-", -1)
 	namespace := fmt.Sprintf("mystack-%s", username)
 	return &Deployment{
@@ -61,6 +62,7 @@ func NewDeployment(name, username, image string) *Deployment {
 		Namespace: namespace,
 		Username:  username,
 		Image:     image,
+		Port:      port,
 	}
 }
 

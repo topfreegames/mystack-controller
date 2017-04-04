@@ -26,6 +26,7 @@ var _ = Describe("Deployment", func() {
 			namespace   = "mystack-user"
 			username    = "user"
 			image       = "hello-world"
+			port        = 5000
 			labelMap    = labels.Set{"mystack/routable": "true"}
 			listOptions = v1.ListOptions{
 				LabelSelector: labelMap.AsSelector().String(),
@@ -38,7 +39,7 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should create a deployment", func() {
-			deployment := NewDeployment(name, username, image)
+			deployment := NewDeployment(name, username, image, port)
 
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())

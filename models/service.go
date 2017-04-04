@@ -2,6 +2,8 @@ package models
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 	"text/template"
 
 	"k8s.io/client-go/kubernetes"
@@ -20,15 +22,29 @@ spec:
     app: {{.Name}}
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 5000
+      port: {{.Port}}
+      targetPort: {{.TargetPort}}
   type: ClusterIP
 `
 
 //Service represents a service
 type Service struct {
-	Name      string
-	Namespace string
+	Name       string
+	Namespace  string
+	Port       int
+	TargetPort int
+}
+
+//NewService is the service ctor
+func NewService(name, username string, port, targetPort int) *Service {
+	username = strings.Replace(username, ".", "-", -1)
+	namespace := fmt.Sprintf("mystack-%s", username)
+	return &Service{
+		Name:       name,
+		Namespace:  namespace,
+		Port:       port,
+		TargetPort: targetPort,
+	}
 }
 
 //Expose exposes a deployment
