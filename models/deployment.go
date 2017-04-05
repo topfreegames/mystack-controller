@@ -9,6 +9,7 @@ package models
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -28,7 +29,6 @@ metadata:
   labels:
     mystack/routable: "true"
     mystack/owner: {{.Username}}
-    app: {{.Name}}
 spec:
   replicas: 1
   template:
@@ -54,7 +54,6 @@ type Deployment struct {
 
 //NewDeployment is the deployment ctor
 func NewDeployment(name, username, image string, port int) *Deployment {
-	//TODO: check if namespace exist, return error if not
 	username = strings.Replace(username, ".", "-", -1)
 	namespace := usernameToNamespace(username)
 	return &Deployment{
@@ -68,6 +67,11 @@ func NewDeployment(name, username, image string, port int) *Deployment {
 
 //Deploy creates a deployment from yaml
 func (d *Deployment) Deploy(clientset kubernetes.Interface) (*v1beta1.Deployment, error) {
+	if !NamespaceExists(clientset, d.Namespace) {
+		err := fmt.Errorf("Namespace %s not found", d.Namespace)
+		return nil, err
+	}
+
 	tmpl, err := template.New("deploy").Parse(deployYaml)
 	if err != nil {
 		return nil, err

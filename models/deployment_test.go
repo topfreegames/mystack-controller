@@ -38,9 +38,18 @@ var _ = Describe("Deployment", func() {
 	})
 
 	Describe("Deploy", func() {
-		It("should create a deployment", func() {
+		It("should return error since namespace was not created", func() {
 			deployment := NewDeployment(name, username, image, port)
+			_, err := deployment.Deploy(clientset)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Namespace mystack-user not found"))
+		})
 
+		It("should create a deployment", func() {
+			err := CreateNamespace(clientset, name, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			deployment := NewDeployment(name, username, image, port)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -53,9 +62,11 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should return error if duplicate deployment", func() {
-			deployment := NewDeployment(name, username, image, port)
+			err := CreateNamespace(clientset, name, username)
+			Expect(err).NotTo(HaveOccurred())
 
-			_, err := deployment.Deploy(clientset)
+			deployment := NewDeployment(name, username, image, port)
+			_, err = deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = deployment.Deploy(clientset)
@@ -63,7 +74,20 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should not return error if create second deployment on same namespace", func() {
+			err := CreateNamespace(clientset, name, username)
+			Expect(err).NotTo(HaveOccurred())
 
+			deployment := NewDeployment(name, username, image, port)
+			_, err = deployment.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deployment2 := NewDeployment("test2", username, "new-image", 5000)
+			_, err = deployment2.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(2))
 		})
 	})
 })

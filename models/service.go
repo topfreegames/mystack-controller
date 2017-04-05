@@ -2,7 +2,6 @@ package models
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"text/template"
 
@@ -38,7 +37,7 @@ type Service struct {
 //NewService is the service ctor
 func NewService(name, username string, port, targetPort int) *Service {
 	username = strings.Replace(username, ".", "-", -1)
-	namespace := fmt.Sprintf("mystack-%s", username)
+	namespace := usernameToNamespace(username)
 	return &Service{
 		Name:       name,
 		Namespace:  namespace,
