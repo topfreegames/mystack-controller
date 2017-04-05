@@ -34,24 +34,45 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 	username := strings.Split(email, "@")[0]
 	clusterName := mux.Vars(r)["name"]
 
-	clusterConfig, err := models.LoadClusterConfig(c.App.DB, clusterName)
+	apps, services, err := models.LoadClusterConfig(c.App.DB, clusterName)
 	if err != nil {
 		c.App.HandleError(w, http.StatusInternalServerError, "Error creating cluster config file", err)
 		return
 	}
 
-	deployments := make([]*models.Deployment, len(clusterConfig))
+	deployments := make([]*models.Deployment, len(apps)+len(services))
 
 	i := 0
-	for name, appConfig := range clusterConfig {
+	for name, appConfig := range apps {
 		deployments[i] = models.NewDeployment(
 			name,
 			username,
 			appConfig.Image,
 			appConfig.Port,
+			appConfig.Environment,
 		)
 		i = i + 1
 	}
+
+	for name, serviceConfig := range services {
+		deployments[i] = models.NewDeployment(
+			name,
+			username,
+			serviceConfig.Image,
+			serviceConfig.Port,
+			serviceConfig.Environment,
+		)
+		i = i + 1
+	}
+
+	cluster := models.NewCluster(username, deployments)
+	err = cluster.Create(c.App.Clientset)
+	if err != nil {
+		c.App.HandleError(w, http.StatusInternalServerError, "Error creating cluster", err)
+		return
+	}
+
+	Write(w, http.StatusOK, `{"success": "true"}`)
 }
 
 func (c *ClusterHandler) remove(w http.ResponseWriter, r *http.Request) {

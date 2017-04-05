@@ -15,8 +15,9 @@ import (
 
 //ClusterAppConfig defines the configuration of an app
 type ClusterAppConfig struct {
-	Image string
-	Port  int
+	Image       string
+	Port        int
+	Environment map[string]string
 }
 
 //LoadClusterConfig reads DB and create map with cluster configuration
