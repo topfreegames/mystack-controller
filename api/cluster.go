@@ -8,6 +8,7 @@
 package api
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/topfreegames/mystack-controller/models"
 	"net/http"
 	"strings"
@@ -31,7 +32,14 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
 	username := strings.Split(email, "@")[0]
-	clusterConfig := clusterConfigFromCtx(r.Context())
+	clusterName := mux.Vars(r)["name"]
+
+	clusterConfig, err := models.LoadClusterConfig(c.App.DB, clusterName)
+	if err != nil {
+		c.App.HandleError(w, http.StatusInternalServerError, "Error creating cluster config file", err)
+		return
+	}
+
 	deployments := make([]*models.Deployment, len(clusterConfig))
 
 	i := 0
