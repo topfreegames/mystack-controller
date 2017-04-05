@@ -16,6 +16,8 @@ kind: Service
 metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
+  labels:
+    mystack/routable: "true"
 spec:
   selector:
     app: {{.Name}}

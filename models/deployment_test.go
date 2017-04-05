@@ -55,6 +55,9 @@ var _ = Describe("Deployment", func() {
 			Expect(deploy).NotTo(BeNil())
 			Expect(deploy.ObjectMeta.Namespace).To(Equal(namespace))
 			Expect(deploy.ObjectMeta.Name).To(Equal(name))
+			Expect(deploy.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
+			Expect(deploy.ObjectMeta.Labels["app"]).To(Equal(name))
+			Expect(deploy.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
 
 			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())

@@ -29,6 +29,8 @@ metadata:
   labels:
     mystack/routable: "true"
     mystack/owner: {{.Username}}
+    app: {{.Name}}
+    heritage: mystack
 spec:
   replicas: 1
   template:
