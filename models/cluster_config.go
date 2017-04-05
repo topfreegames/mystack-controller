@@ -36,16 +36,15 @@ func LoadClusterConfig(
 	error,
 ) {
 	query := `SELECT apps, services FROM clusters WHERE name = $1`
-
 	configJSON, err := db.SQL(query, clusterName).QueryJSON()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var configCluster map[string]map[string]*ClusterAppConfig
-	err = json.Unmarshal(configJSON, configCluster)
+	var configCluster []map[string]map[string]*ClusterAppConfig
+	err = json.Unmarshal(configJSON, &configCluster)
 
-	return configCluster["apps"], configCluster["services"], err
+	return configCluster[0]["apps"], configCluster[0]["services"], err
 }
 
 //WriteClusterConfig writes cluster config on DB
