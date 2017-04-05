@@ -77,3 +77,9 @@ func (s *Service) Expose(clientset kubernetes.Interface) (*v1.Service, error) {
 
 	return clientset.CoreV1().Services(s.Namespace).Create(dst)
 }
+
+//Delete deletes service
+func (s *Service) Delete(clientset kubernetes.Interface) error {
+	deleteOptions := &v1.DeleteOptions{}
+	return clientset.CoreV1().Services(s.Namespace).Delete(s.Name, deleteOptions)
+}
