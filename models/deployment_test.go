@@ -111,6 +111,10 @@ var _ = Describe("Deployment", func() {
 
 			err = deploy.Delete(clientset)
 			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(0))
 		})
 
 		It("should not delete all deployments", func() {
