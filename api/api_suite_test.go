@@ -1,3 +1,10 @@
+// mystack-controller api
+// https://github.com/topfreegames/mystack-controller
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2017 Top Free Games <backend@tfgco.com>
+
 package api_test
 
 import (
@@ -11,8 +18,8 @@ import (
 
 	"testing"
 
-	"github.com/topfreegames/mystack/mystack-controller/api"
-	oTesting "github.com/topfreegames/mystack/mystack-controller/testing"
+	"github.com/topfreegames/mystack-controller/api"
+	oTesting "github.com/topfreegames/mystack-controller/testing"
 )
 
 var app *api.App
@@ -22,7 +29,7 @@ var config *viper.Viper
 
 func TestApi(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Offers API - API Suite")
+	RunSpecs(t, "MyStack Controller API - API Suite")
 }
 
 var _ = BeforeSuite(func() {

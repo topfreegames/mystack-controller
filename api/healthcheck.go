@@ -1,5 +1,5 @@
 // mystack-controller api
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -10,7 +10,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/topfreegames/mystack/mystack-controller/errors"
+	"github.com/topfreegames/mystack-controller/errors"
 )
 
 //HealthcheckHandler handler

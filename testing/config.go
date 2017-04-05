@@ -1,5 +1,5 @@
-// offers api
-// https://github.com/topfreegames/offers
+// mystack-controller api
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -18,7 +18,7 @@ func GetDefaultConfig() (*viper.Viper, error) {
 	cfg := viper.New()
 	cfg.SetConfigFile("../config/test.yaml")
 	cfg.SetConfigType("yaml")
-	cfg.SetEnvPrefix("offers")
+	cfg.SetEnvPrefix("MYSTACK_CONTROLLER")
 	cfg.AddConfigPath(".")
 	cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	cfg.AutomaticEnv()

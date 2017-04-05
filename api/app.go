@@ -1,5 +1,5 @@
 // mystack-controller api
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -16,30 +16,32 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/mystack/mystack-controller/errors"
-	"github.com/topfreegames/mystack/mystack-controller/metadata"
-	"github.com/topfreegames/mystack/mystack-controller/models"
+	"github.com/topfreegames/mystack-controller/errors"
+	"github.com/topfreegames/mystack-controller/metadata"
+	"github.com/topfreegames/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 
 //App is our API application
 type App struct {
-	Address string
-	Config  *viper.Viper
-	DB      runner.Connection
-	Debug   bool
-	Logger  logrus.FieldLogger
-	Router  *mux.Router
-	Server  *http.Server
+	Address     string
+	Config      *viper.Viper
+	DB          runner.Connection
+	Debug       bool
+	Logger      logrus.FieldLogger
+	Router      *mux.Router
+	Server      *http.Server
+	EmailDomain []string
 }
 
 //NewApp ctor
 func NewApp(host string, port int, config *viper.Viper, debug bool, logger logrus.FieldLogger) (*App, error) {
 	a := &App{
-		Config:  config,
-		Address: fmt.Sprintf("%s:%d", host, port),
-		Debug:   debug,
-		Logger:  logger,
+		Config:      config,
+		Address:     fmt.Sprintf("%s:%d", host, port),
+		Debug:       debug,
+		Logger:      logger,
+		EmailDomain: config.GetStringSlice("email.domain"),
 	}
 	err := a.configureApp()
 	if err != nil {
@@ -57,11 +59,17 @@ func (a *App) getRouter() *mux.Router {
 		&VersionMiddleware{},
 	)).Methods("GET").Name("healthcheck")
 
-	r.Handle("/logins", Chain(
-		&LoginHandler{App: a},
+	r.Handle("/login", Chain(
+		&LoginHandler{App: a, Method: "login"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-	)).Methods("GET").Name("login")
+	)).Methods("GET").Name("oauth")
+
+	r.Handle("/access", Chain(
+		&LoginHandler{App: a, Method: "access"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+	)).Methods("GET").Name("oauth")
 
 	return r
 }
@@ -123,7 +131,7 @@ func (a *App) getDB() (runner.Connection, error) {
 
 func (a *App) configureLogger() {
 	a.Logger = a.Logger.WithFields(logrus.Fields{
-		"source":    "mystack-api",
+		"source":    "api/app.go",
 		"operation": "initializeApp",
 		"version":   metadata.Version,
 	})

@@ -1,5 +1,5 @@
 // mystack
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -47,7 +47,7 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVarP(
 		&ConfigFile, "config", "c", "./config/local.yaml",
-		"config file (default is ./config/local.yaml",
+		"config file (default is ./config/local.yaml)",
 	)
 }
 

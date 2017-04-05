@@ -1,5 +1,5 @@
 // mystack-controller api
-// https://github.com/topfreegames/mystack/mystack-controller
+// https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
@@ -75,4 +75,8 @@ func ShouldPing(db *sql.DB, timeout time.Duration) error {
 	}
 
 	return fmt.Errorf("could not ping database")
+}
+
+func usernameToNamespace(username string) string {
+	return fmt.Sprintf("mystack-%s", username)
 }
