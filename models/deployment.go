@@ -41,29 +41,36 @@ spec:
       containers:
         - name: {{.Name}}
           image: {{.Image}}
+          env:
+            {{range $key, $value := .Environment}}
+            - name: {{$key}}
+              value: {{$value}}
+            {{end}}
           ports:
             - containerPort: {{.Port}}
 `
 
 //Deployment represents a deployment
 type Deployment struct {
-	Name      string
-	Namespace string
-	Username  string
-	Image     string
-	Port      int
+	Name        string
+	Namespace   string
+	Username    string
+	Image       string
+	Port        int
+	Environment map[string]string
 }
 
 //NewDeployment is the deployment ctor
-func NewDeployment(name, username, image string, port int) *Deployment {
+func NewDeployment(name, username, image string, port int, environment map[string]string) *Deployment {
 	username = strings.Replace(username, ".", "-", -1)
 	namespace := usernameToNamespace(username)
 	return &Deployment{
-		Name:      name,
-		Namespace: namespace,
-		Username:  username,
-		Image:     image,
-		Port:      port,
+		Name:        name,
+		Namespace:   namespace,
+		Username:    username,
+		Image:       image,
+		Port:        port,
+		Environment: environment,
 	}
 }
 

@@ -31,9 +31,9 @@ var _ = Describe("Cluster", func() {
 			FieldSelector: fields.Everything().String(),
 		}
 		deployments = []*Deployment{
-			NewDeployment("app1", username, "image1", port),
-			NewDeployment("app2", username, "image2", port),
-			NewDeployment("app3", username, "image3", port),
+			NewDeployment("app1", username, "image1", port, nil),
+			NewDeployment("app2", username, "image2", port, nil),
+			NewDeployment("app3", username, "image3", port, nil),
 		}
 	)
 
@@ -88,18 +88,18 @@ var _ = Describe("Cluster", func() {
 
 		It("should delete only specified cluster", func() {
 			deployments1 := []*Deployment{
-				NewDeployment("app1", "user1", "image1", port),
-				NewDeployment("app2", "user1", "image2", port),
-				NewDeployment("app3", "user1", "image3", port),
+				NewDeployment("app1", "user1", "image1", port, nil),
+				NewDeployment("app2", "user1", "image2", port, nil),
+				NewDeployment("app3", "user1", "image3", port, nil),
 			}
 			cluster1 := NewCluster("user1", deployments1)
 			err := cluster1.Create(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			deployments2 := []*Deployment{
-				NewDeployment("app1", "user2", "image1", port),
-				NewDeployment("app2", "user2", "image2", port),
-				NewDeployment("app3", "user2", "image3", port),
+				NewDeployment("app1", "user2", "image1", port, nil),
+				NewDeployment("app2", "user2", "image2", port, nil),
+				NewDeployment("app3", "user2", "image3", port, nil),
 			}
 			cluster2 := NewCluster("user2", deployments2)
 			err = cluster2.Create(clientset)
