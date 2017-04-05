@@ -39,6 +39,13 @@ func CreateNamespace(clientset kubernetes.Interface, name, username string) erro
 	return err
 }
 
+//DeleteNamespace delete the namespace
+func DeleteNamespace(clientset kubernetes.Interface, username string) error {
+	namespace := usernameToNamespace(username)
+	deleteOptions := &v1.DeleteOptions{}
+	return clientset.CoreV1().Namespaces().Delete(namespace, deleteOptions)
+}
+
 //ListNamespaces returns a list of namespaces
 func ListNamespaces(clientset kubernetes.Interface) (*v1.NamespaceList, error) {
 	return clientset.CoreV1().Namespaces().List(listOptions)

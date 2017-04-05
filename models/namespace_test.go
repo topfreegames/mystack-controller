@@ -53,4 +53,22 @@ var _ = Describe("Namespace", func() {
 			Expect(exist).To(BeTrue())
 		})
 	})
+
+	Describe("DeleteNamespace", func() {
+		It("should return error when deleting non-exiting namespace", func() {
+			err := DeleteNamespace(clientset, username)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should delete namespace if exists", func() {
+			err := CreateNamespace(clientset, name, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = DeleteNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			exist := NamespaceExists(clientset, namespace)
+			Expect(exist).To(BeFalse())
+		})
+	})
 })
