@@ -105,5 +105,5 @@ func (d *Deployment) Deploy(clientset kubernetes.Interface) (*v1beta1.Deployment
 //Delete deletes deployment from cluster
 func (d *Deployment) Delete(clientset kubernetes.Interface) error {
 	deleteOptions := &v1.DeleteOptions{}
-	return clientset.ExtensionsV1beta1().Deployments(d.Namespace).Delete(d.Namespace, deleteOptions)
+	return clientset.ExtensionsV1beta1().Deployments(d.Namespace).Delete(d.Name, deleteOptions)
 }

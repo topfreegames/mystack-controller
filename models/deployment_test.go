@@ -93,4 +93,44 @@ var _ = Describe("Deployment", func() {
 			Expect(deploys.Items).To(HaveLen(2))
 		})
 	})
+
+	Describe("Delete", func() {
+		It("should return error if deployment wasn't deployed", func() {
+			deploy := NewDeployment(name, username, image, port)
+			err := deploy.Delete(clientset)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should delete deployment after deploy", func() {
+			err := CreateNamespace(clientset, name, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploy := NewDeployment(name, username, image, port)
+			_, err = deploy.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = deploy.Delete(clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should not delete all deployments", func() {
+			err := CreateNamespace(clientset, name, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploy := NewDeployment(name, username, image, port)
+			_, err = deploy.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploy2 := NewDeployment("test2", username, image, port)
+			_, err = deploy2.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = deploy.Delete(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(1))
+		})
+	})
 })
