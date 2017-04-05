@@ -13,9 +13,10 @@ import (
 
 //Cluster represents a k8s cluster for a user
 type Cluster struct {
-	Namespace   string
-	Deployments []*Deployment
-	Services    []*Service
+	namespace   string
+	username    string
+	deployments []*Deployment
+	services    []*Service
 }
 
 //NewCluster returns a new cluster ready to start
@@ -23,9 +24,10 @@ func NewCluster(username string, deployments []*Deployment) *Cluster {
 	namespace := usernameToNamespace(username)
 	services := servicesFromDeployment(deployments)
 	return &Cluster{
-		Namespace:   namespace,
-		Deployments: deployments,
-		Services:    services,
+		username:    username,
+		namespace:   namespace,
+		deployments: deployments,
+		services:    services,
 	}
 }
 
@@ -44,10 +46,53 @@ func servicesFromDeployment(deployments []*Deployment) []*Service {
 
 //Create creates namespace, deployments and services
 func (c *Cluster) Create(clientset kubernetes.Interface) error {
+	err := CreateNamespace(clientset, c.username)
+	if err != nil {
+		return err
+	}
+
+	for _, deployment := range c.deployments {
+		_, err = deployment.Deploy(clientset)
+		if err != nil {
+			//TODO: maybe delete already created deploys?
+			return err
+		}
+	}
+
+	for _, service := range c.services {
+		_, err = service.Expose(clientset)
+		if err != nil {
+			//TODO: maybe delete already created deploys and services?
+			return err
+		}
+	}
+
 	return nil
 }
 
 //Delete deletes namespace and all deployments and services
 func (c *Cluster) Delete(clientset kubernetes.Interface) error {
+	var err error
+	for _, service := range c.services {
+		err = service.Delete(clientset)
+		if err != nil {
+			//TODO: maybe delete already created deploys and services?
+			return err
+		}
+	}
+
+	for _, deployment := range c.deployments {
+		err = deployment.Delete(clientset)
+		if err != nil {
+			//TODO: maybe delete already created deploys?
+			return err
+		}
+	}
+
+	err = DeleteNamespace(clientset, c.username)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

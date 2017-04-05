@@ -23,15 +23,13 @@ var (
 )
 
 //CreateNamespace creates a namespace
-func CreateNamespace(clientset kubernetes.Interface, name, username string) error {
+func CreateNamespace(clientset kubernetes.Interface, username string) error {
 	namespaceStr := usernameToNamespace(username)
 	namespace := &v1.Namespace{
 		ObjectMeta: v1.ObjectMeta{
 			Name: namespaceStr,
 			Labels: map[string]string{
 				"mystack/routable": "true",
-				"mystack/owner":    username,
-				"app":              name,
 			},
 		},
 	}

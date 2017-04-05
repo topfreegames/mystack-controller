@@ -18,7 +18,6 @@ import (
 var _ = Describe("Namespace", func() {
 	var (
 		clientset *fake.Clientset
-		name      = "test"
 		username  = "user"
 		namespace = "mystack-user"
 	)
@@ -29,7 +28,7 @@ var _ = Describe("Namespace", func() {
 
 	Describe("CreateNamespace", func() {
 		It("should create a namespace", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			ns, err := ListNamespaces(clientset)
@@ -38,10 +37,10 @@ var _ = Describe("Namespace", func() {
 		})
 
 		It("should return error when creating existing namespace", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = CreateNamespace(clientset, name, username)
+			err = CreateNamespace(clientset, username)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -53,7 +52,7 @@ var _ = Describe("Namespace", func() {
 		})
 
 		It("should return true after creating namespace", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			exist := NamespaceExists(clientset, namespace)
@@ -68,7 +67,7 @@ var _ = Describe("Namespace", func() {
 		})
 
 		It("should delete namespace if exists", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = DeleteNamespace(clientset, username)

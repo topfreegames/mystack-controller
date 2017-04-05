@@ -46,7 +46,7 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should create a deployment", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			deployment := NewDeployment(name, username, image, port)
@@ -65,7 +65,7 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should return error if duplicate deployment", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			deployment := NewDeployment(name, username, image, port)
@@ -77,7 +77,7 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should not return error if create second deployment on same namespace", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			deployment := NewDeployment(name, username, image, port)
@@ -102,7 +102,7 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should delete deployment after deploy", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			deploy := NewDeployment(name, username, image, port)
@@ -118,7 +118,7 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("should not delete all deployments", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			deploy := NewDeployment(name, username, image, port)
