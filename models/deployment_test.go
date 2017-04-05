@@ -69,8 +69,11 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			environment := map[string]string{
-				"DATABASE_URL": "postgres://derp:1234@example.com",
+			environment := []*EnvVar{
+				&EnvVar{
+					Name:  "DATABASE_URL",
+					Value: "postgres://derp:1234@example.com",
+				},
 			}
 
 			deployment := NewDeployment(name, username, image, port, environment)

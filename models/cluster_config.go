@@ -13,11 +13,17 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+//EnvVar has name and value of an environmental value
+type EnvVar struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
+}
+
 //ClusterAppConfig defines the configuration of an app
 type ClusterAppConfig struct {
-	Image       string
-	Port        int
-	Environment map[string]string
+	Image       string    `yaml:"image"`
+	Port        int       `yaml:"port"`
+	Environment []*EnvVar `yaml:"env"`
 }
 
 //LoadClusterConfig reads DB and create map with cluster configuration

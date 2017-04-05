@@ -42,9 +42,9 @@ spec:
         - name: {{.Name}}
           image: {{.Image}}
           env:
-            {{range $key, $value := .Environment}}
-            - name: {{$key}}
-              value: {{$value}}
+            {{range .Environment}}
+            - name: {{.Name}}
+              value: {{.Value}}
             {{end}}
           ports:
             - containerPort: {{.Port}}
@@ -57,11 +57,11 @@ type Deployment struct {
 	Username    string
 	Image       string
 	Port        int
-	Environment map[string]string
+	Environment []*EnvVar
 }
 
 //NewDeployment is the deployment ctor
-func NewDeployment(name, username, image string, port int, environment map[string]string) *Deployment {
+func NewDeployment(name, username, image string, port int, environment []*EnvVar) *Deployment {
 	username = strings.Replace(username, ".", "-", -1)
 	namespace := usernameToNamespace(username)
 	return &Deployment{
