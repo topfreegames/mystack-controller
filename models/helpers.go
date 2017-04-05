@@ -76,3 +76,7 @@ func ShouldPing(db *sql.DB, timeout time.Duration) error {
 
 	return fmt.Errorf("could not ping database")
 }
+
+func usernameToNamespace(username string) string {
+	return fmt.Sprintf("mystack-%s", username)
+}

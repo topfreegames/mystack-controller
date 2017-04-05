@@ -9,7 +9,6 @@ package models
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"text/template"
 
@@ -55,8 +54,9 @@ type Deployment struct {
 
 //NewDeployment is the deployment ctor
 func NewDeployment(name, username, image string, port int) *Deployment {
+	//TODO: check if namespace exist, return error if not
 	username = strings.Replace(username, ".", "-", -1)
-	namespace := fmt.Sprintf("mystack-%s", username)
+	namespace := usernameToNamespace(username)
 	return &Deployment{
 		Name:      name,
 		Namespace: namespace,
