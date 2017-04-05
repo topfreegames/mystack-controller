@@ -29,6 +29,14 @@ func newContextWithEmail(ctx context.Context, email string) context.Context {
 	return c
 }
 
+func emailFromCtx(ctx context.Context) string {
+	email := ctx.Value(emailKey)
+	if email == nil {
+		return ""
+	}
+	return email.(string)
+}
+
 //ServeHTTP methods
 func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := loggerFromContext(r.Context())

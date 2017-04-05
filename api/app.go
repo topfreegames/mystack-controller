@@ -71,6 +71,14 @@ func (a *App) getRouter() *mux.Router {
 		&VersionMiddleware{},
 	)).Methods("GET").Name("oauth")
 
+	r.Handle("/clusters/create", Chain(
+		&ClusterHandler{App: a, Method: "create"},
+		&AccessMiddleware{App: a},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&PayloadMiddleware{App: a},
+	)).Methods("POST").Name("oauth")
+
 	return r
 }
 
