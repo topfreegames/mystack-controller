@@ -18,21 +18,26 @@ import (
 
 var _ = Describe("Login", func() {
 	Describe("Generate Login URL", func() {
-		It("should return error for empty vars", func() {
+		It("should return error for empty ID", func() {
 			state := "random"
-			_, err := GenerateLoginURL(state, &models.MockCredentials{})
+			credentials := &models.MockCredentials{
+				ID:  "",
+				Key: "invalid",
+			}
+			_, err := GenerateLoginURL(state, credentials)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Define your app's OAuth2 Client ID on MYSTACK_GOOGLE_CLIENT_ID environmental varianle and run again"))
 		})
-	})
 
-	Describe("[Integration]", func() {
-		Describe("Generate Login URL", func() {
-			It("should return an valid URL", func() {
-				state := "random"
-				url, err := GenerateLoginURL(state, &models.OSCredentials{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(url).To(ContainSubstring(state))
-			})
+		It("should return error for empty Key", func() {
+			state := "random"
+			credentials := &models.MockCredentials{
+				ID:  "invalid",
+				Key: "",
+			}
+			_, err := GenerateLoginURL(state, credentials)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Define your app's OAuth2 Client Secret on MYSTACK_GOOGLE_CLIENT_SECRET environmental varianle and run again"))
 		})
 	})
 })
