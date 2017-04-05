@@ -10,6 +10,7 @@ package api
 import (
 	"fmt"
 	"github.com/topfreegames/mystack-controller/extensions"
+	"github.com/topfreegames/mystack-controller/models"
 	"net/http"
 )
 
@@ -37,7 +38,7 @@ func (l *LoginHandler) generateURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url, err := extensions.GenerateLoginURL(oauthState)
+	url, err := extensions.GenerateLoginURL(oauthState, &models.MockCredentials{})
 	if err != nil {
 		logger.WithError(err).Errorln("undefined env vars")
 		l.App.HandleError(w, http.StatusInternalServerError, "undefined env vars", err)
