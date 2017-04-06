@@ -14,10 +14,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 
 	"testing"
 
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/topfreegames/mystack-controller/api"
 	oTesting "github.com/topfreegames/mystack-controller/testing"
 	"k8s.io/client-go/kubernetes"
@@ -26,7 +27,7 @@ import (
 
 var clientset kubernetes.Interface
 var app *api.App
-var db runner.Connection
+var db *sqlx.DB
 var closer io.Closer
 var config *viper.Viper
 
@@ -52,20 +53,20 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = BeforeEach(func() {
-	tx, err := db.Begin()
+	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 	app.DB = tx
 })
 
 var _ = AfterEach(func() {
-	err := app.DB.(*runner.Tx).Rollback()
+	err := app.DB.(*sqlx.Tx).Rollback()
 	Expect(err).NotTo(HaveOccurred())
 	app.DB = db
 })
 
 var _ = AfterSuite(func() {
 	if db != nil {
-		err := db.(*runner.DB).DB.Close()
+		err := db.Close()
 		Expect(err).NotTo(HaveOccurred())
 		db = nil
 	}

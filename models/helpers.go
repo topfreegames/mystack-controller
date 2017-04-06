@@ -11,8 +11,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/cenkalti/backoff"
-	"gopkg.in/mgutz/dat.v2/dat"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
+	"github.com/jmoiron/sqlx"
 	"time"
 )
 
@@ -22,7 +21,7 @@ func GetDB(
 	dbName string, password string,
 	maxIdleConns, maxOpenConns int,
 	connectionTimeoutMS int,
-) (runner.Connection, error) {
+) (*sqlx.DB, error) {
 	if connectionTimeoutMS <= 0 {
 		connectionTimeoutMS = 100
 	}
@@ -33,7 +32,8 @@ func GetDB(
 	if password != "" {
 		connStr += fmt.Sprintf(" password=%s", password)
 	}
-	db, err := sql.Open("postgres", connStr)
+
+	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
@@ -41,19 +41,9 @@ func GetDB(
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetMaxOpenConns(maxOpenConns)
 
-	ShouldPing(db, time.Duration(connectionTimeoutMS)*time.Millisecond)
+	ShouldPing(db.DB, time.Duration(connectionTimeoutMS)*time.Millisecond)
 
-	// set this to enable interpolation
-	dat.EnableInterpolation = true
-
-	// set to check things like sessions closing.
-	// Should be disabled in production/release builds.
-	dat.Strict = false
-
-	// Log any query over 100ms as warnings. (optional)
-	runner.LogQueriesThreshold = 100 * time.Millisecond
-
-	return runner.NewDB(db, "postgres"), nil
+	return db, nil
 }
 
 //ShouldPing the database

@@ -13,45 +13,67 @@ import (
 
 //Cluster represents a k8s cluster for a user
 type Cluster struct {
-	namespace   string
-	username    string
-	deployments []*Deployment
-	services    []*Service
+	Namespace   string
+	Username    string
+	Deployments []*Deployment
+	Services    []*Service
 }
 
 //NewCluster returns a new cluster ready to start
-func NewCluster(username string, deployments []*Deployment) *Cluster {
+func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 	namespace := usernameToNamespace(username)
-	services := servicesFromDeployment(deployments)
-	return &Cluster{
-		username:    username,
-		namespace:   namespace,
-		deployments: deployments,
-		services:    services,
+
+	apps, services, err := LoadClusterConfig(db, clusterName)
+	if err != nil {
+		return nil, err
 	}
+
+	k8sDeployments := buildDeployments(apps, services, username)
+	k8sServices := buildServices(k8sDeployments, username)
+
+	cluster := &Cluster{
+		Username:    username,
+		Namespace:   namespace,
+		Deployments: k8sDeployments,
+		Services:    k8sServices,
+	}
+
+	return cluster, nil
 }
 
-func servicesFromDeployment(deployments []*Deployment) []*Service {
+func buildDeployments(apps, services map[string]*ClusterAppConfig, username string) []*Deployment {
+	deployments := make([]*Deployment, len(apps)+len(services))
+
+	i := 0
+	for name, config := range services {
+		deployments[i] = NewDeployment(name, username, config.Image, config.Port, config.Environment)
+		i = i + 1
+	}
+
+	for name, config := range apps {
+		deployments[i] = NewDeployment(name, username, config.Image, config.Port, config.Environment)
+		i = i + 1
+	}
+
+	return deployments
+}
+
+func buildServices(deployments []*Deployment, username string) []*Service {
 	services := make([]*Service, len(deployments))
 	for i, deployment := range deployments {
-		services[i] = &Service{
-			Name:       deployment.Name,
-			Namespace:  deployment.Namespace,
-			Port:       80,
-			TargetPort: deployment.Port,
-		}
+		services[i] = NewService(deployment.Name, username, 80, deployment.Port)
 	}
 	return services
 }
 
 //Create creates namespace, deployments and services
 func (c *Cluster) Create(clientset kubernetes.Interface) error {
-	err := CreateNamespace(clientset, c.username)
+	err := CreateNamespace(clientset, c.Username)
 	if err != nil {
 		return err
 	}
 
-	for _, deployment := range c.deployments {
+	for _, deployment := range c.Deployments {
 		_, err = deployment.Deploy(clientset)
 		if err != nil {
 			//TODO: maybe delete already created deploys?
@@ -59,7 +81,7 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 		}
 	}
 
-	for _, service := range c.services {
+	for _, service := range c.Services {
 		_, err = service.Expose(clientset)
 		if err != nil {
 			//TODO: maybe delete already created deploys and services?
@@ -73,7 +95,7 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 //Delete deletes namespace and all deployments and services
 func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	var err error
-	for _, service := range c.services {
+	for _, service := range c.Services {
 		err = service.Delete(clientset)
 		if err != nil {
 			//TODO: maybe delete already created deploys and services?
@@ -81,7 +103,7 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 		}
 	}
 
-	for _, deployment := range c.deployments {
+	for _, deployment := range c.Deployments {
 		err = deployment.Delete(clientset)
 		if err != nil {
 			//TODO: maybe delete already created deploys?
@@ -89,7 +111,7 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 		}
 	}
 
-	err = DeleteNamespace(clientset, c.username)
+	err = DeleteNamespace(clientset, c.Username)
 	if err != nil {
 		return err
 	}

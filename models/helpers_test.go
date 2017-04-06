@@ -37,13 +37,12 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("should panic if invalid connection information is passed", func() {
-			Expect(func() {
-				models.GetDB(
-					"localhost", "mystack_controller_testtt", 8585, "disable",
-					"mystack_controller_test", "password",
-					10, 10, 100,
-				)
-			}).To(Panic())
+			_, err := models.GetDB(
+				"localhost", "mystack_controller_testtt", 8585, "disable",
+				"mystack_controller_test", "password",
+				10, 10, 100,
+			)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

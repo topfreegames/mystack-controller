@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/topfreegames/mystack-controller/migrations"
 	"github.com/topfreegames/mystack-controller/models"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 	"io"
 	"log"
 	"os"
@@ -96,7 +95,7 @@ func getDB() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return db.(*runner.DB).DB.DB, nil
+	return db.DB, nil
 }
 
 func printStatus(d darwin.Darwin) error {

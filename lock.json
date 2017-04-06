@@ -1,5 +1,5 @@
 {
-    "memo": "22e8fb5e03b0b4389a90a689b55554430fc797c327be64108ddcb091b1481b7b",
+    "memo": "41dfb250ca928197a4ec3ece7781d4e832f4f0f75d00ddbbcfd2144da38f38e3",
     "projects": [
         {
             "name": "cloud.google.com/go",
@@ -90,8 +90,8 @@
         },
         {
             "name": "github.com/docker/distribution",
-            "version": "v2.6.0",
-            "revision": "325b0804fef3a66309d962357aac3c2ce3f4d329",
+            "version": "v2.6.1",
+            "revision": "a25b9ef0c9fe242ac04bb20d3a028442b7d266b6",
             "packages": [
                 "digest",
                 "reference"
@@ -516,7 +516,7 @@
         {
             "name": "golang.org/x/sys",
             "branch": "master",
-            "revision": "39e3dc274464e7d2f663aa606a830611bae5f1db",
+            "revision": "7de4796419dc3b554e6dab3a119a62469569d299",
             "packages": [
                 "unix"
             ]
@@ -572,6 +572,14 @@
                 "stats",
                 "tap",
                 "transport"
+            ]
+        },
+        {
+            "name": "gopkg.in/DATA-DOG/go-sqlmock.v1",
+            "version": "v1.2.0",
+            "revision": "b983233bc0bbea4dc6e8ec8c8c923d935765ffec",
+            "packages": [
+                "."
             ]
         },
         {

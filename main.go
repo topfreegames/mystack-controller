@@ -7,7 +7,10 @@
 
 package main
 
-import "github.com/topfreegames/mystack-controller/cmd"
+import (
+	_ "github.com/lib/pq"
+	"github.com/topfreegames/mystack-controller/cmd"
+)
 
 func main() {
 	cmd.Execute(cmd.RootCmd)

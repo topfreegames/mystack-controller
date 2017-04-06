@@ -19,31 +19,43 @@ import (
 	"k8s.io/client-go/pkg/labels"
 )
 
-var _ = Describe("Cluster", func() {
-	var (
-		clientset   *fake.Clientset
-		username    = "user"
-		namespace   = "mystack-user"
-		port        = 5000
-		labelMap    = labels.Set{"mystack/routable": "true"}
-		listOptions = v1.ListOptions{
-			LabelSelector: labelMap.AsSelector().String(),
-			FieldSelector: fields.Everything().String(),
-		}
-		deployments = []*Deployment{
-			NewDeployment("app1", username, "image1", port, nil),
-			NewDeployment("app2", username, "image2", port, nil),
-			NewDeployment("app3", username, "image3", port, nil),
-		}
-	)
+var (
+	clientset   *fake.Clientset
+	username    = "user"
+	namespace   = "mystack-user"
+	port        = 5000
+	labelMap    = labels.Set{"mystack/routable": "true"}
+	listOptions = v1.ListOptions{
+		LabelSelector: labelMap.AsSelector().String(),
+		FieldSelector: fields.Everything().String(),
+	}
+)
 
+func mockCluster(username string) *Cluster {
+	return &Cluster{
+		Username:  username,
+		Namespace: namespace,
+		Deployments: []*Deployment{
+			NewDeployment("test1", username, "app1", port, nil),
+			NewDeployment("test2", username, "app2", port, nil),
+			NewDeployment("test3", username, "app3", port, nil),
+		},
+		Services: []*Service{
+			NewService("test1", username, 80, port),
+			NewService("test2", username, 80, port),
+			NewService("test3", username, 80, port),
+		},
+	}
+}
+
+var _ = Describe("Cluster", func() {
 	BeforeEach(func() {
 		clientset = fake.NewSimpleClientset()
 	})
 
 	Describe("Create", func() {
 		It("should create cluster", func() {
-			cluster := NewCluster(username, deployments)
+			cluster := mockCluster(username)
 			err := cluster.Create(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -57,7 +69,7 @@ var _ = Describe("Cluster", func() {
 		})
 
 		It("should return error if creating same cluster twice", func() {
-			cluster := NewCluster(username, deployments)
+			cluster := mockCluster(username)
 			err := cluster.Create(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -68,7 +80,7 @@ var _ = Describe("Cluster", func() {
 
 	Describe("Delete", func() {
 		It("should delete cluster", func() {
-			cluster := NewCluster(username, deployments)
+			cluster := mockCluster(username)
 			err := cluster.Create(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -87,21 +99,11 @@ var _ = Describe("Cluster", func() {
 		})
 
 		It("should delete only specified cluster", func() {
-			deployments1 := []*Deployment{
-				NewDeployment("app1", "user1", "image1", port, nil),
-				NewDeployment("app2", "user1", "image2", port, nil),
-				NewDeployment("app3", "user1", "image3", port, nil),
-			}
-			cluster1 := NewCluster("user1", deployments1)
+			cluster1 := mockCluster("user1")
 			err := cluster1.Create(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployments2 := []*Deployment{
-				NewDeployment("app1", "user2", "image1", port, nil),
-				NewDeployment("app2", "user2", "image2", port, nil),
-				NewDeployment("app3", "user2", "image3", port, nil),
-			}
-			cluster2 := NewCluster("user2", deployments2)
+			cluster2 := mockCluster("user2")
 			err = cluster2.Create(clientset)
 			Expect(err).NotTo(HaveOccurred())
 

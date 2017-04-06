@@ -13,6 +13,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/jmoiron/sqlx"
+	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 
 const (
@@ -38,7 +41,7 @@ apps:
 var _ = Describe("ClusterConfig", func() {
 	Describe("ParseYaml", func() {
 		It("should build correct struct form yaml", func() {
-			services, apps, err := ParseYaml(yaml1)
+			apps, services, err := ParseYaml(yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(services["postgres"].Image).To(Equal("postgres:1.0"))
@@ -56,6 +59,28 @@ var _ = Describe("ClusterConfig", func() {
 			Expect(apps["app2"].Image).To(Equal("app2"))
 			Expect(apps["app2"].Port).To(Equal(5001))
 			Expect(apps["app2"].Environment).To(BeNil())
+		})
+	})
+
+	Describe("WriteClusterConfig", func() {
+		clusterName := "MyCustomApps"
+
+		It("should write cluster config", func() {
+			db, mock, err := sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			defer db.Close()
+
+			mock.
+				ExpectExec("INSERT INTO clusters").
+				WithArgs(clusterName, yaml1).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+
+			sqlxDB := sqlx.NewDb(db, "postgres")
+			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

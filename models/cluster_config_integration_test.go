@@ -13,15 +13,30 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	mTest "github.com/topfreegames/mystack-controller/testing"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 
 var _ = Describe("ClusterConfig", func() {
+	const (
+		yaml1 = `
+services:
+  postgres:
+    image: postgres:1.0
+  redis:
+    image: redis:1.0
+apps:
+  app1:
+    image: app1
+    port: 5000
+    env:
+      - name: DATABASE_URL
+        value: postgres://derp:1234@example.com
+  app2:
+    image: app2
+    port: 5001
+`
+	)
+
 	var (
-		conn     runner.Connection
-		db       *runner.Tx
 		err      error
 		services = map[string]*ClusterAppConfig{
 			"postgres": &ClusterAppConfig{Image: "postgres:1.0"},
@@ -45,13 +60,8 @@ var _ = Describe("ClusterConfig", func() {
 		}
 	)
 
-	BeforeSuite(func() {
-		conn, err = mTest.GetTestDB()
-		Expect(err).NotTo(HaveOccurred())
-	})
-
 	BeforeEach(func() {
-		db, err = conn.Begin()
+		db, err = conn.Beginx()
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -61,21 +71,16 @@ var _ = Describe("ClusterConfig", func() {
 		db = nil
 	})
 
-	AfterSuite(func() {
-		err = conn.(*runner.DB).DB.Close()
-		Expect(err).NotTo(HaveOccurred())
-	})
-
 	Describe("WriteClusterConfig", func() {
 		It("should write cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", apps, services)
+			err = WriteClusterConfig(db, "myCustomApps", yaml1)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
 	Describe("LoadClusterConfig", func() {
 		It("should load cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", apps, services)
+			err = WriteClusterConfig(db, "myCustomApps", yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
 			returnApps, returnServices, err := LoadClusterConfig(db, "myCustomApps")

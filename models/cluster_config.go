@@ -8,8 +8,7 @@
 package models
 
 import (
-	"encoding/json"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
+	"fmt"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -28,46 +27,35 @@ type ClusterAppConfig struct {
 
 //LoadClusterConfig reads DB and create map with cluster configuration
 func LoadClusterConfig(
-	db runner.Connection,
+	db DB,
 	clusterName string,
 ) (
 	map[string]*ClusterAppConfig,
 	map[string]*ClusterAppConfig,
 	error,
 ) {
-	query := `SELECT apps, services FROM clusters WHERE name = $1`
-	configJSON, err := db.SQL(query, clusterName).QueryJSON()
+	query := "SELECT yaml FROM clusters WHERE name = $1"
+	var yamlStr string
+	err := db.Get(&yamlStr, query, clusterName)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	var configCluster []map[string]map[string]*ClusterAppConfig
-	err = json.Unmarshal(configJSON, &configCluster)
-
-	return configCluster[0]["apps"], configCluster[0]["services"], err
+	apps, services, err := ParseYaml(yamlStr)
+	return apps, services, err
 }
 
 //WriteClusterConfig writes cluster config on DB
 func WriteClusterConfig(
-	db runner.Connection,
+	db DB,
 	clusterName string,
-	apps map[string]*ClusterAppConfig,
-	services map[string]*ClusterAppConfig,
+	yamlStr string,
 ) error {
-	query := `INSERT INTO clusters(name, apps, services)
-						VALUES($1, $2, $3)`
-	appsJSON, err := json.Marshal(apps)
-	if err != nil {
-		return err
+	query := "INSERT INTO clusters(name, yaml) VALUES($1, $2)"
+	res := db.MustExec(query, clusterName, yamlStr)
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("Couldn't insert on DB")
 	}
-
-	servicesJSON, err := json.Marshal(services)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.SQL(query, clusterName, appsJSON, servicesJSON).Exec()
-	return err
+	return nil
 }
 
 type clusterConfig struct {
@@ -79,5 +67,5 @@ type clusterConfig struct {
 func ParseYaml(yamlStr string) (map[string]*ClusterAppConfig, map[string]*ClusterAppConfig, error) {
 	cluster := clusterConfig{}
 	err := yaml.Unmarshal([]byte(yamlStr), &cluster)
-	return cluster.Services, cluster.Apps, err
+	return cluster.Apps, cluster.Services, err
 }
