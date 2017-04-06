@@ -6,7 +6,7 @@
 // http://www.opensource.org/licenses/mit-license
 // Copyright © 2017 Top Free Games <backend@tfgco.com>
 
-package models_test
+package integration_test
 
 import (
 	. "github.com/topfreegames/mystack-controller/models"

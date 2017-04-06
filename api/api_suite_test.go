@@ -1,4 +1,5 @@
 // mystack-controller api
+// +build integration
 // https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
@@ -50,18 +51,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	app, err = api.NewApp("0.0.0.0", 8889, config, false, l, clientset)
 	Expect(err).NotTo(HaveOccurred())
-})
-
-var _ = BeforeEach(func() {
-	tx, err := db.Beginx()
-	Expect(err).NotTo(HaveOccurred())
-	app.DB = tx
-})
-
-var _ = AfterEach(func() {
-	err := app.DB.(*sqlx.Tx).Rollback()
-	Expect(err).NotTo(HaveOccurred())
-	app.DB = db
 })
 
 var _ = AfterSuite(func() {

@@ -71,17 +71,17 @@ clear-coverage-profiles:
 	@find . -name '*.coverprofile' -delete
 
 unit-run:
-	@ginkgo -tags unit -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
+	@ginkgo -tags unit -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements
 
 gather-unit-profiles:
 	@mkdir -p _build
 	@echo "mode: count" > _build/coverage-unit.out
 	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
 
-integration int: clear-coverage-profiles integration-run gather-integration-profiles
+integration int: deps clear-coverage-profiles integration-run gather-integration-profiles
 
 integration-run:
-	@ginkgo -tags integration -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
+	@ginkgo -tags integration -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements
 
 gather-integration-profiles:
 	@mkdir -p _build

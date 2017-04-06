@@ -1,5 +1,5 @@
 // Package api mystack-controller
-// +build unit
+// +build integration
 // https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
