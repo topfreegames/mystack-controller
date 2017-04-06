@@ -20,8 +20,11 @@ import (
 
 	"github.com/topfreegames/mystack-controller/api"
 	oTesting "github.com/topfreegames/mystack-controller/testing"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
+var clientset kubernetes.Interface
 var app *api.App
 var db runner.Connection
 var closer io.Closer
@@ -40,9 +43,11 @@ var _ = BeforeSuite(func() {
 	db, err = oTesting.GetTestDB()
 	Expect(err).NotTo(HaveOccurred())
 
+	clientset := fake.NewSimpleClientset()
+
 	config, err = oTesting.GetDefaultConfig()
 	Expect(err).NotTo(HaveOccurred())
-	app, err = api.NewApp("0.0.0.0", 8889, config, false, l)
+	app, err = api.NewApp("0.0.0.0", 8889, config, false, l, clientset)
 	Expect(err).NotTo(HaveOccurred())
 })
 

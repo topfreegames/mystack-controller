@@ -11,6 +11,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/topfreegames/mystack-controller/api"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var host string
@@ -48,6 +50,11 @@ environment variables to override configuration keys.`,
 			"debug":     debug,
 		})
 
+		clientset, err := getClientset()
+		if err != nil {
+			cmdL.WithError(err).Fatal("Failed to start kubernetes clientset.")
+		}
+
 		cmdL.Debug("Creating application...")
 		app, err := api.NewApp(
 			host,
@@ -55,6 +62,7 @@ environment variables to override configuration keys.`,
 			config,
 			debug,
 			log,
+			clientset,
 		)
 		if err != nil {
 			cmdL.WithError(err).Fatal("Failed to start application.")
@@ -70,6 +78,16 @@ environment variables to override configuration keys.`,
 			cmdL.WithError(err).Fatal("Error running application.")
 		}
 	},
+}
+
+func getClientset() (kubernetes.Interface, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+
+	return clientset, err
 }
 
 func init() {

@@ -1,5 +1,5 @@
 {
-    "memo": "94435af5fd0b3e93425baa7b98414751b90bd7c1dabee38ffe237666a15b7ee5",
+    "memo": "22e8fb5e03b0b4389a90a689b55554430fc797c327be64108ddcb091b1481b7b",
     "projects": [
         {
             "name": "cloud.google.com/go",
@@ -73,7 +73,7 @@
         {
             "name": "github.com/coreos/pkg",
             "version": "v3",
-            "revision": "831ef4f966381d7c274006955589030568234d99",
+            "revision": "3ac0863d7acf3bc44daf49afef8919af12f704ef",
             "packages": [
                 "health",
                 "httputil",
@@ -83,7 +83,7 @@
         {
             "name": "github.com/davecgh/go-spew",
             "version": "v1.1.0",
-            "revision": "a7a0063072ed89d04285d3d3362aa590ed9f7878",
+            "revision": "346938d642f2ec3594ed81d874461961cd0faa76",
             "packages": [
                 "spew"
             ]
@@ -257,7 +257,7 @@
         {
             "name": "github.com/jonboulle/clockwork",
             "version": "v0.1.0",
-            "revision": "e6ec3ec5da5cce15fff8966d365c17f6d01b61a9",
+            "revision": "2eee05ed794112d45db504eb05aa693efd2b8b09",
             "packages": [
                 "."
             ]
@@ -465,7 +465,7 @@
         {
             "name": "github.com/spf13/pflag",
             "branch": "master",
-            "revision": "d16db1e50e33dff1b6cdf37596cef36742128670",
+            "revision": "9a906f17374922ed0f74e1b2f593d3723f2ffb00",
             "packages": [
                 "."
             ]
@@ -516,7 +516,7 @@
         {
             "name": "golang.org/x/sys",
             "branch": "master",
-            "revision": "493114f68206f85e7e333beccfabc11e98cba8dd",
+            "revision": "39e3dc274464e7d2f663aa606a830611bae5f1db",
             "packages": [
                 "unix"
             ]

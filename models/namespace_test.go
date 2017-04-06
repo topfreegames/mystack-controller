@@ -1,3 +1,11 @@
+// mystack-controller api
+// +build unit
+// https://github.com/topfreegames/mystack-controller
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2017 Top Free Games <backend@tfgco.com>
+
 package models_test
 
 import (
@@ -11,7 +19,6 @@ import (
 var _ = Describe("Namespace", func() {
 	var (
 		clientset *fake.Clientset
-		name      = "test"
 		username  = "user"
 		namespace = "mystack-user"
 	)
@@ -22,7 +29,7 @@ var _ = Describe("Namespace", func() {
 
 	Describe("CreateNamespace", func() {
 		It("should create a namespace", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			ns, err := ListNamespaces(clientset)
@@ -31,10 +38,10 @@ var _ = Describe("Namespace", func() {
 		})
 
 		It("should return error when creating existing namespace", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = CreateNamespace(clientset, name, username)
+			err = CreateNamespace(clientset, username)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -46,11 +53,29 @@ var _ = Describe("Namespace", func() {
 		})
 
 		It("should return true after creating namespace", func() {
-			err := CreateNamespace(clientset, name, username)
+			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			exist := NamespaceExists(clientset, namespace)
 			Expect(exist).To(BeTrue())
+		})
+	})
+
+	Describe("DeleteNamespace", func() {
+		It("should return error when deleting non-exiting namespace", func() {
+			err := DeleteNamespace(clientset, username)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should delete namespace if exists", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = DeleteNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			exist := NamespaceExists(clientset, namespace)
+			Expect(exist).To(BeFalse())
 		})
 	})
 })

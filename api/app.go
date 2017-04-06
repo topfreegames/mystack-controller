@@ -20,6 +20,7 @@ import (
 	"github.com/topfreegames/mystack-controller/metadata"
 	"github.com/topfreegames/mystack-controller/models"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
+	"k8s.io/client-go/kubernetes"
 )
 
 //App is our API application
@@ -32,16 +33,25 @@ type App struct {
 	Router      *mux.Router
 	Server      *http.Server
 	EmailDomain []string
+	Clientset   kubernetes.Interface
 }
 
 //NewApp ctor
-func NewApp(host string, port int, config *viper.Viper, debug bool, logger logrus.FieldLogger) (*App, error) {
+func NewApp(
+	host string,
+	port int,
+	config *viper.Viper,
+	debug bool,
+	logger logrus.FieldLogger,
+	clientset kubernetes.Interface,
+) (*App, error) {
 	a := &App{
 		Config:      config,
 		Address:     fmt.Sprintf("%s:%d", host, port),
 		Debug:       debug,
 		Logger:      logger,
 		EmailDomain: config.GetStringSlice("email.domain"),
+		Clientset:   clientset,
 	}
 	err := a.configureApp()
 	if err != nil {
@@ -70,6 +80,13 @@ func (a *App) getRouter() *mux.Router {
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
 	)).Methods("GET").Name("oauth")
+
+	r.Handle("/clusters/{name}/create", Chain(
+		&ClusterHandler{App: a, Method: "create"},
+		&AccessMiddleware{App: a},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+	)).Methods("POST").Name("oauth")
 
 	return r
 }

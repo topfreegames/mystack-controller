@@ -23,20 +23,25 @@ var (
 )
 
 //CreateNamespace creates a namespace
-func CreateNamespace(clientset kubernetes.Interface, name, username string) error {
+func CreateNamespace(clientset kubernetes.Interface, username string) error {
 	namespaceStr := usernameToNamespace(username)
 	namespace := &v1.Namespace{
 		ObjectMeta: v1.ObjectMeta{
 			Name: namespaceStr,
 			Labels: map[string]string{
 				"mystack/routable": "true",
-				"mystack/owner":    username,
-				"app":              name,
 			},
 		},
 	}
 	_, err := clientset.CoreV1().Namespaces().Create(namespace)
 	return err
+}
+
+//DeleteNamespace delete the namespace
+func DeleteNamespace(clientset kubernetes.Interface, username string) error {
+	namespace := usernameToNamespace(username)
+	deleteOptions := &v1.DeleteOptions{}
+	return clientset.CoreV1().Namespaces().Delete(namespace, deleteOptions)
 }
 
 //ListNamespaces returns a list of namespaces

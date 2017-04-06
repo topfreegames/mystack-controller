@@ -10,40 +10,41 @@ package extensions
 import (
 	"fmt"
 	"github.com/topfreegames/mystack-controller/errors"
+	"github.com/topfreegames/mystack-controller/models"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"os"
-)
-
-const (
-	clientIDEnvVar     = "MYSTACK_GOOGLE_CLIENT_ID"
-	clientSecretEnvVar = "MYSTACK_GOOGLE_CLIENT_SECRET"
 )
 
 var (
 	googleOauthConfig = &oauth2.Config{
-		ClientID:     os.Getenv(clientIDEnvVar),
-		ClientSecret: os.Getenv(clientSecretEnvVar),
-		RedirectURL:  "http://localhost:57459/google-callback",
+		RedirectURL: "http://localhost:57459/google-callback",
 		Scopes: []string{"https://www.googleapis.com/auth/userinfo.profile",
 			"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint: google.Endpoint,
 	}
 )
 
+//getClientCredentials receive Credentials interface and fills ClientID and ClientSecret
+func getClientCredentials(credentials models.Credentials) {
+	googleOauthConfig.ClientID = credentials.GetID()
+	googleOauthConfig.ClientSecret = credentials.GetSecret()
+}
+
 //GenerateLoginURL generates the login url using googleapis OAuth2 Client Secret and OAuth2 Client ID
-func GenerateLoginURL(oauthState string) (string, error) {
+func GenerateLoginURL(oauthState string, credentials models.Credentials) (string, error) {
+	getClientCredentials(credentials)
+
 	if len(googleOauthConfig.ClientID) == 0 {
 		return "", errors.NewAccessError(
-			fmt.Sprintf("Undefined environmental variable %s", clientIDEnvVar),
-			fmt.Errorf("Define your app's OAuth2 Client ID on %s environmental varianle and run again", clientIDEnvVar),
+			fmt.Sprintf("Undefined environmental variable %s", models.ClientIDEnvVar),
+			fmt.Errorf("Define your app's OAuth2 Client ID on %s environmental varianle and run again", models.ClientIDEnvVar),
 		)
 	}
 
 	if len(googleOauthConfig.ClientSecret) == 0 {
 		return "", errors.NewAccessError(
-			fmt.Sprintf("Undefined environmental variable %s", clientSecretEnvVar),
-			fmt.Errorf("Define your app's OAuth2 Client Secret on %s environmental varianle and run again", clientSecretEnvVar),
+			fmt.Sprintf("Undefined environmental variable %s", models.ClientSecretEnvVar),
+			fmt.Errorf("Define your app's OAuth2 Client Secret on %s environmental varianle and run again", models.ClientSecretEnvVar),
 		)
 	}
 

@@ -1,3 +1,10 @@
+# mystack-controller api
+# https://github.com/topfreegames/mystack-controller
+#
+# Licensed under the MIT license:
+# http://www.opensource.org/licenses/mit-license
+# Copyright © 2017 Top Free Games <backend@tfgco.com>
+
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
 
 setup: setup-hooks
@@ -64,7 +71,7 @@ clear-coverage-profiles:
 	@find . -name '*.coverprofile' -delete
 
 unit-run:
-	@ginkgo -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
+	@ginkgo -tags unit -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
 
 gather-unit-profiles:
 	@mkdir -p _build
