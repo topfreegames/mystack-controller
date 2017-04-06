@@ -37,7 +37,11 @@ func newContextWithRequestIDAndLogger(ctx context.Context, logger logrus.FieldLo
 }
 
 func loggerFromContext(ctx context.Context) logrus.FieldLogger {
-	return ctx.Value(loggerKey).(logrus.FieldLogger)
+	l := ctx.Value(loggerKey)
+	if l == nil {
+		return nil
+	}
+	return l.(logrus.FieldLogger)
 }
 
 // ServeHTTP method

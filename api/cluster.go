@@ -22,14 +22,14 @@ type ClusterHandler struct {
 
 func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch c.Method {
-	case "create":
-		c.create(w, r)
-	case "remove":
-		c.remove(w, r)
+	case "run":
+		c.run(w, r)
+	case "delete":
+		c.deleteCluster(w, r)
 	}
 }
 
-func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
+func (c *ClusterHandler) run(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
 	username := strings.Split(email, "@")[0]
 	clusterName := mux.Vars(r)["name"]
@@ -46,8 +46,25 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Write(w, http.StatusOK, `{"success": "true"}`)
+	Write(w, http.StatusOK, `{"status": "ok"}`)
 }
 
-func (c *ClusterHandler) remove(w http.ResponseWriter, r *http.Request) {
+func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
+	email := emailFromCtx(r.Context())
+	username := strings.Split(email, "@")[0]
+	clusterName := mux.Vars(r)["name"]
+
+	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
+	if err != nil {
+		c.App.HandleError(w, http.StatusInternalServerError, "Error retrieving cluster", err)
+		return
+	}
+
+	err = cluster.Delete(c.App.Clientset)
+	if err != nil {
+		c.App.HandleError(w, http.StatusInternalServerError, "Error deleting cluster", err)
+		return
+	}
+
+	Write(w, http.StatusOK, `{"status": "ok"}`)
 }

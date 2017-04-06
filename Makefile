@@ -38,13 +38,6 @@ migrate-test: assets
 
 deps: start-deps wait-for-pg
 
-setup-ci:
-	@go get -u github.com/golang/dep/...
-	@go get -u github.com/jteeuwen/go-bindata/...
-	@go get github.com/onsi/ginkgo/ginkgo
-	@go get github.com/wadey/gocovmerge
-	@dep ensure
-
 start-deps:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
 	@env MY_IP=${MY_IP} docker-compose --project-name mystack up -d

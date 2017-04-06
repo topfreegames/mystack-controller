@@ -69,6 +69,26 @@ func WriteClusterConfig(
 	return nil
 }
 
+//RemoveClusterConfig writes cluster config on DB
+func RemoveClusterConfig(
+	db DB,
+	clusterName string,
+) error {
+
+	query := `DELETE FROM clusters WHERE name=:name`
+	values := map[string]interface{}{
+		"name": clusterName,
+	}
+	res, err := db.NamedExec(query, values)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("Cluster config doesn't exist on DB")
+	}
+	return nil
+}
+
 type clusterConfig struct {
 	Services map[string]*ClusterAppConfig `yaml:"services"`
 	Apps     map[string]*ClusterAppConfig `yaml:"apps"`

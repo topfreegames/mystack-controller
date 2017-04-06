@@ -87,10 +87,25 @@ apps:
 			Expect(returnApps).To(BeEquivalentTo(apps))
 		})
 
-		It("should return error if clusterName doesn' exist on DB", func() {
+		It("should return error if clusterName doesn't exist on DB", func() {
 			apps, services, err := LoadClusterConfig(db, clusterName)
 			Expect(apps).To(BeNil())
 			Expect(services).To(BeNil())
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("RemoveClusterConfig", func() {
+		It("should delete existing cluster config", func() {
+			err = WriteClusterConfig(db, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = RemoveClusterConfig(db, clusterName)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should not return error when deleting non existing cluster config", func() {
+			err = RemoveClusterConfig(db, clusterName)
 			Expect(err).To(HaveOccurred())
 		})
 	})

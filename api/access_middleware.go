@@ -59,7 +59,7 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp.StatusCode == http.StatusUnauthorized {
+	if resp.StatusCode == http.StatusBadRequest {
 		logger.WithError(err).Error("Error validating access token")
 		err := errors.NewAccessError("Unauthorized access token", fmt.Errorf(string(body)))
 		m.App.HandleError(w, http.StatusUnauthorized, "Unauthorized access token", err)

@@ -196,4 +196,28 @@ services {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("RemoveClusterConfig", func() {
+		It("should delete existing cluster config", func() {
+			defer db.Close()
+
+			mock.
+				ExpectExec("^INSERT INTO clusters(.+) VALUES(.+)$").
+				WithArgs(clusterName, yaml1).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.
+				ExpectExec("^DELETE FROM clusters WHERE name=(.+)$").
+				WithArgs(clusterName).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+
+			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = RemoveClusterConfig(sqlxDB, clusterName)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })

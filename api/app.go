@@ -81,12 +81,34 @@ func (a *App) getRouter() *mux.Router {
 		&VersionMiddleware{},
 	)).Methods("GET").Name("oauth")
 
-	r.Handle("/clusters/{name}/create", Chain(
-		&ClusterHandler{App: a, Method: "create"},
-		&AccessMiddleware{App: a},
+	r.Handle("/clusters/{name}/run", Chain(
+		&ClusterHandler{App: a, Method: "run"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-	)).Methods("POST").Name("oauth")
+		&AccessMiddleware{App: a},
+	)).Methods("PUT").Name("cluster")
+
+	r.Handle("/clusters/{name}/delete", Chain(
+		&ClusterHandler{App: a, Method: "delete"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&AccessMiddleware{App: a},
+	)).Methods("PUT").Name("cluster")
+
+	r.Handle("/cluster-configs/{name}/create", Chain(
+		&ClusterConfigHandler{App: a, Method: "create"},
+		&VersionMiddleware{},
+		&LoggingMiddleware{App: a},
+		&AccessMiddleware{App: a},
+		&PayloadMiddleware{App: a},
+	)).Methods("PUT").Name("cluster-config")
+
+	r.Handle("/cluster-configs/{name}/remove", Chain(
+		&ClusterConfigHandler{App: a, Method: "remove"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&AccessMiddleware{App: a},
+	)).Methods("PUT").Name("cluster-config")
 
 	return r
 }
@@ -99,7 +121,7 @@ func (a *App) configureApp() error {
 		return err
 	}
 
-	a.configureServer()
+	a.ConfigureServer()
 	return nil
 }
 
@@ -154,7 +176,8 @@ func (a *App) configureLogger() {
 	})
 }
 
-func (a *App) configureServer() {
+//ConfigureServer construct the routes
+func (a *App) ConfigureServer() {
 	a.Router = a.getRouter()
 	a.Server = &http.Server{Addr: a.Address, Handler: a.Router}
 }
