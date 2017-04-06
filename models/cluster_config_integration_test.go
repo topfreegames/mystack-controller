@@ -19,6 +19,26 @@ import (
 )
 
 var _ = Describe("ClusterConfig", func() {
+	const (
+		yaml1 = `
+services:
+  postgres:
+    image: postgres:1.0
+  redis:
+    image: redis:1.0
+apps:
+  app1:
+    image: app1
+    port: 5000
+    env:
+      - name: DATABASE_URL
+        value: postgres://derp:1234@example.com
+  app2:
+    image: app2
+    port: 5001
+`
+	)
+
 	var (
 		conn     runner.Connection
 		db       *runner.Tx
@@ -68,14 +88,14 @@ var _ = Describe("ClusterConfig", func() {
 
 	Describe("WriteClusterConfig", func() {
 		It("should write cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", apps, services)
+			err = WriteClusterConfig(db, "myCustomApps", yaml1)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
 	Describe("LoadClusterConfig", func() {
 		It("should load cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", apps, services)
+			err = WriteClusterConfig(db, "myCustomApps", yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
 			returnApps, returnServices, err := LoadClusterConfig(db, "myCustomApps")

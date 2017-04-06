@@ -10,8 +10,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE clusters (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name varchar(255) UNIQUE NOT NULL,
-    apps JSONB NOT NULL DEFAULT '{}'::JSONB,
-    services JSONB NOT NULL DEFAULT '{}'::JSONB,
+    yaml TEXT NOT NULL,
     created_at timestamp WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-

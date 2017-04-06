@@ -1,5 +1,5 @@
 {
-    "memo": "22e8fb5e03b0b4389a90a689b55554430fc797c327be64108ddcb091b1481b7b",
+    "memo": "55df57f097720e297e78eb7fc7c6d39ec47650e2cbee4bf66e2af6f7dce26455",
     "projects": [
         {
             "name": "cloud.google.com/go",
@@ -572,6 +572,14 @@
                 "stats",
                 "tap",
                 "transport"
+            ]
+        },
+        {
+            "name": "gopkg.in/DATA-DOG/go-sqlmock.v1",
+            "version": "v1.2.0",
+            "revision": "b983233bc0bbea4dc6e8ec8c8c923d935765ffec",
+            "packages": [
+                "."
             ]
         },
         {
