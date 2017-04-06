@@ -8,7 +8,7 @@
 package models
 
 import (
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
+	"fmt"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -27,7 +27,7 @@ type ClusterAppConfig struct {
 
 //LoadClusterConfig reads DB and create map with cluster configuration
 func LoadClusterConfig(
-	db runner.Connection,
+	db DB,
 	clusterName string,
 ) (
 	map[string]*ClusterAppConfig,
@@ -36,7 +36,7 @@ func LoadClusterConfig(
 ) {
 	query := "SELECT yaml FROM clusters WHERE name = $1"
 	var yamlStr string
-	err := db.SQL(query, clusterName).QueryStruct(&yamlStr)
+	err := db.Get(&yamlStr, query, clusterName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -46,13 +46,16 @@ func LoadClusterConfig(
 
 //WriteClusterConfig writes cluster config on DB
 func WriteClusterConfig(
-	db runner.Connection,
+	db DB,
 	clusterName string,
 	yamlStr string,
 ) error {
 	query := "INSERT INTO clusters(name, yaml) VALUES($1, $2)"
-	_, err := db.SQL(query, clusterName, yamlStr).Exec()
-	return err
+	res := db.MustExec(query, clusterName, yamlStr)
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("Couldn't insert on DB")
+	}
+	return nil
 }
 
 type clusterConfig struct {

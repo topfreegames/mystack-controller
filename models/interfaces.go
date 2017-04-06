@@ -7,6 +7,10 @@
 
 package models
 
+import (
+	"database/sql"
+)
+
 const (
 	//ClientIDEnvVar defines the name of the environmental variable
 	ClientIDEnvVar = "MYSTACK_GOOGLE_CLIENT_ID"
@@ -18,4 +22,10 @@ const (
 type Credentials interface {
 	GetID() string
 	GetSecret() string
+}
+
+//DB is the mystack-controller db interface
+type DB interface {
+	MustExec(query string, args ...interface{}) sql.Result
+	Get(dest interface{}, query string, args ...interface{}) error
 }

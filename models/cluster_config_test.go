@@ -14,8 +14,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 
 const (
@@ -63,27 +63,20 @@ var _ = Describe("ClusterConfig", func() {
 	})
 
 	Describe("WriteClusterConfig", func() {
-		apps, services, _ := ParseYaml(yaml1)
 		clusterName := "MyCustomApps"
 
-		XIt("should write cluster config", func() {
-			mockdb, mock, err := sqlmock.New()
+		It("should write cluster config", func() {
+			db, mock, err := sqlmock.New()
 			Expect(err).NotTo(HaveOccurred())
-			defer mockdb.Close()
+			defer db.Close()
 
 			mock.
-				ExpectExec("SHOW server_version_num").
+				ExpectExec("INSERT INTO clusters").
+				WithArgs(clusterName, yaml1).
 				WillReturnResult(sqlmock.NewResult(1, 1))
-			mock.ExpectBegin()
-			mock.
-				ExpectExec("INSERT INTO clusters(name, apps, services)").
-				WithArgs(clusterName, apps, services).
-				WillReturnResult(sqlmock.NewResult(1, 1))
-			mock.ExpectCommit()
 
-			var db runner.Connection
-			db = runner.NewDB(mockdb, "postgres")
-			err = WriteClusterConfig(db, clusterName, yaml1)
+			sqlxDB := sqlx.NewDb(db, "postgres")
+			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = mock.ExpectationsWereMet()

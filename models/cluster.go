@@ -8,7 +8,6 @@
 package models
 
 import (
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -21,7 +20,7 @@ type Cluster struct {
 }
 
 //NewCluster returns a new cluster ready to start
-func NewCluster(db runner.Connection, username, clusterName string) (*Cluster, error) {
+func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 	namespace := usernameToNamespace(username)
 
 	apps, services, err := LoadClusterConfig(db, clusterName)

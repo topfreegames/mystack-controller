@@ -13,9 +13,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	mTest "github.com/topfreegames/mystack-controller/testing"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
 
 var _ = Describe("ClusterConfig", func() {
@@ -40,8 +37,6 @@ apps:
 	)
 
 	var (
-		conn     runner.Connection
-		db       *runner.Tx
 		err      error
 		services = map[string]*ClusterAppConfig{
 			"postgres": &ClusterAppConfig{Image: "postgres:1.0"},
@@ -65,13 +60,8 @@ apps:
 		}
 	)
 
-	BeforeSuite(func() {
-		conn, err = mTest.GetTestDB()
-		Expect(err).NotTo(HaveOccurred())
-	})
-
 	BeforeEach(func() {
-		db, err = conn.Begin()
+		db, err = conn.Beginx()
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -79,11 +69,6 @@ apps:
 		err = db.Rollback()
 		Expect(err).NotTo(HaveOccurred())
 		db = nil
-	})
-
-	AfterSuite(func() {
-		err = conn.(*runner.DB).DB.Close()
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("WriteClusterConfig", func() {

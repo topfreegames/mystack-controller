@@ -15,11 +15,11 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/mystack-controller/errors"
 	"github.com/topfreegames/mystack-controller/metadata"
 	"github.com/topfreegames/mystack-controller/models"
-	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -27,7 +27,7 @@ import (
 type App struct {
 	Address     string
 	Config      *viper.Viper
-	DB          runner.Connection
+	DB          models.DB
 	Debug       bool
 	Logger      logrus.FieldLogger
 	Router      *mux.Router
@@ -113,7 +113,7 @@ func (a *App) configureDatabase() error {
 	return nil
 }
 
-func (a *App) getDB() (runner.Connection, error) {
+func (a *App) getDB() (*sqlx.DB, error) {
 	host := a.Config.GetString("postgres.host")
 	user := a.Config.GetString("postgres.user")
 	dbName := a.Config.GetString("postgres.dbname")

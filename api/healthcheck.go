@@ -24,7 +24,8 @@ func (h *HealthcheckHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	l.Debug("Performing healthcheck...")
 
-	_, err := h.App.DB.Exec("select 1")
+	var result int64
+	err := h.App.DB.Get(&result, "select 1")
 
 	if err != nil {
 		l.WithError(err).Error("Database is offline")
