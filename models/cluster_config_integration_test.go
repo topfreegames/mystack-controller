@@ -34,6 +34,7 @@ apps:
     image: app2
     port: 5001
 `
+		clusterName = "myCustomApps"
 	)
 
 	var (
@@ -73,20 +74,27 @@ apps:
 
 	Describe("WriteClusterConfig", func() {
 		It("should write cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", yaml1)
+			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
 	Describe("LoadClusterConfig", func() {
 		It("should load cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", yaml1)
+			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
-			returnApps, returnServices, err := LoadClusterConfig(db, "myCustomApps")
+			returnApps, returnServices, err := LoadClusterConfig(db, clusterName)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(returnServices).To(BeEquivalentTo(services))
 			Expect(returnApps).To(BeEquivalentTo(apps))
+		})
+
+		It("should return error if clusterName doesn' exist on DB", func() {
+			apps, services, err := LoadClusterConfig(db, clusterName)
+			Expect(apps).To(BeNil())
+			Expect(services).To(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
