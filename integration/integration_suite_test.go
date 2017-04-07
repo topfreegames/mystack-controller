@@ -54,6 +54,18 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 
+var _ = BeforeEach(func() {
+	var err error
+	db, err = conn.Beginx()
+	Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = AfterEach(func() {
+	err := db.Rollback()
+	Expect(err).NotTo(HaveOccurred())
+	db = nil
+})
+
 var _ = AfterSuite(func() {
 	if conn != nil {
 		err := conn.Close()

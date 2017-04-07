@@ -61,17 +61,6 @@ apps:
 		}
 	)
 
-	BeforeEach(func() {
-		db, err = conn.Beginx()
-		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err = db.Rollback()
-		Expect(err).NotTo(HaveOccurred())
-		db = nil
-	})
-
 	Describe("WriteClusterConfig", func() {
 		It("should write cluster config", func() {
 			err = WriteClusterConfig(db, clusterName, yaml1)

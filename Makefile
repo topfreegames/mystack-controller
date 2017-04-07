@@ -87,7 +87,7 @@ gather-unit-profiles:
 	@echo "mode: count" > _build/coverage-unit.out
 	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
 
-integration int: integration-board deps-test clear-coverage-profiles integration-run gather-integration-profiles stop-deps
+integration int: integration-board clear-coverage-profiles integration-run gather-integration-profiles
 
 integration-board:
 	@echo
