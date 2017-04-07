@@ -57,3 +57,7 @@ var _ = BeforeEach(func() {
 	Expect(err).NotTo(HaveOccurred())
 	app.DB = sqlx.NewDb(db, "postgres")
 })
+
+var _ = AfterEach(func() {
+	db.Close()
+})

@@ -53,6 +53,9 @@ func WriteClusterConfig(
 	if _, _, err := ParseYaml(yamlStr); err != nil {
 		return err
 	}
+	if len(yamlStr) == 0 {
+		return fmt.Errorf("yaml: invalid empty yaml")
+	}
 
 	query := `INSERT INTO clusters(name, yaml) VALUES(:name, :yaml)`
 	values := map[string]interface{}{

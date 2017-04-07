@@ -84,7 +84,7 @@ func migrations0001CreateusertableSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0001-CreateUserTable.sql", size: 462, mode: os.FileMode(420), modTime: time.Unix(1491577857, 0)}
+	info := bindataFileInfo{name: "migrations/0001-CreateUserTable.sql", size: 462, mode: os.FileMode(420), modTime: time.Unix(1491410967, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -104,7 +104,7 @@ func migrations0002CreateclustertableSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0002-CreateClusterTable.sql", size: 475, mode: os.FileMode(420), modTime: time.Unix(1491577857, 0)}
+	info := bindataFileInfo{name: "migrations/0002-CreateClusterTable.sql", size: 475, mode: os.FileMode(420), modTime: time.Unix(1491587718, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

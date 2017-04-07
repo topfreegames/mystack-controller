@@ -78,15 +78,22 @@ apps:
 
 	BeforeEach(func() {
 		clientset = fake.NewSimpleClientset()
-		db, mock, err = sqlmock.New()
-		Expect(err).NotTo(HaveOccurred())
-		sqlxDB = sqlx.NewDb(db, "postgres")
 	})
 
 	Describe("NewCluster", func() {
-		It("should return cluster from config on DB", func() {
-			defer db.Close()
+		BeforeEach(func() {
+			db, mock, err = sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			sqlxDB = sqlx.NewDb(db, "postgres")
+		})
 
+		AfterEach(func() {
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+			db.Close()
+		})
+
+		It("should return cluster from config on DB", func() {
 			mockedCluster := mockCluster(username)
 
 			mock.
@@ -105,14 +112,9 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.Deployments).To(ConsistOf(mockedCluster.Deployments))
 			Expect(cluster.Services).To(ConsistOf(mockedCluster.Services))
-
-			err = mock.ExpectationsWereMet()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should return error if clusterName doesn't exists on DB", func() {
-			defer db.Close()
-
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -121,9 +123,6 @@ apps:
 			cluster, err := NewCluster(sqlxDB, username, clusterName)
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
-
-			err = mock.ExpectationsWereMet()
-			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 

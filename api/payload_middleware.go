@@ -28,7 +28,8 @@ type ClusterAppConfig struct {
 
 const configKey = contextKey("clusterConfigKey")
 
-func newContextWithClusterConfig(ctx context.Context, clusterConfig string) context.Context {
+//NewContextWithClusterConfig creates a context with cluster config
+func NewContextWithClusterConfig(ctx context.Context, clusterConfig string) context.Context {
 	c := context.WithValue(ctx, configKey, clusterConfig)
 	return c
 }
@@ -55,7 +56,7 @@ func (p *PayloadMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := newContextWithClusterConfig(r.Context(), bodyJSON["yaml"])
+	ctx := NewContextWithClusterConfig(r.Context(), bodyJSON["yaml"])
 	p.next.ServeHTTP(w, r.WithContext(ctx))
 }
 
