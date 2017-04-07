@@ -58,12 +58,14 @@ var _ = BeforeEach(func() {
 	var err error
 	db, err = conn.Beginx()
 	Expect(err).NotTo(HaveOccurred())
+	app.DB = db
 })
 
 var _ = AfterEach(func() {
 	err := db.Rollback()
 	Expect(err).NotTo(HaveOccurred())
 	db = nil
+	app.DB = conn
 })
 
 var _ = AfterSuite(func() {
