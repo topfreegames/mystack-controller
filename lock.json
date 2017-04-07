@@ -459,7 +459,7 @@
         {
             "name": "golang.org/x/sys",
             "branch": "master",
-            "revision": "7de4796419dc3b554e6dab3a119a62469569d299",
+            "revision": "f3918c30c5c2cb527c0b071a27c35120a6c0719a",
             "packages": [
                 "unix"
             ]
