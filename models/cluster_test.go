@@ -97,16 +97,9 @@ apps:
 			mockedCluster := mockCluster(username)
 
 			mock.
-				ExpectExec("INSERT INTO clusters").
-				WithArgs(clusterName, yaml1).
-				WillReturnResult(sqlmock.NewResult(1, 1))
-			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
-
-			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
-			Expect(err).NotTo(HaveOccurred())
 
 			cluster, err := NewCluster(sqlxDB, username, clusterName)
 			Expect(err).NotTo(HaveOccurred())

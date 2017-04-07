@@ -24,7 +24,8 @@ type AccessMiddleware struct {
 
 const emailKey = contextKey("emailKey")
 
-func newContextWithEmail(ctx context.Context, email string) context.Context {
+//NewContextWithEmail save email on context
+func NewContextWithEmail(ctx context.Context, email string) context.Context {
 	c := context.WithValue(ctx, emailKey, email)
 	return c
 }
@@ -85,7 +86,7 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m.App.HandleError(w, http.StatusUnauthorized, "Error validating access token", err)
 		return
 	}
-	ctx := newContextWithEmail(r.Context(), email)
+	ctx := NewContextWithEmail(r.Context(), email)
 	m.next.ServeHTTP(w, r.WithContext(ctx))
 }
 

@@ -37,6 +37,7 @@ func LoadClusterConfig(
 	query := "SELECT yaml FROM clusters WHERE name = $1"
 	var yamlStr string
 	err := db.Get(&yamlStr, query, clusterName)
+
 	if err != nil {
 		return nil, nil, err
 	}
