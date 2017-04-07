@@ -1,5 +1,5 @@
 {
-    "memo": "41dfb250ca928197a4ec3ece7781d4e832f4f0f75d00ddbbcfd2144da38f38e3",
+    "memo": "d2d756a0515be4d22a5e8e13fb35abcfea976717e564caeff0d9c3f25b0662ea",
     "projects": [
         {
             "name": "cloud.google.com/go",
@@ -113,15 +113,6 @@
             "revision": "629574ca2a5df945712d3079857300b5e4da0236",
             "packages": [
                 "."
-            ]
-        },
-        {
-            "name": "github.com/garyburd/redigo",
-            "version": "v1.0.0",
-            "revision": "8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13",
-            "packages": [
-                "internal",
-                "redis"
             ]
         },
         {
@@ -298,46 +289,6 @@
             ]
         },
         {
-            "name": "github.com/mattn/go-colorable",
-            "version": "v0.0.7",
-            "revision": "d228849504861217f796da67fae4f6e347643f15",
-            "packages": [
-                "."
-            ]
-        },
-        {
-            "name": "github.com/mattn/go-isatty",
-            "version": "v0.0.2",
-            "revision": "fc9e8d8ef48496124e79ae0df75490096eccf6fe",
-            "packages": [
-                "."
-            ]
-        },
-        {
-            "name": "github.com/mgutz/ansi",
-            "branch": "master",
-            "revision": "9520e82c474b0a04dd04f8a40959027271bab992",
-            "packages": [
-                "."
-            ]
-        },
-        {
-            "name": "github.com/mgutz/logxi",
-            "version": "v1",
-            "revision": "aebf8a7d67ab4625e0fd4a665766fef9a709161b",
-            "packages": [
-                "v1"
-            ]
-        },
-        {
-            "name": "github.com/mgutz/str",
-            "version": "v1.2.0",
-            "revision": "968bf66e3da857419e4f6e71b2d5c9ae95682dc4",
-            "packages": [
-                "."
-            ]
-        },
-        {
             "name": "github.com/mitchellh/mapstructure",
             "branch": "master",
             "revision": "53818660ed4955e899c0bcafa97299a388bd7c8e",
@@ -414,14 +365,6 @@
             ]
         },
         {
-            "name": "github.com/pmylund/go-cache",
-            "version": "v2.0.0",
-            "revision": "1881a9bccb818787f68c52bfba648c6cf34c34fa",
-            "packages": [
-                "."
-            ]
-        },
-        {
             "name": "github.com/satori/go.uuid",
             "branch": "master",
             "revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
@@ -489,7 +432,7 @@
         {
             "name": "golang.org/x/net",
             "branch": "master",
-            "revision": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d",
+            "revision": "d1e1b351919c6738fdeb9893d5c998b161464f0c",
             "packages": [
                 "context",
                 "context/ctxhttp",
@@ -588,19 +531,6 @@
             "revision": "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4",
             "packages": [
                 "."
-            ]
-        },
-        {
-            "name": "gopkg.in/mgutz/dat.v2",
-            "branch": "v2",
-            "revision": "98858ed6797785792b13dad45ce45abad036c6b7",
-            "packages": [
-                "common",
-                "dat",
-                "kvs",
-                "postgres",
-                "reflectx",
-                "sqlx-runner"
             ]
         },
         {

@@ -1,11 +1,12 @@
 // mystack-controller api
+// +build integration
 // https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
 // Copyright © 2017 Top Free Games <backend@tfgco.com>
 
-package api_test
+package integration_test
 
 import (
 	"io"
@@ -27,13 +28,14 @@ import (
 
 var clientset kubernetes.Interface
 var app *api.App
-var db *sqlx.DB
+var conn *sqlx.DB
+var db *sqlx.Tx
 var closer io.Closer
 var config *viper.Viper
 
-func TestApi(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "MyStack Controller API - API Suite")
+	RunSpecs(t, "Integration Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -41,7 +43,7 @@ var _ = BeforeSuite(func() {
 	l.Level = logrus.FatalLevel
 
 	var err error
-	db, err = oTesting.GetTestDB()
+	conn, err = oTesting.GetTestDB()
 	Expect(err).NotTo(HaveOccurred())
 
 	clientset := fake.NewSimpleClientset()
@@ -53,20 +55,20 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = BeforeEach(func() {
-	tx, err := db.Beginx()
+	var err error
+	db, err = conn.Beginx()
 	Expect(err).NotTo(HaveOccurred())
-	app.DB = tx
 })
 
 var _ = AfterEach(func() {
-	err := app.DB.(*sqlx.Tx).Rollback()
+	err := db.Rollback()
 	Expect(err).NotTo(HaveOccurred())
-	app.DB = db
+	db = nil
 })
 
 var _ = AfterSuite(func() {
-	if db != nil {
-		err := db.Close()
+	if conn != nil {
+		err := conn.Close()
 		Expect(err).NotTo(HaveOccurred())
 		db = nil
 	}

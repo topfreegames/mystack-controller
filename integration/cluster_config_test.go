@@ -6,7 +6,7 @@
 // http://www.opensource.org/licenses/mit-license
 // Copyright © 2017 Top Free Games <backend@tfgco.com>
 
-package models_test
+package integration_test
 
 import (
 	. "github.com/topfreegames/mystack-controller/models"
@@ -34,6 +34,7 @@ apps:
     image: app2
     port: 5001
 `
+		clusterName = "myCustomApps"
 	)
 
 	var (
@@ -60,33 +61,37 @@ apps:
 		}
 	)
 
-	BeforeEach(func() {
-		db, err = conn.Beginx()
-		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err = db.Rollback()
-		Expect(err).NotTo(HaveOccurred())
-		db = nil
-	})
-
 	Describe("WriteClusterConfig", func() {
 		It("should write cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", yaml1)
+			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return error when writing cluster config with same name", func() {
+			err = WriteClusterConfig(db, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = WriteClusterConfig(db, clusterName, yaml1)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
 	Describe("LoadClusterConfig", func() {
 		It("should load cluster config", func() {
-			err = WriteClusterConfig(db, "myCustomApps", yaml1)
+			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
-			returnApps, returnServices, err := LoadClusterConfig(db, "myCustomApps")
+			returnApps, returnServices, err := LoadClusterConfig(db, clusterName)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(returnServices).To(BeEquivalentTo(services))
 			Expect(returnApps).To(BeEquivalentTo(apps))
+		})
+
+		It("should return error if clusterName doesn' exist on DB", func() {
+			apps, services, err := LoadClusterConfig(db, clusterName)
+			Expect(apps).To(BeNil())
+			Expect(services).To(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

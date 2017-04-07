@@ -50,8 +50,19 @@ func WriteClusterConfig(
 	clusterName string,
 	yamlStr string,
 ) error {
-	query := "INSERT INTO clusters(name, yaml) VALUES($1, $2)"
-	res := db.MustExec(query, clusterName, yamlStr)
+	if _, _, err := ParseYaml(yamlStr); err != nil {
+		return err
+	}
+
+	query := `INSERT INTO clusters(name, yaml) VALUES(:name, :yaml)`
+	values := map[string]interface{}{
+		"name": clusterName,
+		"yaml": yamlStr,
+	}
+	res, err := db.NamedExec(query, values)
+	if err != nil {
+		return err
+	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return fmt.Errorf("Couldn't insert on DB")
 	}

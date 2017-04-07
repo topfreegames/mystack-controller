@@ -6,6 +6,7 @@
 # Copyright © 2017 Top Free Games <backend@tfgco.com>
 
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
+TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq | grep -v integration`
 
 setup: setup-hooks
 	@go get -u github.com/golang/dep...
@@ -50,6 +51,8 @@ wait-for-pg:
 	@until docker exec mystack_postgres_1 pg_isready; do echo 'Waiting for Postgres...' && sleep 1; done
 	@sleep 2
 
+deps-test: deps drop-test migrate-test
+
 drop:
 	@-psql -d postgres -h localhost -p 8585 -U postgres -c "SELECT pg_terminate_backend(pid.pid) FROM pg_stat_activity, (SELECT pid FROM pg_stat_activity where pid <> pg_backend_pid()) pid WHERE datname='mystack';"
 	@psql -d postgres -h localhost -p 8585 -U postgres -f scripts/drop.sql > /dev/null
@@ -65,10 +68,16 @@ run:
 
 run-full: deps drop migrate run
 
-unit: clear-coverage-profiles unit-run gather-unit-profiles
+unit: unit-board clear-coverage-profiles unit-run gather-unit-profiles
 
 clear-coverage-profiles:
 	@find . -name '*.coverprofile' -delete
+
+unit-board:
+	@echo
+	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
+	@echo "\033[1;34m=         Unit Tests         -\033[0m"
+	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 
 unit-run:
 	@ginkgo -tags unit -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
@@ -78,10 +87,16 @@ gather-unit-profiles:
 	@echo "mode: count" > _build/coverage-unit.out
 	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
 
-integration int: clear-coverage-profiles integration-run gather-integration-profiles
+integration int: integration-board deps-test clear-coverage-profiles integration-run gather-integration-profiles
+
+integration-board:
+	@echo
+	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
+	@echo "\033[1;34m=      Integration Tests     -\033[0m"
+	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 
 integration-run:
-	@ginkgo -tags integration -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
+	@ginkgo -tags integration -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ./integration
 
 gather-integration-profiles:
 	@mkdir -p _build
@@ -94,9 +109,9 @@ merge-profiles:
 
 test-coverage-func coverage-func: merge-profiles
 	@echo
-	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-	@echo "Functions NOT COVERED by Tests"
-	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
+	@echo "\033[1;34mFunctions NOT COVERED by Tests\033[0m"
+	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 	@go tool cover -func=_build/coverage-all.out | egrep -v "100.0[%]"
 
 test: unit integration test-coverage-func
