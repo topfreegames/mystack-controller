@@ -6,6 +6,7 @@
 # Copyright © 2017 Top Free Games <backend@tfgco.com>
 
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
+TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq | grep -v integration`
 
 setup: setup-hooks
 	@go get -u github.com/golang/dep...
@@ -71,7 +72,7 @@ clear-coverage-profiles:
 	@find . -name '*.coverprofile' -delete
 
 unit-run:
-	@ginkgo -tags unit -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements
+	@ginkgo -tags unit -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
 
 gather-unit-profiles:
 	@mkdir -p _build
