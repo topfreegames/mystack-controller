@@ -34,6 +34,11 @@ func (c *ClusterHandler) run(w http.ResponseWriter, r *http.Request) {
 	username := strings.Split(email, "@")[0]
 	clusterName := mux.Vars(r)["name"]
 
+	if len(clusterName) == 0 {
+		parts := strings.Split(r.URL.String(), "/")
+		clusterName = parts[2]
+	}
+
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
 	if err != nil {
 		c.App.HandleError(w, http.StatusInternalServerError, "Error creating cluster", err)
@@ -53,6 +58,11 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
 	username := strings.Split(email, "@")[0]
 	clusterName := mux.Vars(r)["name"]
+
+	if len(clusterName) == 0 {
+		parts := strings.Split(r.URL.String(), "/")
+		clusterName = parts[2]
+	}
 
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
 	if err != nil {

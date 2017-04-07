@@ -6,6 +6,8 @@ import (
 
 var _ = Describe("Cluster", func() {
 	Describe("PUT /clusters/{name}/run", func() {
+		It("should run existing clusterName", func() {
 
+		})
 	})
 })
