@@ -28,29 +28,25 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 		return nil, err
 	}
 
-	k8sDeployments := buildDeployments(apps, services, username)
-	k8sServices := buildServices(k8sDeployments, username)
+	k8sAppDeployments := buildDeployments(apps, username)
+	k8sSvcDeployments := buildDeployments(services, username)
+	k8sServices := buildServices(k8sAppDeployments, username)
 
 	cluster := &Cluster{
 		Username:    username,
 		Namespace:   namespace,
-		Deployments: k8sDeployments,
+		Deployments: append(k8sAppDeployments, k8sSvcDeployments...),
 		Services:    k8sServices,
 	}
 
 	return cluster, nil
 }
 
-func buildDeployments(apps, services map[string]*ClusterAppConfig, username string) []*Deployment {
-	deployments := make([]*Deployment, len(apps)+len(services))
+func buildDeployments(types map[string]*ClusterAppConfig, username string) []*Deployment {
+	deployments := make([]*Deployment, len(types))
 
 	i := 0
-	for name, config := range services {
-		deployments[i] = NewDeployment(name, username, config.Image, config.Port, config.Environment)
-		i = i + 1
-	}
-
-	for name, config := range apps {
+	for name, config := range types {
 		deployments[i] = NewDeployment(name, username, config.Image, config.Port, config.Environment)
 		i = i + 1
 	}

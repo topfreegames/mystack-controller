@@ -41,13 +41,13 @@ func GetDB(
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetMaxOpenConns(maxOpenConns)
 
-	ShouldPing(db.DB, time.Duration(connectionTimeoutMS)*time.Millisecond)
+	shouldPing(db.DB, time.Duration(connectionTimeoutMS)*time.Millisecond)
 
 	return db, nil
 }
 
 //ShouldPing the database
-func ShouldPing(db *sql.DB, timeout time.Duration) error {
+func shouldPing(db *sql.DB, timeout time.Duration) error {
 	var err error
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = timeout

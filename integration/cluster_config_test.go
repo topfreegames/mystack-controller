@@ -66,6 +66,14 @@ apps:
 			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 		})
+
+		It("should return error when writing cluster config with same name", func() {
+			err = WriteClusterConfig(db, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = WriteClusterConfig(db, clusterName, yaml1)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 	Describe("LoadClusterConfig", func() {

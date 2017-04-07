@@ -17,6 +17,10 @@ import (
 var _ = Describe("Cluster", func() {
 	const (
 		yaml1 = `
+services:
+  test0:
+    image: svc1
+    port: 5000
 apps:
   test1:
     image: app1
@@ -40,6 +44,7 @@ apps:
 			Username:  username,
 			Namespace: namespace,
 			Deployments: []*Deployment{
+				NewDeployment("test0", username, "svc1", port, nil),
 				NewDeployment("test1", username, "app1", port, nil),
 				NewDeployment("test2", username, "app2", port, nil),
 				NewDeployment("test3", username, "app3", port, nil),

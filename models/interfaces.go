@@ -26,6 +26,6 @@ type Credentials interface {
 
 //DB is the mystack-controller db interface
 type DB interface {
-	MustExec(query string, args ...interface{}) sql.Result
+	NamedExec(query string, arg interface{}) (sql.Result, error)
 	Get(dest interface{}, query string, args ...interface{}) error
 }

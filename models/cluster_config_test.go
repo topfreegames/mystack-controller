@@ -9,6 +9,7 @@
 package models_test
 
 import (
+	"fmt"
 	. "github.com/topfreegames/mystack-controller/models"
 
 	. "github.com/onsi/ginkgo"
@@ -75,6 +76,17 @@ var _ = Describe("ClusterConfig", func() {
 			Expect(apps["app2"].Port).To(Equal(5001))
 			Expect(apps["app2"].Environment).To(BeNil())
 		})
+
+		It("should return error with invalid yaml", func() {
+			invalidYaml := `
+services {
+  app1 {
+    image: app
+}
+			`
+			_, _, err := ParseYaml(invalidYaml)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 	Describe("WriteClusterConfig", func() {
@@ -88,6 +100,44 @@ var _ = Describe("ClusterConfig", func() {
 
 			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
+
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return error when witing invalid yaml", func() {
+			defer db.Close()
+			invalidYaml := `
+services {
+  app1 {
+    image: app
+}
+			`
+
+			err := WriteClusterConfig(sqlxDB, clusterName, invalidYaml)
+			Expect(err).To(HaveOccurred())
+
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return error when writing cluster with same name", func() {
+			defer db.Close()
+
+			mock.
+				ExpectExec("INSERT INTO clusters").
+				WithArgs(clusterName, yaml1).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.
+				ExpectExec("INSERT INTO clusters").
+				WithArgs(clusterName, yaml1).
+				WillReturnError(fmt.Errorf(`pq: duplicate key value violates unique constraint "clusters_name_key"`))
+
+			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
+			Expect(err).To(HaveOccurred())
 
 			err = mock.ExpectationsWereMet()
 			Expect(err).NotTo(HaveOccurred())
