@@ -65,6 +65,7 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
+
 	if err != nil {
 		c.App.HandleError(w, http.StatusInternalServerError, "Error retrieving cluster", err)
 		return

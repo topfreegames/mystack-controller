@@ -1,12 +1,12 @@
 // mystack-controller api
-// +build unit
+// +build integration
 // https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
 // http://www.opensource.org/licenses/mit-license
 // Copyright © 2017 Top Free Games <backend@tfgco.com>
 
-package api_test
+package integration_test
 
 import (
 	"encoding/json"
@@ -14,9 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/api"
-	"github.com/topfreegames/mystack-controller/models"
 
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"net/http"
 	"net/http/httptest"
 )
@@ -49,7 +47,7 @@ apps:
 		var (
 			err     error
 			request *http.Request
-			route   = fmt.Sprintf("/cluster/%s/run", clusterName)
+			route   = fmt.Sprintf("/clusters/%s/run", clusterName)
 		)
 
 		BeforeEach(func() {
@@ -58,18 +56,17 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		AfterEach(func() {
-			err = mock.ExpectationsWereMet()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should run existing clusterName", func() {
-			mock.
-				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
-				WithArgs(clusterName).
-				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			route = fmt.Sprintf("/cluster-configs/%s/create", clusterName)
+			createRequest, err := http.NewRequest("PUT", route, nil)
+			Expect(err).NotTo(HaveOccurred())
 
-			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			clusterConfigHandler := &ClusterConfigHandler{App: app, Method: "create"}
+			ctx := NewContextWithClusterConfig(createRequest.Context(), yaml1)
+			clusterConfigHandler.ServeHTTP(recorder, createRequest.WithContext(ctx))
+
+			recorder = httptest.NewRecorder()
+			ctx = NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
@@ -78,11 +75,6 @@ apps:
 		})
 
 		It("should return error 422 when run non existing clusterName", func() {
-			mock.
-				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
-				WithArgs(clusterName).
-				WillReturnError(fmt.Errorf("sql: no rows in result set"))
-
 			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
@@ -102,7 +94,7 @@ apps:
 		var (
 			err     error
 			request *http.Request
-			route   = fmt.Sprintf("/cluster/%s/delete", clusterName)
+			route   = fmt.Sprintf("/clusters/%s/delete", clusterName)
 		)
 
 		BeforeEach(func() {
@@ -111,40 +103,31 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		AfterEach(func() {
-			err = mock.ExpectationsWereMet()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should delete existing clusterName", func() {
-			mock.
-				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
-				WithArgs(clusterName).
-				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
-			mock.
-				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
-				WithArgs(clusterName).
-				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			route = fmt.Sprintf("/cluster-configs/%s/create", clusterName)
+			createRequest, _ := http.NewRequest("PUT", route, nil)
+			clusterConfigHandler := &ClusterConfigHandler{App: app, Method: "create"}
+			ctx := NewContextWithClusterConfig(createRequest.Context(), yaml1)
+			clusterConfigHandler.ServeHTTP(recorder, createRequest.WithContext(ctx))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName)
-			Expect(err).NotTo(HaveOccurred())
-			err = cluster.Create(app.Clientset)
-			Expect(err).NotTo(HaveOccurred())
+			clusterHandler.Method = "run"
+			route = fmt.Sprintf("/clusters/%s/run", clusterName)
+			runRequest, _ := http.NewRequest("PUT", route, nil)
+			recorder = httptest.NewRecorder()
+			ctx = NewContextWithEmail(runRequest.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, runRequest.WithContext(ctx))
 
-			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.Method = "delete"
+			recorder = httptest.NewRecorder()
+			ctx = NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
-			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
+			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 		})
 
 		It("should return error 422 when deleting non existing clusterName", func() {
-			mock.
-				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
-				WithArgs(clusterName).
-				WillReturnError(fmt.Errorf("sql: no rows in result set"))
-
 			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 

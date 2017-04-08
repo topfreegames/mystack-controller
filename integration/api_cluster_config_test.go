@@ -15,7 +15,6 @@ import (
 
 	"encoding/json"
 	"fmt"
-	mTest "github.com/topfreegames/mystack-controller/testing"
 	"net/http"
 	"net/http/httptest"
 )
@@ -54,10 +53,7 @@ apps:
 		)
 
 		BeforeEach(func() {
-			yamlReader := mTest.JSONFor(map[string]interface{}{
-				"yaml": yaml1,
-			})
-			request, err = http.NewRequest("PUT", route, yamlReader)
+			request, err = http.NewRequest("PUT", route, nil)
 			Expect(err).NotTo(HaveOccurred())
 			clusterConfigHandler.Method = "create"
 		})
@@ -76,10 +72,7 @@ apps:
 			clusterConfigHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			recorder = httptest.NewRecorder()
-			yamlReader := mTest.JSONFor(map[string]interface{}{
-				"yaml": yaml1,
-			})
-			request, err = http.NewRequest("PUT", route, yamlReader)
+			request, err = http.NewRequest("PUT", route, nil)
 
 			ctx = NewContextWithClusterConfig(request.Context(), yaml1)
 			clusterConfigHandler.ServeHTTP(recorder, request.WithContext(ctx))
@@ -123,10 +116,7 @@ apps:
 
 		It("should return 200 when removing existing cluster", func() {
 			clusterConfigHandler.Method = "create"
-			yamlReader := mTest.JSONFor(map[string]interface{}{
-				"yaml": yaml1,
-			})
-			request, err = http.NewRequest("PUT", createRoute, yamlReader)
+			request, err = http.NewRequest("PUT", createRoute, nil)
 			Expect(err).NotTo(HaveOccurred())
 			ctx := NewContextWithClusterConfig(request.Context(), yaml1)
 			clusterConfigHandler.ServeHTTP(recorder, request.WithContext(ctx))
