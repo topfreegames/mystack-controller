@@ -9,6 +9,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/topfreegames/mystack-controller/errors"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -34,15 +35,28 @@ func LoadClusterConfig(
 	map[string]*ClusterAppConfig,
 	error,
 ) {
+	if len(clusterName) == 0 {
+		return nil, nil, errors.NewGenericError("load cluster config error", fmt.Errorf("invalid empty cluster name"))
+	}
+
 	query := "SELECT yaml FROM clusters WHERE name = $1"
 	var yamlStr string
-	err := db.Get(&yamlStr, query, clusterName)
 
+	err := db.Get(&yamlStr, query, clusterName)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.NewDatabaseError(err)
 	}
+
+	if len(yamlStr) == 0 {
+		return nil, nil, errors.NewYamlError("load cluster config error", fmt.Errorf("invalid empty config"))
+	}
+
 	apps, services, err := ParseYaml(yamlStr)
-	return apps, services, err
+	if err != nil {
+		return nil, nil, errors.NewYamlError("load cluster config error", err)
+	}
+
+	return apps, services, nil
 }
 
 //WriteClusterConfig writes cluster config on DB
@@ -51,11 +65,14 @@ func WriteClusterConfig(
 	clusterName string,
 	yamlStr string,
 ) error {
+	if len(clusterName) == 0 {
+		return errors.NewGenericError("write cluster config error", fmt.Errorf("invalid empty cluster name"))
+	}
 	if _, _, err := ParseYaml(yamlStr); err != nil {
-		return err
+		return errors.NewYamlError("write cluster config error", err)
 	}
 	if len(yamlStr) == 0 {
-		return fmt.Errorf("yaml: invalid empty yaml")
+		return errors.NewYamlError("write cluster config error", fmt.Errorf("invalid empty config"))
 	}
 
 	query := `INSERT INTO clusters(name, yaml) VALUES(:name, :yaml)`
@@ -65,10 +82,10 @@ func WriteClusterConfig(
 	}
 	res, err := db.NamedExec(query, values)
 	if err != nil {
-		return err
+		return errors.NewDatabaseError(err)
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
-		return fmt.Errorf("Couldn't insert on DB")
+		return errors.NewDatabaseError(fmt.Errorf("couldn't insert on database"))
 	}
 	return nil
 }
@@ -78,6 +95,9 @@ func RemoveClusterConfig(
 	db DB,
 	clusterName string,
 ) error {
+	if len(clusterName) == 0 {
+		return errors.NewGenericError("remove cluster config error", fmt.Errorf("invalid empty cluster name"))
+	}
 
 	query := `DELETE FROM clusters WHERE name=:name`
 	values := map[string]interface{}{
@@ -85,10 +105,11 @@ func RemoveClusterConfig(
 	}
 	res, err := db.NamedExec(query, values)
 	if err != nil {
-		return err
+		return errors.NewDatabaseError(err)
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
-		return fmt.Errorf("Cluster config doesn't exist on DB")
+		err = fmt.Errorf("sql: no rows in result set")
+		return errors.NewDatabaseError(err)
 	}
 	return nil
 }
@@ -102,5 +123,10 @@ type clusterConfig struct {
 func ParseYaml(yamlStr string) (map[string]*ClusterAppConfig, map[string]*ClusterAppConfig, error) {
 	cluster := clusterConfig{}
 	err := yaml.Unmarshal([]byte(yamlStr), &cluster)
-	return cluster.Apps, cluster.Services, err
+
+	if err != nil {
+		return nil, nil, errors.NewYamlError("parse yaml error", err)
+	}
+
+	return cluster.Apps, cluster.Services, nil
 }

@@ -8,6 +8,7 @@
 package models
 
 import (
+	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/fields"
@@ -34,19 +35,34 @@ func CreateNamespace(clientset kubernetes.Interface, username string) error {
 		},
 	}
 	_, err := clientset.CoreV1().Namespaces().Create(namespace)
-	return err
+
+	if err != nil {
+		return errors.NewKubernetesError("create namespace error", err)
+	}
+
+	return nil
 }
 
 //DeleteNamespace delete the namespace
 func DeleteNamespace(clientset kubernetes.Interface, username string) error {
 	namespace := usernameToNamespace(username)
 	deleteOptions := &v1.DeleteOptions{}
-	return clientset.CoreV1().Namespaces().Delete(namespace, deleteOptions)
+
+	err := clientset.CoreV1().Namespaces().Delete(namespace, deleteOptions)
+	if err != nil {
+		return errors.NewKubernetesError("delete namespace error", err)
+	}
+
+	return nil
 }
 
 //ListNamespaces returns a list of namespaces
 func ListNamespaces(clientset kubernetes.Interface) (*v1.NamespaceList, error) {
-	return clientset.CoreV1().Namespaces().List(listOptions)
+	list, err := clientset.CoreV1().Namespaces().List(listOptions)
+	if err != nil {
+		return nil, errors.NewKubernetesError("list namespaces error", err)
+	}
+	return list, nil
 }
 
 //NamespaceExists return true if namespace is already created

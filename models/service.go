@@ -12,6 +12,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -59,19 +60,19 @@ func NewService(name, username string, port, targetPort int) *Service {
 func (s *Service) Expose(clientset kubernetes.Interface) (*v1.Service, error) {
 	tmpl, err := template.New("expose").Parse(serviceYaml)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	buf := new(bytes.Buffer)
 	err = tmpl.Execute(buf, s)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	decoder := api.Codecs.UniversalDecoder()
 	obj, _, err := decoder.Decode(buf.Bytes(), nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	src := obj.(*api.Service)
@@ -79,14 +80,26 @@ func (s *Service) Expose(clientset kubernetes.Interface) (*v1.Service, error) {
 
 	err = api.Scheme.Convert(src, dst, 0)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
-	return clientset.CoreV1().Services(s.Namespace).Create(dst)
+	service, err := clientset.CoreV1().Services(s.Namespace).Create(dst)
+
+	if err != nil {
+		return nil, errors.NewKubernetesError("create service error", err)
+	}
+
+	return service, nil
 }
 
 //Delete deletes service
 func (s *Service) Delete(clientset kubernetes.Interface) error {
 	deleteOptions := &v1.DeleteOptions{}
-	return clientset.CoreV1().Services(s.Namespace).Delete(s.Name, deleteOptions)
+
+	err := clientset.CoreV1().Services(s.Namespace).Delete(s.Name, deleteOptions)
+	if err != nil {
+		return errors.NewKubernetesError("create service error", err)
+	}
+
+	return nil
 }
