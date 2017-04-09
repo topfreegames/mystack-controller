@@ -8,10 +8,8 @@
 package api
 
 import (
-	"github.com/gorilla/mux"
 	"github.com/topfreegames/mystack-controller/models"
 	"net/http"
-	"strings"
 )
 
 //ClusterConfigHandler handles cluster creation and deletion
@@ -32,18 +30,12 @@ func (c *ClusterConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func (c *ClusterConfigHandler) create(w http.ResponseWriter, r *http.Request) {
-	clusterName := mux.Vars(r)["name"]
-
-	if len(clusterName) == 0 {
-		parts := strings.Split(r.URL.String(), "/")
-		clusterName = parts[2]
-	}
-
+	clusterName := GetClusterName(r)
 	clusterConfig := clusterConfigFromCtx(r.Context())
 
 	err := models.WriteClusterConfig(c.App.DB, clusterName, clusterConfig)
 	if err != nil {
-		c.App.HandleError(w, http.StatusInternalServerError, "Error writing cluster config", err)
+		c.App.HandleError(w, Status(err), "writing cluster config error", err)
 		return
 	}
 
@@ -51,16 +43,11 @@ func (c *ClusterConfigHandler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *ClusterConfigHandler) remove(w http.ResponseWriter, r *http.Request) {
-	clusterName := mux.Vars(r)["name"]
-
-	if len(clusterName) == 0 {
-		parts := strings.Split(r.URL.String(), "/")
-		clusterName = parts[2]
-	}
+	clusterName := GetClusterName(r)
 
 	err := models.RemoveClusterConfig(c.App.DB, clusterName)
 	if err != nil {
-		c.App.HandleError(w, http.StatusInternalServerError, "Error removing cluster config", err)
+		c.App.HandleError(w, Status(err), "removing cluster config error", err)
 		return
 	}
 

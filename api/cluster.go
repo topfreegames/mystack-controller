@@ -8,7 +8,6 @@
 package api
 
 import (
-	"github.com/gorilla/mux"
 	"github.com/topfreegames/mystack-controller/models"
 	"net/http"
 	"strings"
@@ -32,22 +31,17 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (c *ClusterHandler) run(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
 	username := strings.Split(email, "@")[0]
-	clusterName := mux.Vars(r)["name"]
-
-	if len(clusterName) == 0 {
-		parts := strings.Split(r.URL.String(), "/")
-		clusterName = parts[2]
-	}
+	clusterName := GetClusterName(r)
 
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
 	if err != nil {
-		c.App.HandleError(w, http.StatusInternalServerError, "Error creating cluster", err)
+		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
 	}
 
 	err = cluster.Create(c.App.Clientset)
 	if err != nil {
-		c.App.HandleError(w, http.StatusInternalServerError, "Error creating cluster", err)
+		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
 	}
 
@@ -57,23 +51,17 @@ func (c *ClusterHandler) run(w http.ResponseWriter, r *http.Request) {
 func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
 	username := strings.Split(email, "@")[0]
-	clusterName := mux.Vars(r)["name"]
-
-	if len(clusterName) == 0 {
-		parts := strings.Split(r.URL.String(), "/")
-		clusterName = parts[2]
-	}
+	clusterName := GetClusterName(r)
 
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
-
 	if err != nil {
-		c.App.HandleError(w, http.StatusInternalServerError, "Error retrieving cluster", err)
+		c.App.HandleError(w, Status(err), "retrieve cluster error", err)
 		return
 	}
 
 	err = cluster.Delete(c.App.Clientset)
 	if err != nil {
-		c.App.HandleError(w, http.StatusInternalServerError, "Error deleting cluster", err)
+		c.App.HandleError(w, Status(err), "delet cluster error", err)
 		return
 	}
 
