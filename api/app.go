@@ -81,8 +81,8 @@ func (a *App) getRouter() *mux.Router {
 		&VersionMiddleware{},
 	)).Methods("GET").Name("oauth")
 
-	r.Handle("/clusters/{name}/run", Chain(
-		&ClusterHandler{App: a, Method: "run"},
+	r.Handle("/clusters/{name}/create", Chain(
+		&ClusterHandler{App: a, Method: "create"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
 		&AccessMiddleware{App: a},
@@ -93,7 +93,7 @@ func (a *App) getRouter() *mux.Router {
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
 		&AccessMiddleware{App: a},
-	)).Methods("PUT").Name("cluster")
+	)).Methods("DELETE").Name("cluster")
 
 	r.Handle("/cluster-configs/{name}/create", Chain(
 		&ClusterConfigHandler{App: a, Method: "create"},
@@ -108,7 +108,7 @@ func (a *App) getRouter() *mux.Router {
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
 		&AccessMiddleware{App: a},
-	)).Methods("PUT").Name("cluster-config")
+	)).Methods("DELETE").Name("cluster-config")
 
 	return r
 }

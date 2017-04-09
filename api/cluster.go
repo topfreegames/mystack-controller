@@ -21,14 +21,14 @@ type ClusterHandler struct {
 
 func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch c.Method {
-	case "run":
-		c.run(w, r)
+	case "create":
+		c.create(w, r)
 	case "delete":
 		c.deleteCluster(w, r)
 	}
 }
 
-func (c *ClusterHandler) run(w http.ResponseWriter, r *http.Request) {
+func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
 	username := strings.Split(email, "@")[0]
 	clusterName := GetClusterName(r)
