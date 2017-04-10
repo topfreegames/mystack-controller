@@ -38,7 +38,7 @@ func (l *LoginHandler) generateURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url, err := extensions.GenerateLoginURL(oauthState, &models.MockCredentials{})
+	url, err := extensions.GenerateLoginURL(oauthState, &models.OSCredentials{})
 	if err != nil {
 		logger.WithError(err).Errorln("undefined env vars")
 		l.App.HandleError(w, http.StatusInternalServerError, "undefined env vars", err)

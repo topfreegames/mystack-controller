@@ -8,7 +8,7 @@
 REVOKE ALL ON SCHEMA public FROM mystack_controller;
 DROP DATABASE IF EXISTS mystack_controller;
 
-DROP ROLE mystack_controller;
+DROP ROLE IF EXISTS mystack_controller;
 
 CREATE ROLE mystack_controller LOGIN
   SUPERUSER INHERIT CREATEDB CREATEROLE;

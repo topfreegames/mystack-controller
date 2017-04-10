@@ -47,7 +47,7 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Get(url)
 
 	if err != nil {
-		logger.WithError(err).Error("Error fetching googleapis")
+		logger.WithError(err).Error("error fetching googleapis")
 		m.App.HandleError(w, http.StatusInternalServerError, "Error fetching googleapis", err)
 		return
 	}
@@ -55,22 +55,22 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logger.WithError(err).Error("Error parsing response")
+		logger.WithError(err).Error("error parsing response")
 		m.App.HandleError(w, http.StatusInternalServerError, "Error parsing response", err)
 		return
 	}
 
 	if resp.StatusCode == http.StatusBadRequest {
-		logger.WithError(err).Error("Error validating access token")
+		logger.WithError(err).Error("error validating access token")
 		err := errors.NewAccessError("Unauthorized access token", fmt.Errorf(string(body)))
 		m.App.HandleError(w, http.StatusUnauthorized, "Unauthorized access token", err)
 		return
 	}
 
 	if resp.StatusCode != 200 {
-		logger.WithError(err).Error("Invalid access token")
-		err := errors.NewAccessError("Invalid access token", fmt.Errorf(string(body)))
-		m.App.HandleError(w, resp.StatusCode, "Error validating access token", err)
+		logger.WithError(err).Error("invalid access token")
+		err := errors.NewAccessError("invalid access token", fmt.Errorf(string(body)))
+		m.App.HandleError(w, resp.StatusCode, "error validating access token", err)
 		return
 	}
 
@@ -80,10 +80,10 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !m.verifyEmailDomain(email) {
 		logger.WithError(err).Error("Invalid email")
 		err := errors.NewAccessError(
-			fmt.Sprintf("The email on OAuth authorization is not from domain %s", m.App.EmailDomain),
-			fmt.Errorf("Invalid email"),
+			"authorization access error",
+			fmt.Errorf("the email on OAuth authorization is not from domain %s", m.App.EmailDomain),
 		)
-		m.App.HandleError(w, http.StatusUnauthorized, "Error validating access token", err)
+		m.App.HandleError(w, http.StatusUnauthorized, "error validating access token", err)
 		return
 	}
 	ctx := NewContextWithEmail(r.Context(), email)
