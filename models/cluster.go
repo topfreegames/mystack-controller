@@ -8,6 +8,8 @@
 package models
 
 import (
+	"fmt"
+	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -82,7 +84,13 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 	for _, deployment := range c.Deployments {
 		_, err = deployment.Deploy(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys?
+			nsErr := DeleteNamespace(clientset, c.Username)
+			if nsErr != nil {
+				return errors.NewKubernetesError(
+					"create cluster error",
+					fmt.Errorf("error during cluster creation and could not rollback: %s", nsErr.Error()),
+				)
+			}
 			return err
 		}
 	}
@@ -90,7 +98,13 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 	for _, service := range c.Services {
 		_, err = service.Expose(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys and services?
+			nsErr := DeleteNamespace(clientset, c.Username)
+			if nsErr != nil {
+				return errors.NewKubernetesError(
+					"create cluster error",
+					fmt.Errorf("error during cluster creation and could not rollback: %s", nsErr.Error()),
+				)
+			}
 			return err
 		}
 	}
@@ -104,7 +118,6 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	for _, service := range c.Services {
 		err = service.Delete(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys and services?
 			return err
 		}
 	}
@@ -112,7 +125,6 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	for _, deployment := range c.Deployments {
 		err = deployment.Delete(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys?
 			return err
 		}
 	}
