@@ -53,6 +53,7 @@ var _ = BeforeSuite(func() {
 var _ = BeforeEach(func() {
 	var err error
 	clientset = fake.NewSimpleClientset()
+	app.Clientset = clientset
 	db, mock, err = sqlmock.New()
 	Expect(err).NotTo(HaveOccurred())
 	app.DB = sqlx.NewDb(db, "postgres")

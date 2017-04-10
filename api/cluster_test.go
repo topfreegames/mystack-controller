@@ -138,7 +138,7 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
-		It("should return error 404 when deleting non existing clusterName", func() {
+		It("should return error 404 when deleting non existing cluster", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -148,12 +148,35 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-003"))
-			Expect(bodyJSON["description"]).To(Equal("sql: no rows in result set"))
-			Expect(bodyJSON["error"]).To(Equal("database error"))
+			Expect(bodyJSON["description"]).To(Equal("Namespace \"mystack-derp\" not found"))
+			Expect(bodyJSON["error"]).To(Equal("delete namespace error"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
+			Expect(recorder.Code).To(Equal(http.StatusNotFound))
+		})
+
+		It("should delete cluster even if cluster config doesn't exist anymore", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnError(fmt.Errorf("sql: no rows in result set"))
+
+			cluster, err := models.NewCluster(app.DB, "user", clusterName)
+			Expect(err).NotTo(HaveOccurred())
+			err = cluster.Create(app.Clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 	})
 })

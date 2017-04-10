@@ -147,9 +147,9 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-003"))
-			Expect(bodyJSON["description"]).To(Equal("sql: no rows in result set"))
-			Expect(bodyJSON["error"]).To(Equal("database error"))
+			Expect(bodyJSON["description"]).To(Equal("Namespace \"mystack-derp\" not found"))
+			Expect(bodyJSON["error"]).To(Equal("delete namespace error"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
 		})
 
 		It("should return status 401 when complete route without access token", func() {

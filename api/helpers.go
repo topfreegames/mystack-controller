@@ -46,6 +46,10 @@ func Status(err error) int {
 		return http.StatusBadRequest
 	case *errors.GenericError:
 		return http.StatusUnprocessableEntity
+	case *errors.KubernetesError:
+		if strings.Contains(err.Error(), "not found") {
+			return http.StatusNotFound
+		}
 	}
 
 	return http.StatusInternalServerError
