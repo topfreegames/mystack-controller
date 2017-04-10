@@ -10,7 +10,6 @@ package api
 import (
 	"github.com/topfreegames/mystack-controller/models"
 	"net/http"
-	"strings"
 )
 
 //ClusterHandler handles cluster creation and deletion
@@ -30,7 +29,7 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
-	username := strings.Split(email, "@")[0]
+	username := usernameFromEmail(email)
 	clusterName := GetClusterName(r)
 
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
@@ -50,7 +49,7 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 
 func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	email := emailFromCtx(r.Context())
-	username := strings.Split(email, "@")[0]
+	username := usernameFromEmail(email)
 	clusterName := GetClusterName(r)
 
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName)

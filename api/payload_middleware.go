@@ -8,6 +8,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -42,12 +43,18 @@ func clusterConfigFromCtx(ctx context.Context) string {
 	return clusterConfig.(string)
 }
 
+func toLiteral(bts []byte) []byte {
+	return bytes.Replace(bts, []byte("\n"), []byte(`\n`), -1)
+}
+
 func (p *PayloadMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bts, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		p.App.HandleError(w, http.StatusBadRequest, "Error reading body", err)
 		return
 	}
+
+	bts = toLiteral(bts)
 
 	bodyJSON := make(map[string]string)
 	err = json.Unmarshal(bts, &bodyJSON)

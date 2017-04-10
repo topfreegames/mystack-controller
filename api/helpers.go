@@ -62,3 +62,9 @@ func GetClusterName(r *http.Request) string {
 
 	return clusterName
 }
+
+func usernameFromEmail(email string) string {
+	username := strings.Split(email, "@")[0]
+	username = strings.Replace(username, ".", "-", -1)
+	return username
+}
