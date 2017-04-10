@@ -9,7 +9,6 @@ package models
 
 import (
 	"bytes"
-	"strings"
 	"text/template"
 
 	"github.com/topfreegames/mystack-controller/errors"
@@ -30,29 +29,34 @@ spec:
   selector:
     app: {{.Name}}
   ports:
+    {{range .Ports}}
     - protocol: TCP
       port: {{.Port}}
       targetPort: {{.TargetPort}}
+    {{end}}
   type: ClusterIP
 `
 
-//Service represents a service
-type Service struct {
-	Name       string
-	Namespace  string
+//PortMap maps a port to a target por on service
+type PortMap struct {
 	Port       int
 	TargetPort int
 }
 
+//Service represents a service
+type Service struct {
+	Name      string
+	Namespace string
+	Ports     []*PortMap
+}
+
 //NewService is the service ctor
-func NewService(name, username string, port, targetPort int) *Service {
-	username = strings.Replace(username, ".", "-", -1)
+func NewService(name, username string, ports []*PortMap) *Service {
 	namespace := usernameToNamespace(username)
 	return &Service{
-		Name:       name,
-		Namespace:  namespace,
-		Port:       port,
-		TargetPort: targetPort,
+		Name:      name,
+		Namespace: namespace,
+		Ports:     ports,
 	}
 }
 

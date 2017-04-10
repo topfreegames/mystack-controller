@@ -10,7 +10,6 @@ package models
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/topfreegames/mystack-controller/errors"
@@ -48,7 +47,9 @@ spec:
               value: {{.Value}}
             {{end}}
           ports:
-            - containerPort: {{.Port}}
+            {{range .Ports}}
+            - containerPort: {{.}}
+            {{end}}
 `
 
 //Deployment represents a deployment
@@ -57,20 +58,19 @@ type Deployment struct {
 	Namespace   string
 	Username    string
 	Image       string
-	Port        int
+	Ports       []int
 	Environment []*EnvVar
 }
 
 //NewDeployment is the deployment ctor
-func NewDeployment(name, username, image string, port int, environment []*EnvVar) *Deployment {
-	username = strings.Replace(username, ".", "-", -1)
+func NewDeployment(name, username, image string, ports []int, environment []*EnvVar) *Deployment {
 	namespace := usernameToNamespace(username)
 	return &Deployment{
 		Name:        name,
 		Namespace:   namespace,
 		Username:    username,
 		Image:       image,
-		Port:        port,
+		Ports:       ports,
 		Environment: environment,
 	}
 }

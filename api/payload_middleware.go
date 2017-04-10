@@ -21,12 +21,6 @@ type PayloadMiddleware struct {
 	next http.Handler
 }
 
-//ClusterAppConfig contains information about each app that will run on cluster
-type ClusterAppConfig struct {
-	Image string
-	Port  int
-}
-
 const configKey = contextKey("clusterConfigKey")
 
 //NewContextWithClusterConfig creates a context with cluster config
@@ -44,7 +38,8 @@ func clusterConfigFromCtx(ctx context.Context) string {
 }
 
 func toLiteral(bts []byte) []byte {
-	return bytes.Replace(bts, []byte("\n"), []byte(`\n`), -1)
+	bts = bytes.Replace(bts, []byte("\n"), []byte(`\n`), -1)
+	return bytes.Replace(bts, []byte("\t"), []byte("  "), -1)
 }
 
 func (p *PayloadMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {

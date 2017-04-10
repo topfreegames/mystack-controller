@@ -22,18 +22,24 @@ const (
 services:
   postgres:
     image: postgres:1.0
+    ports:
+      - 8585:5432
   redis:
     image: redis:1.0
+    ports:
+      - 6379
 apps:
   app1:
     image: app1
-    port: 5000
+    ports:
+      - 5000:5001
     env:
       - name: DATABASE_URL
         value: postgres://derp:1234@example.com
   app2:
     image: app2
-    port: 5001
+    ports:
+      - 5000:5001
 `
 )
 
@@ -49,10 +55,12 @@ var _ = Describe("ClusterConfig", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(services["postgres"].Image).To(Equal("postgres:1.0"))
+			Expect(services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
 			Expect(services["redis"].Image).To(Equal("redis:1.0"))
+			Expect(services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
 
 			Expect(apps["app1"].Image).To(Equal("app1"))
-			Expect(apps["app1"].Port).To(Equal(5000))
+			Expect(apps["app1"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
 			Expect(apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
 				&EnvVar{
 					Name:  "DATABASE_URL",
@@ -61,7 +69,7 @@ var _ = Describe("ClusterConfig", func() {
 			}))
 
 			Expect(apps["app2"].Image).To(Equal("app2"))
-			Expect(apps["app2"].Port).To(Equal(5001))
+			Expect(apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
 			Expect(apps["app2"].Environment).To(BeNil())
 		})
 
@@ -160,10 +168,12 @@ services {
 			apps, services, err := LoadClusterConfig(sqlxDB, clusterName)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services["postgres"].Image).To(Equal("postgres:1.0"))
+			Expect(services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
 			Expect(services["redis"].Image).To(Equal("redis:1.0"))
+			Expect(services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
 
 			Expect(apps["app1"].Image).To(Equal("app1"))
-			Expect(apps["app1"].Port).To(Equal(5000))
+			Expect(apps["app1"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
 			Expect(apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
 				&EnvVar{
 					Name:  "DATABASE_URL",
@@ -172,7 +182,7 @@ services {
 			}))
 
 			Expect(apps["app2"].Image).To(Equal("app2"))
-			Expect(apps["app2"].Port).To(Equal(5001))
+			Expect(apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
 			Expect(apps["app2"].Environment).To(BeNil())
 		})
 

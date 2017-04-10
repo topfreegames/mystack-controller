@@ -28,17 +28,25 @@ var _ = Describe("Cluster", func() {
 services:
   test0:
     image: svc1
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
 apps:
   test1:
     image: app1
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
   test2:
     image: app2
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
   test3:
     image: app3
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
 `
 	)
 	var (
@@ -50,7 +58,11 @@ apps:
 		clientset   *fake.Clientset
 		username    = "user"
 		namespace   = "mystack-user"
-		port        = 5000
+		ports       = []int{5000, 5002}
+		portMaps    = []*PortMap{
+			&PortMap{Port: 5000, TargetPort: 5000},
+			&PortMap{Port: 5001, TargetPort: 5002},
+		}
 		labelMap    = labels.Set{"mystack/routable": "true"}
 		listOptions = v1.ListOptions{
 			LabelSelector: labelMap.AsSelector().String(),
@@ -63,16 +75,16 @@ apps:
 			Username:  username,
 			Namespace: namespace,
 			Deployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", port, nil),
-				NewDeployment("test1", username, "app1", port, nil),
-				NewDeployment("test2", username, "app2", port, nil),
-				NewDeployment("test3", username, "app3", port, nil),
+				NewDeployment("test0", username, "svc1", ports, nil),
+				NewDeployment("test1", username, "app1", ports, nil),
+				NewDeployment("test2", username, "app2", ports, nil),
+				NewDeployment("test3", username, "app3", ports, nil),
 			},
 			Services: []*Service{
-				NewService("test0", username, 80, port),
-				NewService("test1", username, 80, port),
-				NewService("test2", username, 80, port),
-				NewService("test3", username, 80, port),
+				NewService("test0", username, portMaps),
+				NewService("test1", username, portMaps),
+				NewService("test2", username, portMaps),
+				NewService("test3", username, portMaps),
 			},
 		}
 	}

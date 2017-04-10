@@ -22,7 +22,7 @@ type EnvVar struct {
 //ClusterAppConfig defines the configuration of an app
 type ClusterAppConfig struct {
 	Image       string    `yaml:"image"`
-	Port        int       `yaml:"port"`
+	Ports       []string  `yaml:"ports"`
 	Environment []*EnvVar `yaml:"env"`
 }
 

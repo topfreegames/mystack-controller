@@ -22,12 +22,13 @@ import (
 
 var _ = Describe("Service", func() {
 	var (
-		clientset   *fake.Clientset
-		name        = "test"
-		namespace   = "mystack-user"
-		username    = "user"
-		port        = 80
-		targetPort  = 5000
+		clientset *fake.Clientset
+		name      = "test"
+		namespace = "mystack-user"
+		username  = "user"
+		portMaps  = []*PortMap{
+			&PortMap{Port: 80, TargetPort: 5000},
+		}
 		labelMap    = labels.Set{"mystack/routable": "true"}
 		listOptions = v1.ListOptions{
 			LabelSelector: labelMap.AsSelector().String(),
@@ -41,7 +42,7 @@ var _ = Describe("Service", func() {
 
 	Describe("Expose", func() {
 		It("should expose a new Service", func() {
-			service := NewService(name, username, port, targetPort)
+			service := NewService(name, username, portMaps)
 			Expect(service.Namespace).To(Equal(namespace))
 
 			servicev1, err := service.Expose(clientset)
@@ -54,7 +55,7 @@ var _ = Describe("Service", func() {
 		})
 
 		It("should return error when creating same service twice", func() {
-			service := NewService(name, username, port, targetPort)
+			service := NewService(name, username, portMaps)
 			Expect(service.Namespace).To(Equal(namespace))
 
 			_, err := service.Expose(clientset)
@@ -69,13 +70,13 @@ var _ = Describe("Service", func() {
 
 	Describe("Delete", func() {
 		It("should return error if trying to delete unexposed service", func() {
-			service := NewService(name, username, port, targetPort)
+			service := NewService(name, username, portMaps)
 			err := service.Delete(clientset)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should delete service", func() {
-			service := NewService(name, username, port, targetPort)
+			service := NewService(name, username, portMaps)
 			_, err := service.Expose(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -88,11 +89,11 @@ var _ = Describe("Service", func() {
 		})
 
 		It("should not delete all services", func() {
-			service := NewService(name, username, port, targetPort)
+			service := NewService(name, username, portMaps)
 			_, err := service.Expose(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			service2 := NewService("test2", username, port, targetPort)
+			service2 := NewService("test2", username, portMaps)
 			_, err = service2.Expose(clientset)
 			Expect(err).NotTo(HaveOccurred())
 

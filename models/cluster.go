@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
+	"strconv"
+	"strings"
 )
 
 //Cluster represents a k8s cluster for a user
@@ -30,9 +32,16 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 		return nil, err
 	}
 
-	k8sAppDeployments := buildDeployments(apps, username)
-	k8sSvcDeployments := buildDeployments(services, username)
-	k8sServices := buildServices(k8sAppDeployments, k8sSvcDeployments, username)
+	portMap := make(map[string][]*PortMap)
+	k8sAppDeployments, err := buildDeployments(apps, username, portMap)
+	if err != nil {
+		return nil, errors.NewYamlError("parse yaml error", err)
+	}
+	k8sSvcDeployments, err := buildDeployments(services, username, portMap)
+	if err != nil {
+		return nil, errors.NewYamlError("parse yaml error", err)
+	}
+	k8sServices := buildServices(k8sAppDeployments, k8sSvcDeployments, username, portMap)
 
 	cluster := &Cluster{
 		Username:    username,
@@ -44,31 +53,66 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 	return cluster, nil
 }
 
-func buildDeployments(types map[string]*ClusterAppConfig, username string) []*Deployment {
+func getPorts(name string, ports []string, portMap map[string][]*PortMap) ([]int, error) {
+	var err error
+	containerPorts := make([]int, len(ports))
+	portMap[name] = make([]*PortMap, len(ports))
+	for i, port := range ports {
+		splitedPorts := strings.Split(port, ":")
+		if containerPorts[i], err = strconv.Atoi(splitedPorts[0]); err != nil {
+			return nil, err
+		}
+
+		portMap[name][i] = &PortMap{
+			Port:       containerPorts[i],
+			TargetPort: containerPorts[i],
+		}
+
+		if len(splitedPorts) == 2 {
+			if containerPorts[i], err = strconv.Atoi(splitedPorts[1]); err != nil {
+				return nil, err
+			}
+			portMap[name][i].TargetPort = containerPorts[i]
+		}
+	}
+
+	return containerPorts, nil
+}
+
+func buildDeployments(
+	types map[string]*ClusterAppConfig,
+	username string,
+	portMap map[string][]*PortMap,
+) ([]*Deployment, error) {
 	deployments := make([]*Deployment, len(types))
 
 	i := 0
 	for name, config := range types {
-		deployments[i] = NewDeployment(name, username, config.Image, config.Port, config.Environment)
+		ports, err := getPorts(name, config.Ports, portMap)
+		if err != nil {
+			return nil, err
+		}
+		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment)
 		i = i + 1
 	}
 
-	return deployments
+	return deployments, nil
 }
 
 func buildServices(
 	apps []*Deployment,
 	svcs []*Deployment,
 	username string,
+	portMap map[string][]*PortMap,
 ) []*Service {
 	services := make([]*Service, len(apps)+len(svcs))
 	i := 0
 	for _, app := range apps {
-		services[i] = NewService(app.Name, username, 80, app.Port)
+		services[i] = NewService(app.Name, username, portMap[app.Name])
 		i = i + 1
 	}
 	for _, svc := range svcs {
-		services[i] = NewService(svc.Name, username, 80, svc.Port)
+		services[i] = NewService(svc.Name, username, portMap[svc.Name])
 		i = i + 1
 	}
 	return services
