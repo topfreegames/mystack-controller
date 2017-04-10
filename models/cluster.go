@@ -30,7 +30,7 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 
 	k8sAppDeployments := buildDeployments(apps, username)
 	k8sSvcDeployments := buildDeployments(services, username)
-	k8sServices := buildServices(k8sAppDeployments, username)
+	k8sServices := buildServices(k8sAppDeployments, k8sSvcDeployments, username)
 
 	cluster := &Cluster{
 		Username:    username,
@@ -54,10 +54,20 @@ func buildDeployments(types map[string]*ClusterAppConfig, username string) []*De
 	return deployments
 }
 
-func buildServices(deployments []*Deployment, username string) []*Service {
-	services := make([]*Service, len(deployments))
-	for i, deployment := range deployments {
-		services[i] = NewService(deployment.Name, username, 80, deployment.Port)
+func buildServices(
+	apps []*Deployment,
+	svcs []*Deployment,
+	username string,
+) []*Service {
+	services := make([]*Service, len(apps)+len(svcs))
+	i := 0
+	for _, app := range apps {
+		services[i] = NewService(app.Name, username, 80, app.Port)
+		i = i + 1
+	}
+	for _, svc := range svcs {
+		services[i] = NewService(svc.Name, username, 80, svc.Port)
+		i = i + 1
 	}
 	return services
 }
