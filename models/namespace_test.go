@@ -11,6 +11,7 @@ package models_test
 import (
 	. "github.com/topfreegames/mystack-controller/models"
 
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/fake"
@@ -43,6 +44,8 @@ var _ = Describe("Namespace", func() {
 
 			err = CreateNamespace(clientset, username)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Namespace \"mystack-user\" already exists"))
+			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.KubernetesError"))
 		})
 	})
 

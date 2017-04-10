@@ -78,30 +78,43 @@ apps:
 			clusterConfigHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			//TODO: change to return 409 (THIS IS CRITICAL)
-			Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+			Expect(recorder.Code).To(Equal(http.StatusConflict))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-001"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-003"))
 			Expect(bodyJSON["description"]).To(Equal("pq: duplicate key value violates unique constraint \"clusters_name_key\""))
-			Expect(bodyJSON["error"]).To(Equal("Error writing cluster config"))
+			Expect(bodyJSON["error"]).To(Equal("database error"))
 		})
 
-		It("should return status 422 when creating invalid cluster config", func() {
-			invalidYaml := `iam {
-				invalid: 123
-			}`
+		It("should return status 400 when creating invalid cluster config", func() {
+			invalidYaml := `
+iam {
+  invalid: 123
+}`
 			ctx := NewContextWithClusterConfig(request.Context(), invalidYaml)
 			clusterConfigHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			//TODO: change to return 422 (THIS IS CRITICAL)
-			Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+			Expect(recorder.Code).To(Equal(http.StatusBadRequest))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-001"))
-			Expect(bodyJSON["description"]).To(Equal("yaml: line 1: mapping values are not allowed in this context"))
-			Expect(bodyJSON["error"]).To(Equal("Error writing cluster config"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
+			Expect(bodyJSON["description"]).To(Equal("yaml: line 2: mapping values are not allowed in this context"))
+			Expect(bodyJSON["error"]).To(Equal("parse yaml error"))
+		})
+
+		It("should return status 401 when complete route without access token", func() {
+			deleteRoute := "/clusters/myCustomApps/delete"
+			request, err = http.NewRequest("DELETE", deleteRoute, nil)
+			request.Header.Add("Authorization", "Bearer invalid-token")
+			app.Router.ServeHTTP(recorder, request)
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusUnauthorized))
+			bodyJSON := make(map[string]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["code"]).To(Equal("OFF-002"))
+			Expect(bodyJSON["description"]).To(Equal("{\n \"error\": \"invalid_token\",\n \"error_description\": \"Invalid Value\"\n}\n"))
+			Expect(bodyJSON["error"]).To(Equal("Unauthorized access token"))
 		})
 	})
 
@@ -132,7 +145,7 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
-		It("should return 422 when removing non existing cluster", func() {
+		It("should return 404 when removing non existing cluster", func() {
 			clusterConfigHandler.Method = "remove"
 			recorder = httptest.NewRecorder()
 			request, err = http.NewRequest("PUT", removeRoute, nil)
@@ -140,13 +153,25 @@ apps:
 			clusterConfigHandler.ServeHTTP(recorder, request)
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			//TODO: change to return 422 (THIS IS CRITICAL)
-			Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-001"))
-			Expect(bodyJSON["description"]).To(Equal("Cluster config doesn't exist on DB"))
-			Expect(bodyJSON["error"]).To(Equal("Error removing cluster config"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-003"))
+			Expect(bodyJSON["description"]).To(Equal("sql: no rows in result set"))
+			Expect(bodyJSON["error"]).To(Equal("database error"))
+		})
+
+		It("should return status 401 when complete route without access token", func() {
+			request, err = http.NewRequest("DELETE", removeRoute, nil)
+			request.Header.Add("Authorization", "Bearer invalid-token")
+			app.Router.ServeHTTP(recorder, request)
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusUnauthorized))
+			bodyJSON := make(map[string]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["code"]).To(Equal("OFF-002"))
+			Expect(bodyJSON["description"]).To(Equal("{\n \"error\": \"invalid_token\",\n \"error_description\": \"Invalid Value\"\n}\n"))
+			Expect(bodyJSON["error"]).To(Equal("Unauthorized access token"))
 		})
 	})
 })

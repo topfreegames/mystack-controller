@@ -59,5 +59,7 @@ var _ = BeforeEach(func() {
 })
 
 var _ = AfterEach(func() {
-	db.Close()
+	defer db.Close()
+	err := mock.ExpectationsWereMet()
+	Expect(err).NotTo(HaveOccurred())
 })

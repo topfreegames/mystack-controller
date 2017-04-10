@@ -50,6 +50,7 @@ apps:
 				NewDeployment("test3", username, "app3", port, nil),
 			},
 			Services: []*Service{
+				NewService("test0", username, 80, port),
 				NewService("test1", username, 80, port),
 				NewService("test2", username, 80, port),
 				NewService("test3", username, 80, port),

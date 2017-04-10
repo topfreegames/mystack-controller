@@ -9,6 +9,7 @@
 package models_test
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/models"
@@ -43,7 +44,7 @@ var _ = Describe("Deployment", func() {
 			deployment := NewDeployment(name, username, image, port, nil)
 			_, err := deployment.Deploy(clientset)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Namespace mystack-user not found"))
+			Expect(err.Error()).To(Equal("namespace mystack-user not found"))
 		})
 
 		It("should create a deployment", func() {
@@ -92,6 +93,8 @@ var _ = Describe("Deployment", func() {
 
 			_, err = deployment.Deploy(clientset)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Deployment.extensions \"test\" already exists"))
+			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.KubernetesError"))
 		})
 
 		It("should not return error if create second deployment on same namespace", func() {

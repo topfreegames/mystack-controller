@@ -9,6 +9,7 @@
 package models_test
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/models"
@@ -61,6 +62,8 @@ var _ = Describe("Service", func() {
 
 			_, err = service.Expose(clientset)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Service \"test\" already exists"))
+			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.KubernetesError"))
 		})
 	})
 

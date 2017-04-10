@@ -69,6 +69,7 @@ apps:
 				NewDeployment("test3", username, "app3", port, nil),
 			},
 			Services: []*Service{
+				NewService("test0", username, 80, port),
 				NewService("test1", username, 80, port),
 				NewService("test2", username, 80, port),
 				NewService("test3", username, 80, port),
@@ -116,6 +117,19 @@ apps:
 			cluster, err := NewCluster(sqlxDB, username, clusterName)
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("sql: no rows in result set"))
+		})
+
+		It("should return error if empty clusterName", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			Expect(cluster).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("sql: no rows in result set"))
 		})
 	})
 
@@ -131,7 +145,7 @@ apps:
 
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(services.Items).To(HaveLen(3))
+			Expect(services.Items).To(HaveLen(4))
 		})
 
 		It("should return error if creating same cluster twice", func() {
@@ -141,6 +155,7 @@ apps:
 
 			err = cluster.Create(clientset)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Namespace \"mystack-user\" already exists"))
 		})
 	})
 
@@ -193,7 +208,15 @@ apps:
 
 			services, err = clientset.CoreV1().Services("mystack-user2").List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(services.Items).To(HaveLen(3))
+			Expect(services.Items).To(HaveLen(4))
+		})
+
+		It("should return error when deleting non existing cluster", func() {
+			cluster := mockCluster(username)
+
+			err = cluster.Delete(clientset)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Service \"test0\" not found"))
 		})
 	})
 })

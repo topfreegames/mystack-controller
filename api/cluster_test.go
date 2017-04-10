@@ -44,16 +44,16 @@ apps:
 		clusterHandler = &ClusterHandler{App: app}
 	})
 
-	Describe("PUT /clusters/{name}/run", func() {
+	Describe("PUT /clusters/{name}/create", func() {
 
 		var (
 			err     error
 			request *http.Request
-			route   = fmt.Sprintf("/cluster/%s/run", clusterName)
+			route   = fmt.Sprintf("/cluster/%s/create", clusterName)
 		)
 
 		BeforeEach(func() {
-			clusterHandler.Method = "run"
+			clusterHandler.Method = "create"
 			request, err = http.NewRequest("PUT", route, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -63,7 +63,7 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should run existing clusterName", func() {
+		It("should create existing clusterName", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -77,7 +77,7 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
-		It("should return error 422 when run non existing clusterName", func() {
+		It("should return error 404 when create non existing clusterName", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -87,13 +87,12 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			//TODO: change this to 422 (THIS IS URGENT)
-			Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-001"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-003"))
 			Expect(bodyJSON["description"]).To(Equal("sql: no rows in result set"))
-			Expect(bodyJSON["error"]).To(Equal("Error creating cluster"))
+			Expect(bodyJSON["error"]).To(Equal("database error"))
 		})
 	})
 
@@ -139,7 +138,7 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
-		It("should return error 422 when deleting non existing clusterName", func() {
+		It("should return error 404 when deleting non existing clusterName", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -149,13 +148,12 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			//TODO: change this to 422 (THIS IS URGENT)
-			Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-001"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-003"))
 			Expect(bodyJSON["description"]).To(Equal("sql: no rows in result set"))
-			Expect(bodyJSON["error"]).To(Equal("Error retrieving cluster"))
+			Expect(bodyJSON["error"]).To(Equal("database error"))
 		})
 	})
 })
