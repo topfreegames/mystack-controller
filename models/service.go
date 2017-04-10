@@ -9,6 +9,7 @@ package models
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 
 	"github.com/topfreegames/mystack-controller/errors"
@@ -30,7 +31,8 @@ spec:
     app: {{.Name}}
   ports:
     {{range .Ports}}
-    - protocol: TCP
+    - name: {{.Name}}
+      protocol: TCP
       port: {{.Port}}
       targetPort: {{.TargetPort}}
     {{end}}
@@ -41,6 +43,7 @@ spec:
 type PortMap struct {
 	Port       int
 	TargetPort int
+	Name       string
 }
 
 //Service represents a service
@@ -53,6 +56,11 @@ type Service struct {
 //NewService is the service ctor
 func NewService(name, username string, ports []*PortMap) *Service {
 	namespace := usernameToNamespace(username)
+	for i, port := range ports {
+		if len(port.Name) == 0 {
+			port.Name = fmt.Sprintf("port-%d", i)
+		}
+	}
 	return &Service{
 		Name:      name,
 		Namespace: namespace,

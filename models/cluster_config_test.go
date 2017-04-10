@@ -35,7 +35,9 @@ apps:
       - 5000:5001
     env:
       - name: DATABASE_URL
-        value: postgres://derp:1234@example.com
+        value: postgresql://derp:1234@example.com
+      - name: USERNAME
+        value: derp
   app2:
     image: app2
     ports:
@@ -64,7 +66,11 @@ var _ = Describe("ClusterConfig", func() {
 			Expect(apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
 				&EnvVar{
 					Name:  "DATABASE_URL",
-					Value: "postgres://derp:1234@example.com",
+					Value: "postgresql://derp:1234@example.com",
+				},
+				&EnvVar{
+					Name:  "USERNAME",
+					Value: "derp",
 				},
 			}))
 
@@ -177,7 +183,11 @@ services {
 			Expect(apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
 				&EnvVar{
 					Name:  "DATABASE_URL",
-					Value: "postgres://derp:1234@example.com",
+					Value: "postgresql://derp:1234@example.com",
+				},
+				&EnvVar{
+					Name:  "USERNAME",
+					Value: "derp",
 				},
 			}))
 
