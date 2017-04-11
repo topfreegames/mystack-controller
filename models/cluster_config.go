@@ -31,12 +31,11 @@ func LoadClusterConfig(
 	db DB,
 	clusterName string,
 ) (
-	map[string]*ClusterAppConfig,
-	map[string]*ClusterAppConfig,
+	*ClusterConfig,
 	error,
 ) {
 	if len(clusterName) == 0 {
-		return nil, nil, errors.NewGenericError("load cluster config error", fmt.Errorf("invalid empty cluster name"))
+		return nil, errors.NewGenericError("load cluster config error", fmt.Errorf("invalid empty cluster name"))
 	}
 
 	query := "SELECT yaml FROM clusters WHERE name = $1"
@@ -44,19 +43,19 @@ func LoadClusterConfig(
 
 	err := db.Get(&yamlStr, query, clusterName)
 	if err != nil {
-		return nil, nil, errors.NewDatabaseError(err)
+		return nil, errors.NewDatabaseError(err)
 	}
 
 	if len(yamlStr) == 0 {
-		return nil, nil, errors.NewYamlError("load cluster config error", fmt.Errorf("invalid empty config"))
+		return nil, errors.NewYamlError("load cluster config error", fmt.Errorf("invalid empty config"))
 	}
 
-	apps, services, err := ParseYaml(yamlStr)
+	clusterConfig, err := ParseYaml(yamlStr)
 	if err != nil {
-		return nil, nil, errors.NewYamlError("load cluster config error", err)
+		return nil, errors.NewYamlError("load cluster config error", err)
 	}
 
-	return apps, services, nil
+	return clusterConfig, nil
 }
 
 //WriteClusterConfig writes cluster config on DB
@@ -68,7 +67,7 @@ func WriteClusterConfig(
 	if len(clusterName) == 0 {
 		return errors.NewGenericError("write cluster config error", fmt.Errorf("invalid empty cluster name"))
 	}
-	if _, _, err := ParseYaml(yamlStr); err != nil {
+	if _, err := ParseYaml(yamlStr); err != nil {
 		return errors.NewYamlError("write cluster config error", err)
 	}
 	if len(yamlStr) == 0 {
@@ -114,19 +113,21 @@ func RemoveClusterConfig(
 	return nil
 }
 
-type clusterConfig struct {
+//ClusterConfig contains the elements of a config file
+type ClusterConfig struct {
+	Setup    map[string]string            `yaml:"setup"`
 	Services map[string]*ClusterAppConfig `yaml:"services"`
 	Apps     map[string]*ClusterAppConfig `yaml:"apps"`
 }
 
 //ParseYaml convert string to maps
-func ParseYaml(yamlStr string) (map[string]*ClusterAppConfig, map[string]*ClusterAppConfig, error) {
-	cluster := clusterConfig{}
-	err := yaml.Unmarshal([]byte(yamlStr), &cluster)
+func ParseYaml(yamlStr string) (*ClusterConfig, error) {
+	clusterConfig := ClusterConfig{}
+	err := yaml.Unmarshal([]byte(yamlStr), &clusterConfig)
 
 	if err != nil {
-		return nil, nil, errors.NewYamlError("parse yaml error", err)
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
-	return cluster.Apps, cluster.Services, nil
+	return &clusterConfig, nil
 }

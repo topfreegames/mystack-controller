@@ -53,17 +53,17 @@ var _ = Describe("ClusterConfig", func() {
 
 	Describe("ParseYaml", func() {
 		It("should build correct struct form yaml", func() {
-			apps, services, err := ParseYaml(yaml1)
+			clusterConfig, err := ParseYaml(yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(services["postgres"].Image).To(Equal("postgres:1.0"))
-			Expect(services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
-			Expect(services["redis"].Image).To(Equal("redis:1.0"))
-			Expect(services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
+			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
+			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
+			Expect(clusterConfig.Services["redis"].Image).To(Equal("redis:1.0"))
+			Expect(clusterConfig.Services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
 
-			Expect(apps["app1"].Image).To(Equal("app1"))
-			Expect(apps["app1"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
-			Expect(apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
+			Expect(clusterConfig.Apps["app1"].Image).To(Equal("app1"))
+			Expect(clusterConfig.Apps["app1"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
+			Expect(clusterConfig.Apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
 				&EnvVar{
 					Name:  "DATABASE_URL",
 					Value: "postgresql://derp:1234@example.com",
@@ -74,9 +74,11 @@ var _ = Describe("ClusterConfig", func() {
 				},
 			}))
 
-			Expect(apps["app2"].Image).To(Equal("app2"))
-			Expect(apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
-			Expect(apps["app2"].Environment).To(BeNil())
+			Expect(clusterConfig.Apps["app2"].Image).To(Equal("app2"))
+			Expect(clusterConfig.Apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
+			Expect(clusterConfig.Apps["app2"].Environment).To(BeNil())
+
+			Expect(clusterConfig.Setup["image"]).To(Equal("setup-img"))
 		})
 
 		It("should return error with invalid yaml", func() {
@@ -86,7 +88,7 @@ services {
     image: app
 }
 			`
-			_, _, err := ParseYaml(invalidYaml)
+			_, err := ParseYaml(invalidYaml)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("yaml: line 3: mapping values are not allowed in this context"))
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
@@ -171,16 +173,16 @@ services {
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			apps, services, err := LoadClusterConfig(sqlxDB, clusterName)
+			clusterConfig, err := LoadClusterConfig(sqlxDB, clusterName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(services["postgres"].Image).To(Equal("postgres:1.0"))
-			Expect(services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
-			Expect(services["redis"].Image).To(Equal("redis:1.0"))
-			Expect(services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
+			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
+			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
+			Expect(clusterConfig.Services["redis"].Image).To(Equal("redis:1.0"))
+			Expect(clusterConfig.Services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
 
-			Expect(apps["app1"].Image).To(Equal("app1"))
-			Expect(apps["app1"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
-			Expect(apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
+			Expect(clusterConfig.Apps["app1"].Image).To(Equal("app1"))
+			Expect(clusterConfig.Apps["app1"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
+			Expect(clusterConfig.Apps["app1"].Environment).To(BeEquivalentTo([]*EnvVar{
 				&EnvVar{
 					Name:  "DATABASE_URL",
 					Value: "postgresql://derp:1234@example.com",
@@ -191,9 +193,11 @@ services {
 				},
 			}))
 
-			Expect(apps["app2"].Image).To(Equal("app2"))
-			Expect(apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
-			Expect(apps["app2"].Environment).To(BeNil())
+			Expect(clusterConfig.Apps["app2"].Image).To(Equal("app2"))
+			Expect(clusterConfig.Apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
+			Expect(clusterConfig.Apps["app2"].Environment).To(BeNil())
+
+			Expect(clusterConfig.Setup["image"]).To(Equal("setup-img"))
 		})
 
 		It("should return error when loading non existing clusterName", func() {
@@ -202,18 +206,16 @@ services {
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
 
-			apps, services, err := LoadClusterConfig(sqlxDB, clusterName)
-			Expect(apps).To(BeNil())
-			Expect(services).To(BeNil())
+			clusterConfig, err := LoadClusterConfig(sqlxDB, clusterName)
+			Expect(clusterConfig).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.DatabaseError"))
 		})
 
 		It("should return error when loading empty clusterName", func() {
-			apps, services, err := LoadClusterConfig(sqlxDB, "")
-			Expect(apps).To(BeNil())
-			Expect(services).To(BeNil())
+			clusterConfig, err := LoadClusterConfig(sqlxDB, "")
+			Expect(clusterConfig).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("invalid empty cluster name"))
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.GenericError"))
@@ -231,9 +233,8 @@ services {
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(invalidYaml))
 
-			apps, services, err := LoadClusterConfig(sqlxDB, clusterName)
-			Expect(apps).To(BeNil())
-			Expect(services).To(BeNil())
+			clusterConfig, err := LoadClusterConfig(sqlxDB, clusterName)
+			Expect(clusterConfig).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("yaml: line 3: mapping values are not allowed in this context"))
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
@@ -245,10 +246,8 @@ services {
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(""))
 
-			apps, services, err := LoadClusterConfig(sqlxDB, clusterName)
-			Expect(apps).To(BeNil())
-			Expect(services).To(BeNil())
-			Expect(err).To(HaveOccurred())
+			clusterConfig, err := LoadClusterConfig(sqlxDB, clusterName)
+			Expect(clusterConfig).To(BeNil())
 			Expect(err.Error()).To(Equal("invalid empty config"))
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
 		})

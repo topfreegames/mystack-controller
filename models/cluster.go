@@ -27,14 +27,14 @@ type Cluster struct {
 func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 	namespace := usernameToNamespace(username)
 
-	apps, services, err := LoadClusterConfig(db, clusterName)
+	clusterConfig, err := LoadClusterConfig(db, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	portMap := make(map[string][]*PortMap)
-	k8sAppDeployments, err := buildDeployments(apps, username, portMap)
-	k8sSvcDeployments, err := buildDeployments(services, username, portMap)
+	k8sAppDeployments, err := buildDeployments(clusterConfig.Apps, username, portMap)
+	k8sSvcDeployments, err := buildDeployments(clusterConfig.Services, username, portMap)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}

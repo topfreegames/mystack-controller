@@ -93,16 +93,15 @@ apps:
 			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
-			returnApps, returnServices, err := LoadClusterConfig(db, clusterName)
+			clusterConfig, err := LoadClusterConfig(db, clusterName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(returnServices).To(BeEquivalentTo(services))
-			Expect(returnApps).To(BeEquivalentTo(apps))
+			Expect(clusterConfig.Services).To(BeEquivalentTo(services))
+			Expect(clusterConfig.Apps).To(BeEquivalentTo(apps))
 		})
 
 		It("should return error if clusterName doesn't exist on DB", func() {
-			apps, services, err := LoadClusterConfig(db, clusterName)
-			Expect(apps).To(BeNil())
-			Expect(services).To(BeNil())
+			clusterConfig, err := LoadClusterConfig(db, clusterName)
+			Expect(clusterConfig).To(BeNil())
 			Expect(err).To(HaveOccurred())
 		})
 	})
