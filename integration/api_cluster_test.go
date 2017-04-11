@@ -26,6 +26,18 @@ var _ = Describe("Cluster", func() {
 		clusterName    = "myCustomApps"
 		clusterHandler *ClusterHandler
 		yaml1          = `
+setup:
+  image: setup-img
+services:
+  test0:
+    image: svc1
+    port: 5000
+apps:
+  test1:
+    image: app1
+    port: 5000
+`
+		yamlWithoutSetup = `
 services:
   test0:
     image: svc1
@@ -63,6 +75,24 @@ apps:
 
 			clusterConfigHandler := &ClusterConfigHandler{App: app, Method: "create"}
 			ctx := NewContextWithClusterConfig(createRequest.Context(), yaml1)
+			clusterConfigHandler.ServeHTTP(recorder, createRequest.WithContext(ctx))
+
+			recorder = httptest.NewRecorder()
+			ctx = NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+		})
+
+		It("should create clusterName without setup", func() {
+			route = fmt.Sprintf("/cluster-configs/%s/create", clusterName)
+			createRequest, err := http.NewRequest("PUT", route, nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			clusterConfigHandler := &ClusterConfigHandler{App: app, Method: "create"}
+			ctx := NewContextWithClusterConfig(createRequest.Context(), yamlWithoutSetup)
 			clusterConfigHandler.ServeHTTP(recorder, createRequest.WithContext(ctx))
 
 			recorder = httptest.NewRecorder()

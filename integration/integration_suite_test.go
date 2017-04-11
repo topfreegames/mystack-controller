@@ -56,6 +56,8 @@ var _ = BeforeSuite(func() {
 
 var _ = BeforeEach(func() {
 	var err error
+	clientset = fake.NewSimpleClientset()
+	app.Clientset = clientset
 	db, err = conn.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 	app.DB = db

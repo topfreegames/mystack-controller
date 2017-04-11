@@ -162,6 +162,10 @@ apps:
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services.Items).To(HaveLen(4))
+
+			jobs, err := clientset.BatchV1().Jobs(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jobs.Items).To(HaveLen(1))
 		})
 
 		It("should return error if creating same cluster twice", func() {
@@ -187,6 +191,10 @@ apps:
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services.Items).To(HaveLen(4))
+
+			jobs, err := clientset.BatchV1().Jobs(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jobs.Items).To(BeEmpty())
 		})
 	})
 
