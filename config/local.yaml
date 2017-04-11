@@ -8,5 +8,5 @@ postgres:
   maxOpenConns: 10
 email:
   domain: 
-  - "tfgco.com"
-  - "topfreegames.com"
+  - "example.com"
+  - "other.example.com"

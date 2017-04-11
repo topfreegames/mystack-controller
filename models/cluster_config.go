@@ -13,7 +13,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-//EnvVar has name and value of an environmental value
+//EnvVar has name and value of an environment value
 type EnvVar struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`

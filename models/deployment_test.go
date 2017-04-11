@@ -66,7 +66,7 @@ var _ = Describe("Deployment", func() {
 			Expect(deploys.Items).To(HaveLen(1))
 		})
 
-		It("should create deployment with environmental variables", func() {
+		It("should create deployment with environment variables", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
