@@ -38,25 +38,32 @@ spec:
       containers:
       - name: {{.Name}}
         image: {{.Image}}
+        env:
+          {{range .Environment}}
+          - name: {{.Name}}
+            value: "{{.Value}}"
+          {{end}}
       restartPolicy: OnFailure
 `
 
 //Job represents a Kubernetes job
 type Job struct {
-	Name      string
-	Namespace string
-	Username  string
-	Image     string
+	Name        string
+	Namespace   string
+	Username    string
+	Image       string
+	Environment []*EnvVar
 }
 
 //NewJob is the job ctor
-func NewJob(username, image string) *Job {
+func NewJob(username, image string, environment []*EnvVar) *Job {
 	namespace := usernameToNamespace(username)
 	return &Job{
-		Name:      "setup",
-		Namespace: namespace,
-		Username:  username,
-		Image:     image,
+		Name:        "setup",
+		Namespace:   namespace,
+		Username:    username,
+		Image:       image,
+		Environment: environment,
 	}
 }
 

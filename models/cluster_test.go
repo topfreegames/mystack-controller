@@ -88,7 +88,7 @@ apps:
 				NewService("test2", username, portMaps),
 				NewService("test3", username, portMaps),
 			},
-			Setup: NewJob(username, "setup-img"),
+			Setup: NewJob(username, "setup-img", []*EnvVar{}),
 		}
 	}
 

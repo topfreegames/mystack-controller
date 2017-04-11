@@ -42,7 +42,9 @@ var _ = Describe("Job", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			job := NewJob(username, image)
+			job := NewJob(username, image, []*EnvVar{
+				&EnvVar{Name: "DATABASE_URL", Value: "postgresql://derp"},
+			})
 
 			k8sJob, err := job.Run(clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -59,7 +61,7 @@ var _ = Describe("Job", func() {
 		})
 
 		It("should not run job without namespace", func() {
-			job := NewJob(username, image)
+			job := NewJob(username, image, nil)
 			_, err = job.Run(clientset)
 			Expect(err).To(HaveOccurred())
 		})
