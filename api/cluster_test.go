@@ -28,6 +28,18 @@ var _ = Describe("Cluster", func() {
 		clusterName    = "myCustomApps"
 		clusterHandler *ClusterHandler
 		yaml1          = `
+setup:
+  image: setup-img
+services:
+  test0:
+    image: svc1
+    port: 5000
+apps:
+  test1:
+    image: app1
+    port: 5000
+`
+		yamlWithoutSetup = `
 services:
   test0:
     image: svc1
@@ -68,6 +80,20 @@ apps:
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+		})
+
+		It("should create existing clusterName without setup", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithoutSetup))
 
 			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))

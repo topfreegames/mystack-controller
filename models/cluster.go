@@ -21,6 +21,7 @@ type Cluster struct {
 	Username    string
 	Deployments []*Deployment
 	Services    []*Service
+	Setup       *Job
 }
 
 //NewCluster returns a new cluster ready to start
@@ -43,11 +44,14 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 	}
 	k8sServices := buildServices(k8sAppDeployments, k8sSvcDeployments, username, portMap)
 
+	k8sJob := NewJob(username, clusterConfig.Setup["image"])
+
 	cluster := &Cluster{
 		Username:    username,
 		Namespace:   namespace,
 		Deployments: append(k8sAppDeployments, k8sSvcDeployments...),
 		Services:    k8sServices,
+		Setup:       k8sJob,
 	}
 
 	return cluster, nil
@@ -137,6 +141,11 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 			}
 			return err
 		}
+	}
+
+	_, err = c.Setup.Run(clientset)
+	if err != nil {
+		return err
 	}
 
 	for _, service := range c.Services {

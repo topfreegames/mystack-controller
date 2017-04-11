@@ -25,6 +25,8 @@ import (
 var _ = Describe("Cluster", func() {
 	const (
 		yaml1 = `
+setup:
+  image: setup-img
 services:
   test0:
     image: svc1
@@ -86,6 +88,7 @@ apps:
 				NewService("test2", username, portMaps),
 				NewService("test3", username, portMaps),
 			},
+			Setup: NewJob(username, "setup-img"),
 		}
 	}
 
@@ -118,6 +121,7 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.Deployments).To(ConsistOf(mockedCluster.Deployments))
 			Expect(cluster.Services).To(ConsistOf(mockedCluster.Services))
+			Expect(cluster.Setup).To(Equal(mockedCluster.Setup))
 		})
 
 		It("should return error if clusterName doesn't exists on DB", func() {
@@ -168,6 +172,21 @@ apps:
 			err = cluster.Create(clientset)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Namespace \"mystack-user\" already exists"))
+		})
+
+		It("should run without setup image", func() {
+			cluster := mockCluster(username)
+			cluster.Setup = nil
+			err := cluster.Create(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(4))
+
+			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(services.Items).To(HaveLen(4))
 		})
 	})
 

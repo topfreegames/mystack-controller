@@ -19,6 +19,33 @@ import (
 
 const (
 	yaml1 = `
+setup:
+  image: setup-img
+services:
+  postgres:
+    image: postgres:1.0
+    ports:
+      - 8585:5432
+  redis:
+    image: redis:1.0
+    ports:
+      - 6379
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+    env:
+      - name: DATABASE_URL
+        value: postgresql://derp:1234@example.com
+      - name: USERNAME
+        value: derp
+  app2:
+    image: app2
+    ports:
+      - 5000:5001
+`
+	yamlWithoutSetup = `
 services:
   postgres:
     image: postgres:1.0
@@ -103,6 +130,16 @@ services {
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
 			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should write cluster config without setup", func() {
+			mock.
+				ExpectExec("INSERT INTO clusters").
+				WithArgs(clusterName, yamlWithoutSetup).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+
+			err = WriteClusterConfig(sqlxDB, clusterName, yamlWithoutSetup)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
