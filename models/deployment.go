@@ -44,7 +44,7 @@ spec:
           env:
             {{range .Environment}}
             - name: {{.Name}}
-              value: {{.Value}}
+              value: "{{.Value}}"
             {{end}}
           ports:
             {{range .Ports}}

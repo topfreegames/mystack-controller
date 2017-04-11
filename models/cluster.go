@@ -34,10 +34,10 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 
 	portMap := make(map[string][]*PortMap)
 	k8sAppDeployments, err := buildDeployments(apps, username, portMap)
+	k8sSvcDeployments, err := buildDeployments(services, username, portMap)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
-	k8sSvcDeployments, err := buildDeployments(services, username, portMap)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
@@ -107,12 +107,12 @@ func buildServices(
 ) []*Service {
 	services := make([]*Service, len(apps)+len(svcs))
 	i := 0
-	for _, app := range apps {
-		services[i] = NewService(app.Name, username, portMap[app.Name])
-		i = i + 1
-	}
 	for _, svc := range svcs {
 		services[i] = NewService(svc.Name, username, portMap[svc.Name])
+		i = i + 1
+	}
+	for _, app := range apps {
+		services[i] = NewService(app.Name, username, portMap[app.Name])
 		i = i + 1
 	}
 	return services

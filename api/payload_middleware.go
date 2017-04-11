@@ -39,7 +39,9 @@ func clusterConfigFromCtx(ctx context.Context) string {
 
 func toLiteral(bts []byte) []byte {
 	bts = bytes.Replace(bts, []byte("\n"), []byte(`\n`), -1)
-	return bytes.Replace(bts, []byte("\t"), []byte("  "), -1)
+	bts = bytes.Replace(bts, []byte("\t"), []byte("  "), -1)
+
+	return bts
 }
 
 func (p *PayloadMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {

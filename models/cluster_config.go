@@ -23,7 +23,7 @@ type EnvVar struct {
 type ClusterAppConfig struct {
 	Image       string    `yaml:"image"`
 	Ports       []string  `yaml:"ports"`
-	Environment []*EnvVar `yaml:"env"`
+	Environment []*EnvVar `yaml:"env,flow"`
 }
 
 //LoadClusterConfig reads DB and create map with cluster configuration
