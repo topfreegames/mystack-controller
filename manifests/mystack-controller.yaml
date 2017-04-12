@@ -24,24 +24,42 @@ kind: Deployment
 metadata:
   name: mystack-controller
   namespace: mystack
+  labels:
+    heritage: mystack
 spec:
+  selector:
+    matchLabels:
+      app: mystack-controller
+      heritage: mystack
   replicas: 1
   template:
     metadata:
       labels:
         app: mystack-controller
+        heritage: mystack
     spec:
       containers:
         - name: controller
-          image: tfgco/mystack-controller:v1
+          command:
+            - /app/mystack-controller
+            - start
+            - -v3
+          image: quay.io/tfgco/mystack-controller:v0.1.2
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
             - name: MYSTACK_POSTGRES_HOST
-              value: "10.0.0.10"
+              value: mystack-postgres
             - name: MYSTACK_POSTGRES_PORT
-              value: "8585"
+              value: "5432"
+            - name: MYSTACK_POSTGRES_USER
+              value: mystack
+            - name: MYSTACK_POSTGRES_DBNAME
+              value: mystack
             - name: MYSTACK_GOOGLE_CLIENT_ID
               value: ""
             - name: MYSTACK_GOOGLE_CLIENT_SECRET
               value: ""
+            - name: MYSTACK_OAUTH_ACCEPTEDDOMAINS
+              value: "example.com other.com"

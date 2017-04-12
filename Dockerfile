@@ -24,6 +24,7 @@ FROM quay.io/tfgco/mystack-base:v0.1.0
 MAINTAINER TFG Co <backend@tfgco.com>
 
 RUN mkdir /app
+
 COPY ./bin/mystack-controller-linux-amd64 /app/mystack-controller
 COPY ./config/local.yaml /app/config/local.yaml
 

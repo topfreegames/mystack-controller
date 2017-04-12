@@ -6,7 +6,7 @@ postgres:
   sslMode: "disable"
   maxIdleConns: 10
   maxOpenConns: 10
-email:
-  domain: 
+oauth:
+  acceptedDomains: 
   - "tfgco.com"
   - "topfreegames.com"

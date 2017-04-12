@@ -1,23 +1,17 @@
-# mystack-controller api
-# https://github.com/topfreegames/mystack-controller
-#
-# Licensed under the MIT license:
-# http://www.opensource.org/licenses/mit-license
-# Copyright © 2017 Top Free Games <backend@tfgco.com>
-
+---
 apiVersion: v1
 kind: Service
 metadata:
+  labels:
+    name: mystack-postgres
   name: mystack-postgres
   namespace: mystack
 spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
   selector:
     app: mystack-postgres
-  ports:
-    - protocol: TCP
-      port: 8585
-      targetPort: 5432
-  type: ClusterIP
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -32,7 +26,32 @@ spec:
         app: mystack-postgres
     spec:
       containers:
-        - name: postgres
-          image: postgres:9.5
-          ports:
-            - containerPort: 5432
+      - name: postgres
+        image: postgres:9.6
+        ports:
+          - containerPort: 5432
+        env:
+        - name: POD_IP
+          valueFrom: { fieldRef: { fieldPath: status.podIP } }
+        - name: POSTGRES_USER
+          value: mystack
+        - name: POSTGRES_DB
+          value: mystack
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP --username mystack
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP --username mystack
+          initialDelaySeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 5

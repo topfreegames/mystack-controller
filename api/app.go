@@ -50,7 +50,7 @@ func NewApp(
 		Address:     fmt.Sprintf("%s:%d", host, port),
 		Debug:       debug,
 		Logger:      logger,
-		EmailDomain: config.GetStringSlice("email.domain"),
+		EmailDomain: config.GetStringSlice("oauth.acceptedDomains"),
 		Clientset:   clientset,
 	}
 	err := a.configureApp()
@@ -110,6 +110,13 @@ func (a *App) getRouter() *mux.Router {
 		&AccessMiddleware{App: a},
 	)).Methods("DELETE").Name("cluster-config")
 
+	r.Handle("/dns", Chain(
+		&DNSHandler{App: a},
+		&LoggingMiddleware{App: a},
+		&AccessMiddleware{App: a},
+		&VersionMiddleware{},
+	)).Methods("GET").Name("dns")
+
 	return r
 }
 
@@ -144,7 +151,7 @@ func (a *App) getDB() (*sqlx.DB, error) {
 	sslMode := a.Config.GetString("postgres.sslMode")
 	maxIdleConns := a.Config.GetInt("postgres.maxIdleConns")
 	maxOpenConns := a.Config.GetInt("postgres.maxOpenConns")
-	connectionTimeoutMS := viper.GetInt("postgres.connectionTimeoutMS")
+	connectionTimeoutMS := a.Config.GetInt("postgres.connectionTimeoutMS")
 
 	l := a.Logger.WithFields(logrus.Fields{
 		"postgres.host":    host,
