@@ -9,13 +9,20 @@ MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | gre
 TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq | grep -v integration`
 
 setup: setup-hooks
-	@go get -u github.com/golang/dep...
+	@go get -u github.com/golang/dep/...
 	@go get -u github.com/jteeuwen/go-bindata/...
 	@go get -u github.com/wadey/gocovmerge
-	@dep ensure -update
+	@dep ensure
 
 setup-hooks:
 	@cd .git/hooks && ln -sf ../../hooks/pre-commit.sh pre-commit
+
+setup-ci:
+	@go get -u github.com/golang/dep/...
+	@go get github.com/onsi/ginkgo/ginkgo
+	@go get -u github.com/wadey/gocovmerge
+	@go get -u github.com/jteeuwen/go-bindata/...
+	@dep ensure
 
 build:
 	@mkdir -p bin && go build -o ./bin/mystack-controller main.go
@@ -37,13 +44,6 @@ migrate-test: assets
 	@go run main.go migrate -c ./config/test.yaml
 
 deps: start-deps wait-for-pg
-
-setup-ci:
-	@go get -u github.com/golang/dep/...
-	@go get -u github.com/jteeuwen/go-bindata/...
-	@go get github.com/onsi/ginkgo/ginkgo
-	@go get github.com/wadey/gocovmerge
-	@dep ensure
 
 start-deps:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."

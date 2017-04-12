@@ -8,6 +8,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -20,25 +21,27 @@ type PayloadMiddleware struct {
 	next http.Handler
 }
 
-//ClusterAppConfig contains information about each app that will run on cluster
-type ClusterAppConfig struct {
-	Image string
-	Port  int
-}
-
 const configKey = contextKey("clusterConfigKey")
 
-func newContextWithClusterConfig(ctx context.Context, clusterConfig map[string]*ClusterAppConfig) context.Context {
+//NewContextWithClusterConfig creates a context with cluster config
+func NewContextWithClusterConfig(ctx context.Context, clusterConfig string) context.Context {
 	c := context.WithValue(ctx, configKey, clusterConfig)
 	return c
 }
 
-func clusterConfigFromCtx(ctx context.Context) map[string]*ClusterAppConfig {
+func clusterConfigFromCtx(ctx context.Context) string {
 	clusterConfig := ctx.Value(configKey)
 	if clusterConfig == nil {
-		return nil
+		return ""
 	}
-	return clusterConfig.(map[string]*ClusterAppConfig)
+	return clusterConfig.(string)
+}
+
+func toLiteral(bts []byte) []byte {
+	bts = bytes.Replace(bts, []byte("\n"), []byte(`\n`), -1)
+	bts = bytes.Replace(bts, []byte("\t"), []byte("  "), -1)
+
+	return bts
 }
 
 func (p *PayloadMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,14 +51,16 @@ func (p *PayloadMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clusterConfig := make(map[string]*ClusterAppConfig)
-	err = json.Unmarshal(bts, clusterConfig)
+	bts = toLiteral(bts)
+
+	bodyJSON := make(map[string]string)
+	err = json.Unmarshal(bts, &bodyJSON)
 	if err != nil {
-		p.App.HandleError(w, http.StatusBadRequest, "Error reading body", err)
+		p.App.HandleError(w, http.StatusInternalServerError, "Error reading body", err)
 		return
 	}
 
-	ctx := newContextWithClusterConfig(r.Context(), clusterConfig)
+	ctx := NewContextWithClusterConfig(r.Context(), bodyJSON["yaml"])
 	p.next.ServeHTTP(w, r.WithContext(ctx))
 }
 

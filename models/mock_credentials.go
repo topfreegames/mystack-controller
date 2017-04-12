@@ -13,12 +13,12 @@ type MockCredentials struct {
 	Key string
 }
 
-//GetID gets ID from environmental variable
+//GetID gets ID from environment variable
 func (m *MockCredentials) GetID() string {
 	return m.ID
 }
 
-//GetSecret gets secret from environmental variable
+//GetSecret gets secret from environment variable
 func (m *MockCredentials) GetSecret() string {
 	return m.Key
 }

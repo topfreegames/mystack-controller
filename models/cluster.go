@@ -8,7 +8,11 @@
 package models
 
 import (
+	"fmt"
+	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
+	"strconv"
+	"strings"
 )
 
 //Cluster represents a k8s cluster for a user
@@ -28,9 +32,16 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 		return nil, err
 	}
 
-	k8sAppDeployments := buildDeployments(apps, username)
-	k8sSvcDeployments := buildDeployments(services, username)
-	k8sServices := buildServices(k8sAppDeployments, username)
+	portMap := make(map[string][]*PortMap)
+	k8sAppDeployments, err := buildDeployments(apps, username, portMap)
+	k8sSvcDeployments, err := buildDeployments(services, username, portMap)
+	if err != nil {
+		return nil, errors.NewYamlError("parse yaml error", err)
+	}
+	if err != nil {
+		return nil, errors.NewYamlError("parse yaml error", err)
+	}
+	k8sServices := buildServices(k8sAppDeployments, k8sSvcDeployments, username, portMap)
 
 	cluster := &Cluster{
 		Username:    username,
@@ -42,22 +53,67 @@ func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
 	return cluster, nil
 }
 
-func buildDeployments(types map[string]*ClusterAppConfig, username string) []*Deployment {
+func getPorts(name string, ports []string, portMap map[string][]*PortMap) ([]int, error) {
+	var err error
+	containerPorts := make([]int, len(ports))
+	portMap[name] = make([]*PortMap, len(ports))
+	for i, port := range ports {
+		splitedPorts := strings.Split(port, ":")
+		if containerPorts[i], err = strconv.Atoi(splitedPorts[0]); err != nil {
+			return nil, err
+		}
+
+		portMap[name][i] = &PortMap{
+			Port:       containerPorts[i],
+			TargetPort: containerPorts[i],
+		}
+
+		if len(splitedPorts) == 2 {
+			if containerPorts[i], err = strconv.Atoi(splitedPorts[1]); err != nil {
+				return nil, err
+			}
+			portMap[name][i].TargetPort = containerPorts[i]
+		}
+	}
+
+	return containerPorts, nil
+}
+
+func buildDeployments(
+	types map[string]*ClusterAppConfig,
+	username string,
+	portMap map[string][]*PortMap,
+) ([]*Deployment, error) {
 	deployments := make([]*Deployment, len(types))
 
 	i := 0
 	for name, config := range types {
-		deployments[i] = NewDeployment(name, username, config.Image, config.Port, config.Environment)
+		ports, err := getPorts(name, config.Ports, portMap)
+		if err != nil {
+			return nil, err
+		}
+		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment)
 		i = i + 1
 	}
 
-	return deployments
+	return deployments, nil
 }
 
-func buildServices(deployments []*Deployment, username string) []*Service {
-	services := make([]*Service, len(deployments))
-	for i, deployment := range deployments {
-		services[i] = NewService(deployment.Name, username, 80, deployment.Port)
+func buildServices(
+	apps []*Deployment,
+	svcs []*Deployment,
+	username string,
+	portMap map[string][]*PortMap,
+) []*Service {
+	services := make([]*Service, len(apps)+len(svcs))
+	i := 0
+	for _, svc := range svcs {
+		services[i] = NewService(svc.Name, username, portMap[svc.Name])
+		i = i + 1
+	}
+	for _, app := range apps {
+		services[i] = NewService(app.Name, username, portMap[app.Name])
+		i = i + 1
 	}
 	return services
 }
@@ -72,7 +128,13 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 	for _, deployment := range c.Deployments {
 		_, err = deployment.Deploy(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys?
+			nsErr := DeleteNamespace(clientset, c.Username)
+			if nsErr != nil {
+				return errors.NewKubernetesError(
+					"create cluster error",
+					fmt.Errorf("error during cluster creation and could not rollback: %s", nsErr.Error()),
+				)
+			}
 			return err
 		}
 	}
@@ -80,7 +142,13 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 	for _, service := range c.Services {
 		_, err = service.Expose(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys and services?
+			nsErr := DeleteNamespace(clientset, c.Username)
+			if nsErr != nil {
+				return errors.NewKubernetesError(
+					"create cluster error",
+					fmt.Errorf("error during cluster creation and could not rollback: %s", nsErr.Error()),
+				)
+			}
 			return err
 		}
 	}
@@ -94,7 +162,6 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	for _, service := range c.Services {
 		err = service.Delete(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys and services?
 			return err
 		}
 	}
@@ -102,7 +169,6 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	for _, deployment := range c.Deployments {
 		err = deployment.Delete(clientset)
 		if err != nil {
-			//TODO: maybe delete already created deploys?
 			return err
 		}
 	}

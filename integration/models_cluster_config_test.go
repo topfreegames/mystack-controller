@@ -21,18 +21,24 @@ var _ = Describe("ClusterConfig", func() {
 services:
   postgres:
     image: postgres:1.0
+    ports:
+      - 8585:5432
   redis:
     image: redis:1.0
+    ports:
+      - 6379
 apps:
   app1:
     image: app1
-    port: 5000
+    ports: 
+      - 5000:5001
     env:
       - name: DATABASE_URL
         value: postgres://derp:1234@example.com
   app2:
     image: app2
-    port: 5001
+    ports: 
+      - 5001
 `
 		clusterName = "myCustomApps"
 	)
@@ -40,13 +46,19 @@ apps:
 	var (
 		err      error
 		services = map[string]*ClusterAppConfig{
-			"postgres": &ClusterAppConfig{Image: "postgres:1.0"},
-			"redis":    &ClusterAppConfig{Image: "redis:1.0"},
+			"postgres": &ClusterAppConfig{
+				Image: "postgres:1.0",
+				Ports: []string{"8585:5432"},
+			},
+			"redis": &ClusterAppConfig{
+				Image: "redis:1.0",
+				Ports: []string{"6379"},
+			},
 		}
 		apps = map[string]*ClusterAppConfig{
 			"app1": &ClusterAppConfig{
 				Image: "app1",
-				Port:  5000,
+				Ports: []string{"5000:5001"},
 				Environment: []*EnvVar{
 					&EnvVar{
 						Name:  "DATABASE_URL",
@@ -56,7 +68,7 @@ apps:
 			},
 			"app2": &ClusterAppConfig{
 				Image: "app2",
-				Port:  5001,
+				Ports: []string{"5001"},
 			},
 		}
 	)
@@ -87,10 +99,25 @@ apps:
 			Expect(returnApps).To(BeEquivalentTo(apps))
 		})
 
-		It("should return error if clusterName doesn' exist on DB", func() {
+		It("should return error if clusterName doesn't exist on DB", func() {
 			apps, services, err := LoadClusterConfig(db, clusterName)
 			Expect(apps).To(BeNil())
 			Expect(services).To(BeNil())
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("RemoveClusterConfig", func() {
+		It("should delete existing cluster config", func() {
+			err = WriteClusterConfig(db, clusterName, yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = RemoveClusterConfig(db, clusterName)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should not return error when deleting non existing cluster config", func() {
+			err = RemoveClusterConfig(db, clusterName)
 			Expect(err).To(HaveOccurred())
 		})
 	})

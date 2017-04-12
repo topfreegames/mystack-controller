@@ -1,4 +1,4 @@
-// mystack api
+// mystack-controller api
 // https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
@@ -28,8 +28,8 @@ func (e *DatabaseError) Error() string {
 //Serialize returns the error serialized
 func (e *DatabaseError) Serialize() []byte {
 	g, _ := json.Marshal(map[string]interface{}{
-		"code":        "OFF-000",
-		"error":       "DatabaseError",
+		"code":        "OFF-003",
+		"error":       "database error",
 		"description": e.SourceError.Error(),
 	})
 

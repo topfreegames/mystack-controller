@@ -94,7 +94,7 @@ func init() {
 	RootCmd.AddCommand(startCmd)
 
 	startCmd.Flags().StringVarP(&host, "bind", "b", "0.0.0.0", "Host to bind mystack to")
-	startCmd.Flags().IntVarP(&port, "port", "p", 8888, "Port to bind mystack to")
+	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to bind mystack to")
 	startCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Debug mode")
 	startCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet mode (log level error)")
 }

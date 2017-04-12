@@ -10,9 +10,9 @@ package models
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"text/template"
 
+	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -44,10 +44,12 @@ spec:
           env:
             {{range .Environment}}
             - name: {{.Name}}
-              value: {{.Value}}
+              value: "{{.Value}}"
             {{end}}
           ports:
-            - containerPort: {{.Port}}
+            {{range .Ports}}
+            - containerPort: {{.}}
+            {{end}}
 `
 
 //Deployment represents a deployment
@@ -56,20 +58,19 @@ type Deployment struct {
 	Namespace   string
 	Username    string
 	Image       string
-	Port        int
+	Ports       []int
 	Environment []*EnvVar
 }
 
 //NewDeployment is the deployment ctor
-func NewDeployment(name, username, image string, port int, environment []*EnvVar) *Deployment {
-	username = strings.Replace(username, ".", "-", -1)
+func NewDeployment(name, username, image string, ports []int, environment []*EnvVar) *Deployment {
 	namespace := usernameToNamespace(username)
 	return &Deployment{
 		Name:        name,
 		Namespace:   namespace,
 		Username:    username,
 		Image:       image,
-		Port:        port,
+		Ports:       ports,
 		Environment: environment,
 	}
 }
@@ -77,25 +78,25 @@ func NewDeployment(name, username, image string, port int, environment []*EnvVar
 //Deploy creates a deployment from yaml
 func (d *Deployment) Deploy(clientset kubernetes.Interface) (*v1beta1.Deployment, error) {
 	if !NamespaceExists(clientset, d.Namespace) {
-		err := fmt.Errorf("Namespace %s not found", d.Namespace)
-		return nil, err
+		err := fmt.Errorf("namespace %s not found", d.Namespace)
+		return nil, errors.NewKubernetesError("create namespace error", err)
 	}
 
 	tmpl, err := template.New("deploy").Parse(deployYaml)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	buf := new(bytes.Buffer)
 	err = tmpl.Execute(buf, d)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	decoder := api.Codecs.UniversalDecoder()
 	obj, _, err := decoder.Decode(buf.Bytes(), nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	src := obj.(*extensions.Deployment)
@@ -103,14 +104,25 @@ func (d *Deployment) Deploy(clientset kubernetes.Interface) (*v1beta1.Deployment
 
 	err = api.Scheme.Convert(src, dst, 0)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
-	return clientset.ExtensionsV1beta1().Deployments(d.Namespace).Create(dst)
+	deployment, err := clientset.ExtensionsV1beta1().Deployments(d.Namespace).Create(dst)
+	if err != nil {
+		return nil, errors.NewKubernetesError("create deployment error", err)
+	}
+
+	return deployment, nil
 }
 
 //Delete deletes deployment from cluster
 func (d *Deployment) Delete(clientset kubernetes.Interface) error {
 	deleteOptions := &v1.DeleteOptions{}
-	return clientset.ExtensionsV1beta1().Deployments(d.Namespace).Delete(d.Name, deleteOptions)
+	err := clientset.ExtensionsV1beta1().Deployments(d.Namespace).Delete(d.Name, deleteOptions)
+
+	if err != nil {
+		return errors.NewKubernetesError("delete deployment error", err)
+	}
+
+	return nil
 }

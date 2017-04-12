@@ -36,15 +36,15 @@ func GenerateLoginURL(oauthState string, credentials models.Credentials) (string
 
 	if len(googleOauthConfig.ClientID) == 0 {
 		return "", errors.NewAccessError(
-			fmt.Sprintf("Undefined environmental variable %s", models.ClientIDEnvVar),
-			fmt.Errorf("Define your app's OAuth2 Client ID on %s environmental varianle and run again", models.ClientIDEnvVar),
+			fmt.Sprintf("Undefined environment variable %s", models.ClientIDEnvVar),
+			fmt.Errorf("Define your app's OAuth2 Client ID on %s environment variable and run again", models.ClientIDEnvVar),
 		)
 	}
 
 	if len(googleOauthConfig.ClientSecret) == 0 {
 		return "", errors.NewAccessError(
-			fmt.Sprintf("Undefined environmental variable %s", models.ClientSecretEnvVar),
-			fmt.Errorf("Define your app's OAuth2 Client Secret on %s environmental varianle and run again", models.ClientSecretEnvVar),
+			fmt.Sprintf("Undefined environment variable %s", models.ClientSecretEnvVar),
+			fmt.Errorf("Define your app's OAuth2 Client Secret on %s environment variable and run again", models.ClientSecretEnvVar),
 		)
 	}
 

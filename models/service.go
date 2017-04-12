@@ -9,9 +9,10 @@ package models
 
 import (
 	"bytes"
-	"strings"
+	"fmt"
 	"text/template"
 
+	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -29,29 +30,41 @@ spec:
   selector:
     app: {{.Name}}
   ports:
-    - protocol: TCP
+    {{range .Ports}}
+    - name: {{.Name}}
+      protocol: TCP
       port: {{.Port}}
       targetPort: {{.TargetPort}}
+    {{end}}
   type: ClusterIP
 `
 
-//Service represents a service
-type Service struct {
-	Name       string
-	Namespace  string
+//PortMap maps a port to a target por on service
+type PortMap struct {
 	Port       int
 	TargetPort int
+	Name       string
+}
+
+//Service represents a service
+type Service struct {
+	Name      string
+	Namespace string
+	Ports     []*PortMap
 }
 
 //NewService is the service ctor
-func NewService(name, username string, port, targetPort int) *Service {
-	username = strings.Replace(username, ".", "-", -1)
+func NewService(name, username string, ports []*PortMap) *Service {
 	namespace := usernameToNamespace(username)
+	for i, port := range ports {
+		if len(port.Name) == 0 {
+			port.Name = fmt.Sprintf("port-%d", i)
+		}
+	}
 	return &Service{
-		Name:       name,
-		Namespace:  namespace,
-		Port:       port,
-		TargetPort: targetPort,
+		Name:      name,
+		Namespace: namespace,
+		Ports:     ports,
 	}
 }
 
@@ -59,19 +72,19 @@ func NewService(name, username string, port, targetPort int) *Service {
 func (s *Service) Expose(clientset kubernetes.Interface) (*v1.Service, error) {
 	tmpl, err := template.New("expose").Parse(serviceYaml)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	buf := new(bytes.Buffer)
 	err = tmpl.Execute(buf, s)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	decoder := api.Codecs.UniversalDecoder()
 	obj, _, err := decoder.Decode(buf.Bytes(), nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
 	src := obj.(*api.Service)
@@ -79,14 +92,26 @@ func (s *Service) Expose(clientset kubernetes.Interface) (*v1.Service, error) {
 
 	err = api.Scheme.Convert(src, dst, 0)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 
-	return clientset.CoreV1().Services(s.Namespace).Create(dst)
+	service, err := clientset.CoreV1().Services(s.Namespace).Create(dst)
+
+	if err != nil {
+		return nil, errors.NewKubernetesError("create service error", err)
+	}
+
+	return service, nil
 }
 
 //Delete deletes service
 func (s *Service) Delete(clientset kubernetes.Interface) error {
 	deleteOptions := &v1.DeleteOptions{}
-	return clientset.CoreV1().Services(s.Namespace).Delete(s.Name, deleteOptions)
+
+	err := clientset.CoreV1().Services(s.Namespace).Delete(s.Name, deleteOptions)
+	if err != nil {
+		return errors.NewKubernetesError("create service error", err)
+	}
+
+	return nil
 }

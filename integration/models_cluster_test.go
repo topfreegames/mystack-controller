@@ -20,39 +20,49 @@ var _ = Describe("Cluster", func() {
 services:
   test0:
     image: svc1
-    port: 5000
+    ports: 
+      - 5000:5001
 apps:
   test1:
     image: app1
-    port: 5000
+    ports: 
+      - 5000:5001
   test2:
     image: app2
-    port: 5000
+    ports: 
+      - 5000:5001
   test3:
     image: app3
-    port: 5000
+    ports: 
+      - 5000:5001
 `
 		clusterName = "myCustomApps"
 		username    = "user"
-		port        = 5000
 		namespace   = "mystack-user"
 	)
-	var err error
+	var (
+		err     error
+		ports   = []int{5001}
+		portMap = []*PortMap{
+			&PortMap{Port: 5000, TargetPort: 5001},
+		}
+	)
 
 	mockCluster := func(username string) *Cluster {
 		return &Cluster{
 			Username:  username,
 			Namespace: namespace,
 			Deployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", port, nil),
-				NewDeployment("test1", username, "app1", port, nil),
-				NewDeployment("test2", username, "app2", port, nil),
-				NewDeployment("test3", username, "app3", port, nil),
+				NewDeployment("test0", username, "svc1", ports, nil),
+				NewDeployment("test1", username, "app1", ports, nil),
+				NewDeployment("test2", username, "app2", ports, nil),
+				NewDeployment("test3", username, "app3", ports, nil),
 			},
 			Services: []*Service{
-				NewService("test1", username, 80, port),
-				NewService("test2", username, 80, port),
-				NewService("test3", username, 80, port),
+				NewService("test0", username, portMap),
+				NewService("test1", username, portMap),
+				NewService("test2", username, portMap),
+				NewService("test3", username, portMap),
 			},
 		}
 	}

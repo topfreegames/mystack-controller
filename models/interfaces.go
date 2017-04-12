@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	//ClientIDEnvVar defines the name of the environmental variable
+	//ClientIDEnvVar defines the name of the environment variable
 	ClientIDEnvVar = "MYSTACK_GOOGLE_CLIENT_ID"
-	//ClientSecretEnvVar defines the name of the environmental variable
+	//ClientSecretEnvVar defines the name of the environment variable
 	ClientSecretEnvVar = "MYSTACK_GOOGLE_CLIENT_SECRET"
 )
 

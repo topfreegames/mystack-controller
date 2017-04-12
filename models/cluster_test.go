@@ -28,17 +28,25 @@ var _ = Describe("Cluster", func() {
 services:
   test0:
     image: svc1
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
 apps:
   test1:
     image: app1
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
   test2:
     image: app2
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
   test3:
     image: app3
-    port: 5000
+    ports: 
+      - "5000"
+      - "5001:5002"
 `
 	)
 	var (
@@ -50,7 +58,11 @@ apps:
 		clientset   *fake.Clientset
 		username    = "user"
 		namespace   = "mystack-user"
-		port        = 5000
+		ports       = []int{5000, 5002}
+		portMaps    = []*PortMap{
+			&PortMap{Port: 5000, TargetPort: 5000},
+			&PortMap{Port: 5001, TargetPort: 5002},
+		}
 		labelMap    = labels.Set{"mystack/routable": "true"}
 		listOptions = v1.ListOptions{
 			LabelSelector: labelMap.AsSelector().String(),
@@ -63,56 +75,52 @@ apps:
 			Username:  username,
 			Namespace: namespace,
 			Deployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", port, nil),
-				NewDeployment("test1", username, "app1", port, nil),
-				NewDeployment("test2", username, "app2", port, nil),
-				NewDeployment("test3", username, "app3", port, nil),
+				NewDeployment("test0", username, "svc1", ports, nil),
+				NewDeployment("test1", username, "app1", ports, nil),
+				NewDeployment("test2", username, "app2", ports, nil),
+				NewDeployment("test3", username, "app3", ports, nil),
 			},
 			Services: []*Service{
-				NewService("test1", username, 80, port),
-				NewService("test2", username, 80, port),
-				NewService("test3", username, 80, port),
+				NewService("test0", username, portMaps),
+				NewService("test1", username, portMaps),
+				NewService("test2", username, portMaps),
+				NewService("test3", username, portMaps),
 			},
 		}
 	}
 
 	BeforeEach(func() {
 		clientset = fake.NewSimpleClientset()
-		db, mock, err = sqlmock.New()
-		Expect(err).NotTo(HaveOccurred())
-		sqlxDB = sqlx.NewDb(db, "postgres")
 	})
 
 	Describe("NewCluster", func() {
-		It("should return cluster from config on DB", func() {
-			defer db.Close()
+		BeforeEach(func() {
+			db, mock, err = sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			sqlxDB = sqlx.NewDb(db, "postgres")
+		})
 
+		AfterEach(func() {
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+			db.Close()
+		})
+
+		It("should return cluster from config on DB", func() {
 			mockedCluster := mockCluster(username)
 
-			mock.
-				ExpectExec("INSERT INTO clusters").
-				WithArgs(clusterName, yaml1).
-				WillReturnResult(sqlmock.NewResult(1, 1))
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			err = WriteClusterConfig(sqlxDB, clusterName, yaml1)
-			Expect(err).NotTo(HaveOccurred())
-
 			cluster, err := NewCluster(sqlxDB, username, clusterName)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.Deployments).To(ConsistOf(mockedCluster.Deployments))
 			Expect(cluster.Services).To(ConsistOf(mockedCluster.Services))
-
-			err = mock.ExpectationsWereMet()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should return error if clusterName doesn't exists on DB", func() {
-			defer db.Close()
-
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -121,9 +129,19 @@ apps:
 			cluster, err := NewCluster(sqlxDB, username, clusterName)
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("sql: no rows in result set"))
+		})
 
-			err = mock.ExpectationsWereMet()
-			Expect(err).NotTo(HaveOccurred())
+		It("should return error if empty clusterName", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			Expect(cluster).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("sql: no rows in result set"))
 		})
 	})
 
@@ -139,7 +157,7 @@ apps:
 
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(services.Items).To(HaveLen(3))
+			Expect(services.Items).To(HaveLen(4))
 		})
 
 		It("should return error if creating same cluster twice", func() {
@@ -149,6 +167,7 @@ apps:
 
 			err = cluster.Create(clientset)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Namespace \"mystack-user\" already exists"))
 		})
 	})
 
@@ -201,7 +220,15 @@ apps:
 
 			services, err = clientset.CoreV1().Services("mystack-user2").List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(services.Items).To(HaveLen(3))
+			Expect(services.Items).To(HaveLen(4))
+		})
+
+		It("should return error when deleting non existing cluster", func() {
+			cluster := mockCluster(username)
+
+			err = cluster.Delete(clientset)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Service \"test0\" not found"))
 		})
 	})
 })

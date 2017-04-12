@@ -26,7 +26,7 @@ var _ = Describe("Login", func() {
 			}
 			_, err := GenerateLoginURL(state, credentials)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Define your app's OAuth2 Client ID on MYSTACK_GOOGLE_CLIENT_ID environmental varianle and run again"))
+			Expect(err.Error()).To(Equal("Define your app's OAuth2 Client ID on MYSTACK_GOOGLE_CLIENT_ID environment variable and run again"))
 		})
 
 		It("should return error for empty Key", func() {
@@ -37,7 +37,7 @@ var _ = Describe("Login", func() {
 			}
 			_, err := GenerateLoginURL(state, credentials)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Define your app's OAuth2 Client Secret on MYSTACK_GOOGLE_CLIENT_SECRET environmental varianle and run again"))
+			Expect(err.Error()).To(Equal("Define your app's OAuth2 Client Secret on MYSTACK_GOOGLE_CLIENT_SECRET environment variable and run again"))
 		})
 	})
 })
