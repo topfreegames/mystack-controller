@@ -1,0 +1,47 @@
+# mystack-controller api
+# https://github.com/topfreegames/mystack-controller
+#
+# Licensed under the MIT license:
+# http://www.opensource.org/licenses/mit-license
+# Copyright © 2017 Top Free Games <backend@tfgco.com>
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mystack-controller
+  namespace: mystack
+spec:
+  selector:
+    app: mystack-controller
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mystack-controller
+  namespace: mystack
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mystack-controller
+    spec:
+      containers:
+        - name: controller
+          image: tfgco/mystack-controller:v1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MYSTACK_POSTGRES_HOST
+              value: "10.0.0.10"
+            - name: MYSTACK_POSTGRES_PORT
+              value: "8585"
+            - name: MYSTACK_GOOGLE_CLIENT_ID
+              value: ""
+            - name: MYSTACK_GOOGLE_CLIENT_SECRET
+              value: ""
