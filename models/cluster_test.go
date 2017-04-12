@@ -49,6 +49,9 @@ apps:
     ports: 
       - "5000"
       - "5001:5002"
+    env:
+      - name: VARIABLE_1
+        value: 100
 `
 	)
 	var (
@@ -80,7 +83,9 @@ apps:
 				NewDeployment("test0", username, "svc1", ports, nil),
 				NewDeployment("test1", username, "app1", ports, nil),
 				NewDeployment("test2", username, "app2", ports, nil),
-				NewDeployment("test3", username, "app3", ports, nil),
+				NewDeployment("test3", username, "app3", ports, []*EnvVar{
+					&EnvVar{Name: "VARIABLE_1", Value: "100"},
+				}),
 			},
 			Services: []*Service{
 				NewService("test0", username, portMaps),
@@ -88,7 +93,9 @@ apps:
 				NewService("test2", username, portMaps),
 				NewService("test3", username, portMaps),
 			},
-			Setup: NewJob(username, "setup-img", []*EnvVar{}),
+			Setup: NewJob(username, "setup-img", []*EnvVar{
+				&EnvVar{Name: "VARIABLE_1", Value: "100"},
+			}),
 		}
 	}
 
