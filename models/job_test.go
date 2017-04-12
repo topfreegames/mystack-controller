@@ -54,6 +54,8 @@ var _ = Describe("Job", func() {
 			Expect(k8sJob.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
 			Expect(k8sJob.ObjectMeta.Labels["app"]).To(Equal("setup"))
 			Expect(k8sJob.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Name).To(Equal("DATABASE_URL"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("postgresql://derp"))
 
 			jobs, err := clientset.BatchV1().Jobs(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())

@@ -81,6 +81,8 @@ var _ = Describe("Deployment", func() {
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
+			Expect(deploy.Spec.Template.Spec.Containers[0].Env[0].Name).To(Equal("DATABASE_URL"))
+			Expect(deploy.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("postgres://derp:1234@example.com"))
 		})
 
 		It("should return error if duplicate deployment", func() {
