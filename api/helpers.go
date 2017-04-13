@@ -76,6 +76,11 @@ func usernameFromEmail(email string) string {
 
 func log(logger logrus.FieldLogger, format string, args ...interface{}) {
 	if logger != nil {
+		if len(args) == 0 {
+			logger.Info(format)
+			return
+		}
+
 		logger.Infof(format, args)
 	}
 }

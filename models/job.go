@@ -56,6 +56,10 @@ type Job struct {
 
 //NewJob is the job ctor
 func NewJob(username, image string, environment []*EnvVar) *Job {
+	if len(image) == 0 {
+		return nil
+	}
+
 	namespace := usernameToNamespace(username)
 	return &Job{
 		Name:        "setup",

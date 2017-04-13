@@ -24,6 +24,9 @@ func (*JobReadiness) WaitForCompletion(clientset kubernetes.Interface, j interfa
 	}
 
 	job := j.(*Job)
+	if job == nil {
+		return nil
+	}
 
 	k8sJob, err := clientset.BatchV1().Jobs(job.Namespace).Get(job.Name)
 	if err != nil {
