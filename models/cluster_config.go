@@ -118,3 +118,28 @@ func ParseYaml(yamlStr string) (*ClusterConfig, error) {
 
 	return &clusterConfig, nil
 }
+
+//ListClusterConfig return the list of saved cluster configs
+func ListClusterConfig(db DB) ([]string, error) {
+	names := []string{}
+	query := "SELECT name FROM clusters"
+	err := db.Select(&names, query)
+
+	if err != nil {
+		return nil, errors.NewDatabaseError(err)
+	}
+
+	return names, nil
+}
+
+//ClusterConfigDetails return the cluster config yaml
+func ClusterConfigDetails(db DB, clusterName string) (string, error) {
+	var yamlStr string
+	query := "SELECT yaml FROM clusters WHERE name = $1"
+	err := db.Get(&yamlStr, query, clusterName)
+	if err != nil {
+		return "", errors.NewDatabaseError(err)
+	}
+
+	return yamlStr, nil
+}

@@ -32,6 +32,8 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (l *LoginHandler) generateURL(w http.ResponseWriter, r *http.Request) {
 	logger := loggerFromContext(r.Context())
+	log(logger, "Generating log in URL")
+
 	oauthState := r.FormValue("state")
 	if len(oauthState) == 0 {
 		l.App.HandleError(w, http.StatusBadRequest, "state must not be empty", fmt.Errorf("state must not be empty"))
@@ -48,9 +50,13 @@ func (l *LoginHandler) generateURL(w http.ResponseWriter, r *http.Request) {
 	body := fmt.Sprintf(`{"url": "%s"}`, url)
 
 	Write(w, http.StatusOK, body)
+	log(logger, "Login URL generated")
 }
 
 func (l *LoginHandler) exchangeAccess(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
+	log(logger, "Getting access token")
+
 	authCode := r.FormValue("code")
 	if len(authCode) == 0 {
 		l.App.HandleError(w, http.StatusBadRequest, "state must not be empty", fmt.Errorf("state must not be empty"))
@@ -66,4 +72,5 @@ func (l *LoginHandler) exchangeAccess(w http.ResponseWriter, r *http.Request) {
 	body := fmt.Sprintf(`{"token": "%s"}`, token)
 
 	Write(w, http.StatusOK, body)
+	log(logger, "Returning access token")
 }

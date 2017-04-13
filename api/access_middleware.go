@@ -41,6 +41,8 @@ func emailFromCtx(ctx context.Context) string {
 //ServeHTTP methods
 func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := loggerFromContext(r.Context())
+	log(logger, "Checking access token")
+
 	token := r.Header.Get("Authorization")
 	token = strings.TrimPrefix(token, "Bearer ")
 	url := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s", token)
@@ -87,6 +89,8 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := NewContextWithEmail(r.Context(), email)
+
+	log(logger, "Access token checked")
 	m.next.ServeHTTP(w, r.WithContext(ctx))
 }
 

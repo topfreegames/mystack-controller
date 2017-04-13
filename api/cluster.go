@@ -29,8 +29,11 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
 	email := emailFromCtx(r.Context())
 	username := usernameFromEmail(email)
+
+	log(logger, "Creating cluster for user %d", username)
 	clusterName := GetClusterName(r)
 
 	cluster, err := models.NewCluster(
@@ -52,11 +55,15 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Write(w, http.StatusOK, `{"status": "ok"}`)
+	log(logger, "Cluster successfully created for user %s", username)
 }
 
 func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
 	email := emailFromCtx(r.Context())
 	username := usernameFromEmail(email)
+
+	log(logger, "Deleting cluster for user %d", username)
 	clusterName := GetClusterName(r)
 
 	cluster, err := models.NewCluster(
@@ -80,4 +87,5 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Write(w, http.StatusOK, `{"status": "ok"}`)
+	log(logger, "Cluster deleted for user %d", username)
 }

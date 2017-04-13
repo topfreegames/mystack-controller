@@ -331,4 +331,50 @@ services {
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.GenericError"))
 		})
 	})
+
+	Describe("ListClusterConfig", func() {
+		It("should list cluster configs", func() {
+			mock.
+				ExpectQuery("^SELECT name FROM clusters$").
+				WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("cluster1").AddRow("cluster2"))
+
+			names, err := ListClusterConfig(sqlxDB)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(names).To(ConsistOf("cluster1", "cluster2"))
+		})
+
+		It("should return error if list is empty", func() {
+			mock.
+				ExpectQuery("^SELECT name FROM clusters$").
+				WillReturnRows(sqlmock.NewRows([]string{"name"}))
+
+			names, err := ListClusterConfig(sqlxDB)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(names).To(BeEmpty())
+		})
+	})
+
+	Describe("ClusterConfigDetails", func() {
+		It("should return cluster config yaml", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name(.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			config, err := ClusterConfigDetails(sqlxDB, clusterName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(config).To(Equal(yaml1))
+		})
+
+		It("should return error if name doesn't exist", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name(.+)$").
+				WithArgs(clusterName).
+				WillReturnError(fmt.Errorf(`pq: no rows in result set`))
+
+			config, err := ClusterConfigDetails(sqlxDB, clusterName)
+			Expect(err).To(HaveOccurred())
+			Expect(config).To(BeEmpty())
+		})
+	})
 })

@@ -29,6 +29,7 @@ type Credentials interface {
 type DB interface {
 	NamedExec(query string, arg interface{}) (sql.Result, error)
 	Get(dest interface{}, query string, args ...interface{}) error
+	Select(dest interface{}, query string, args ...interface{}) error
 }
 
 //Readiness is the interface that tell how much time to wait until
