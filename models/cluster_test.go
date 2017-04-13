@@ -183,9 +183,17 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services.Items).To(HaveLen(4))
 
-			jobs, err := clientset.BatchV1().Jobs(namespace).List(listOptions)
+			k8sJob, err := clientset.BatchV1().Jobs(namespace).Get("setup")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(jobs.Items).To(HaveLen(1))
+			Expect(k8sJob).NotTo(BeNil())
+			Expect(k8sJob.ObjectMeta.Namespace).To(Equal(namespace))
+			Expect(k8sJob.ObjectMeta.Name).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
+			Expect(k8sJob.ObjectMeta.Labels["app"]).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Name).To(Equal("VARIABLE_1"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("100"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Image).To(Equal("setup-img"))
 		})
 
 		It("should return error if creating same cluster twice", func() {

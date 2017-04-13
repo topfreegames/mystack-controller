@@ -15,22 +15,14 @@ import (
 	. "github.com/onsi/gomega"
 
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/fields"
-	"k8s.io/client-go/pkg/labels"
 )
 
 var _ = Describe("Job", func() {
 	var (
-		username    = "user"
-		image       = "setup-img"
-		clientset   *fake.Clientset
-		namespace   = "mystack-user"
-		labelMap    = labels.Set{"mystack/routable": "true"}
-		listOptions = v1.ListOptions{
-			LabelSelector: labelMap.AsSelector().String(),
-			FieldSelector: fields.Everything().String(),
-		}
+		username  = "user"
+		image     = "setup-img"
+		clientset *fake.Clientset
+		namespace = "mystack-user"
 	)
 
 	BeforeEach(func() {
@@ -57,9 +49,17 @@ var _ = Describe("Job", func() {
 			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Name).To(Equal("DATABASE_URL"))
 			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("postgresql://derp"))
 
-			jobs, err := clientset.BatchV1().Jobs(namespace).List(listOptions)
+			k8sJob, err = clientset.BatchV1().Jobs(namespace).Get(job.Name)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(jobs.Items).To(HaveLen(1))
+			Expect(k8sJob).NotTo(BeNil())
+			Expect(k8sJob.ObjectMeta.Namespace).To(Equal(namespace))
+			Expect(k8sJob.ObjectMeta.Name).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
+			Expect(k8sJob.ObjectMeta.Labels["app"]).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Name).To(Equal("DATABASE_URL"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("postgresql://derp"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Image).To(Equal("setup-img"))
 		})
 
 		It("should not run job without namespace", func() {

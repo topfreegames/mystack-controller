@@ -26,7 +26,6 @@ metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
   labels:
-    mystack/routable: "true"
     mystack/owner: {{.Username}}
     app: {{.Name}}
     heritage: mystack
