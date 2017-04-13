@@ -13,17 +13,11 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-//EnvVar has name and value of an environment value
-type EnvVar struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
-}
-
-//ClusterAppConfig defines the configuration of an app
-type ClusterAppConfig struct {
-	Image       string    `yaml:"image"`
-	Ports       []string  `yaml:"ports"`
-	Environment []*EnvVar `yaml:"env,flow"`
+//ClusterConfig contains the elements of a config file
+type ClusterConfig struct {
+	Setup    map[string]string            `yaml:"setup"`
+	Services map[string]*ClusterAppConfig `yaml:"services"`
+	Apps     map[string]*ClusterAppConfig `yaml:"apps"`
 }
 
 //LoadClusterConfig reads DB and create map with cluster configuration
@@ -111,13 +105,6 @@ func RemoveClusterConfig(
 		return errors.NewDatabaseError(err)
 	}
 	return nil
-}
-
-//ClusterConfig contains the elements of a config file
-type ClusterConfig struct {
-	Setup    map[string]string            `yaml:"setup"`
-	Services map[string]*ClusterAppConfig `yaml:"services"`
-	Apps     map[string]*ClusterAppConfig `yaml:"apps"`
 }
 
 //ParseYaml convert string to maps

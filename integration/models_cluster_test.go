@@ -12,6 +12,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/models"
+
+	mTest "github.com/topfreegames/mystack-controller/testing"
 )
 
 var _ = Describe("Cluster", func() {
@@ -52,17 +54,21 @@ apps:
 		return &Cluster{
 			Username:  username,
 			Namespace: namespace,
-			Deployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", ports, nil),
-				NewDeployment("test1", username, "app1", ports, nil),
-				NewDeployment("test2", username, "app2", ports, nil),
-				NewDeployment("test3", username, "app3", ports, nil),
+			AppDeployments: []*Deployment{
+				NewDeployment("test1", username, "app1", ports, nil, nil),
+				NewDeployment("test2", username, "app2", ports, nil, nil),
+				NewDeployment("test3", username, "app3", ports, nil, nil),
 			},
-			Services: []*Service{
-				NewService("test0", username, portMap),
+			SvcDeployments: []*Deployment{
+				NewDeployment("test0", username, "svc1", ports, nil, nil),
+			},
+			AppServices: []*Service{
 				NewService("test1", username, portMap),
 				NewService("test2", username, portMap),
 				NewService("test3", username, portMap),
+			},
+			SvcServices: []*Service{
+				NewService("test0", username, portMap),
 			},
 		}
 	}
@@ -72,16 +78,18 @@ apps:
 			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
-			cluster, err := NewCluster(db, username, clusterName)
+			cluster, err := NewCluster(db, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
 
 			mockedCluster := mockCluster(username)
-			Expect(cluster.Deployments).To(ConsistOf(mockedCluster.Deployments))
-			Expect(cluster.Services).To(ConsistOf(mockedCluster.Services))
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
+			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
+			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
 		})
 
 		It("should return error if cluster name not found", func() {
-			cluster, err := NewCluster(db, username, clusterName)
+			cluster, err := NewCluster(db, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).To(HaveOccurred())
 			Expect(cluster).To(BeNil())
 		})

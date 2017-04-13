@@ -26,6 +26,9 @@ services:
     image: postgres:1.0
     ports:
       - 8585:5432
+    readinessProbe:
+      command:
+        - pg_isready
   redis:
     image: redis:1.0
     ports:
@@ -85,6 +88,10 @@ var _ = Describe("ClusterConfig", func() {
 
 			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
 			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
+			Expect(clusterConfig.Services["postgres"].ReadinessProbe).To(BeEquivalentTo(&Probe{
+				Command: []string{"pg_isready"},
+			}))
+
 			Expect(clusterConfig.Services["redis"].Image).To(Equal("redis:1.0"))
 			Expect(clusterConfig.Services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
 
@@ -214,6 +221,10 @@ services {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
 			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
+			Expect(clusterConfig.Services["postgres"].ReadinessProbe).To(BeEquivalentTo(&Probe{
+				Command: []string{"pg_isready"},
+			}))
+
 			Expect(clusterConfig.Services["redis"].Image).To(Equal("redis:1.0"))
 			Expect(clusterConfig.Services["redis"].Ports).To(BeEquivalentTo([]string{"6379"}))
 

@@ -15,6 +15,7 @@ import (
 
 	"database/sql"
 	"github.com/jmoiron/sqlx"
+	mTest "github.com/topfreegames/mystack-controller/testing"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
@@ -33,6 +34,10 @@ services:
     ports: 
       - "5000"
       - "5001:5002"
+    readinessProbe:
+      command:
+        - echo
+        - ready
 apps:
   test1:
     image: app1
@@ -79,23 +84,29 @@ apps:
 		return &Cluster{
 			Username:  username,
 			Namespace: namespace,
-			Deployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", ports, nil),
-				NewDeployment("test1", username, "app1", ports, nil),
-				NewDeployment("test2", username, "app2", ports, nil),
+			AppDeployments: []*Deployment{
+				NewDeployment("test1", username, "app1", ports, nil, nil),
+				NewDeployment("test2", username, "app2", ports, nil, nil),
 				NewDeployment("test3", username, "app3", ports, []*EnvVar{
 					&EnvVar{Name: "VARIABLE_1", Value: "100"},
-				}),
+				}, nil),
 			},
-			Services: []*Service{
-				NewService("test0", username, portMaps),
+			SvcDeployments: []*Deployment{
+				NewDeployment("test0", username, "svc1", ports, nil, &Probe{Command: []string{"echo", "ready"}}),
+			},
+			AppServices: []*Service{
 				NewService("test1", username, portMaps),
 				NewService("test2", username, portMaps),
 				NewService("test3", username, portMaps),
 			},
+			SvcServices: []*Service{
+				NewService("test0", username, portMaps),
+			},
 			Setup: NewJob(username, "setup-img", []*EnvVar{
 				&EnvVar{Name: "VARIABLE_1", Value: "100"},
 			}),
+			DeploymentReadiness: &mTest.MockReadiness{},
+			JobReadiness:        &mTest.MockReadiness{},
 		}
 	}
 
@@ -124,10 +135,12 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cluster.Deployments).To(ConsistOf(mockedCluster.Deployments))
-			Expect(cluster.Services).To(ConsistOf(mockedCluster.Services))
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
+			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
+			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
 			Expect(cluster.Setup).To(Equal(mockedCluster.Setup))
 		})
 
@@ -137,7 +150,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
@@ -149,7 +162,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
@@ -262,7 +275,7 @@ apps:
 
 			err = cluster.Delete(clientset)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Service \"test0\" not found"))
+			Expect(err.Error()).To(Equal("Service \"test1\" not found"))
 		})
 	})
 })

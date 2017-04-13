@@ -16,6 +16,7 @@ import (
 	. "github.com/topfreegames/mystack-controller/api"
 	"github.com/topfreegames/mystack-controller/models"
 
+	mTest "github.com/topfreegames/mystack-controller/testing"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"net/http"
 	"net/http/httptest"
@@ -151,7 +152,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName)
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
 			err = cluster.Create(app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -192,7 +193,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnError(fmt.Errorf("sql: no rows in result set"))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName)
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
 			err = cluster.Create(app.Clientset)
 			Expect(err).NotTo(HaveOccurred())

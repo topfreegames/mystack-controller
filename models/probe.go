@@ -20,6 +20,10 @@ type Probe struct {
 //Return 0 if exit code was 0 (successfully executed)
 //Return 1 otherwise
 func (p *Probe) Status() int {
+	if p == nil {
+		return 0
+	}
+
 	cmd := p.Command[0]
 	args := p.Command[1:]
 

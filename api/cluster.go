@@ -33,7 +33,13 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 	username := usernameFromEmail(email)
 	clusterName := GetClusterName(r)
 
-	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
+	cluster, err := models.NewCluster(
+		c.App.DB,
+		username,
+		clusterName,
+		c.App.DeploymentReadiness,
+		c.App.JobReadiness,
+	)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
@@ -53,7 +59,13 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	username := usernameFromEmail(email)
 	clusterName := GetClusterName(r)
 
-	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
+	cluster, err := models.NewCluster(
+		c.App.DB,
+		username,
+		clusterName,
+		c.App.DeploymentReadiness,
+		c.App.JobReadiness,
+	)
 	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
 		cluster = &models.Cluster{Username: username}
 	} else if err != nil {
