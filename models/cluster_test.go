@@ -15,6 +15,7 @@ import (
 
 	"database/sql"
 	"github.com/jmoiron/sqlx"
+	mTest "github.com/topfreegames/mystack-controller/testing"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
@@ -25,12 +26,18 @@ import (
 var _ = Describe("Cluster", func() {
 	const (
 		yaml1 = `
+setup:
+  image: setup-img
 services:
   test0:
     image: svc1
     ports: 
       - "5000"
       - "5001:5002"
+    readinessProbe:
+      command:
+        - echo
+        - ready
 apps:
   test1:
     image: app1
@@ -47,6 +54,9 @@ apps:
     ports: 
       - "5000"
       - "5001:5002"
+    env:
+      - name: VARIABLE_1
+        value: 100
 `
 	)
 	var (
@@ -74,18 +84,29 @@ apps:
 		return &Cluster{
 			Username:  username,
 			Namespace: namespace,
-			Deployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", ports, nil),
-				NewDeployment("test1", username, "app1", ports, nil),
-				NewDeployment("test2", username, "app2", ports, nil),
-				NewDeployment("test3", username, "app3", ports, nil),
+			AppDeployments: []*Deployment{
+				NewDeployment("test1", username, "app1", ports, nil, nil),
+				NewDeployment("test2", username, "app2", ports, nil, nil),
+				NewDeployment("test3", username, "app3", ports, []*EnvVar{
+					&EnvVar{Name: "VARIABLE_1", Value: "100"},
+				}, nil),
 			},
-			Services: []*Service{
-				NewService("test0", username, portMaps),
+			SvcDeployments: []*Deployment{
+				NewDeployment("test0", username, "svc1", ports, nil, &Probe{Command: []string{"echo", "ready"}}),
+			},
+			AppServices: []*Service{
 				NewService("test1", username, portMaps),
 				NewService("test2", username, portMaps),
 				NewService("test3", username, portMaps),
 			},
+			SvcServices: []*Service{
+				NewService("test0", username, portMaps),
+			},
+			Setup: NewJob(username, "setup-img", []*EnvVar{
+				&EnvVar{Name: "VARIABLE_1", Value: "100"},
+			}),
+			DeploymentReadiness: &mTest.MockReadiness{},
+			JobReadiness:        &mTest.MockReadiness{},
 		}
 	}
 
@@ -114,10 +135,13 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cluster.Deployments).To(ConsistOf(mockedCluster.Deployments))
-			Expect(cluster.Services).To(ConsistOf(mockedCluster.Services))
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
+			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
+			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
+			Expect(cluster.Setup).To(Equal(mockedCluster.Setup))
 		})
 
 		It("should return error if clusterName doesn't exists on DB", func() {
@@ -126,7 +150,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
@@ -138,7 +162,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName)
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
@@ -158,6 +182,18 @@ apps:
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services.Items).To(HaveLen(4))
+
+			k8sJob, err := clientset.BatchV1().Jobs(namespace).Get("setup")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(k8sJob).NotTo(BeNil())
+			Expect(k8sJob.ObjectMeta.Namespace).To(Equal(namespace))
+			Expect(k8sJob.ObjectMeta.Name).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
+			Expect(k8sJob.ObjectMeta.Labels["app"]).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Name).To(Equal("VARIABLE_1"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("100"))
+			Expect(k8sJob.Spec.Template.Spec.Containers[0].Image).To(Equal("setup-img"))
 		})
 
 		It("should return error if creating same cluster twice", func() {
@@ -168,6 +204,25 @@ apps:
 			err = cluster.Create(clientset)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Namespace \"mystack-user\" already exists"))
+		})
+
+		It("should run without setup image", func() {
+			cluster := mockCluster(username)
+			cluster.Setup = nil
+			err := cluster.Create(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(4))
+
+			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(services.Items).To(HaveLen(4))
+
+			jobs, err := clientset.BatchV1().Jobs(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jobs.Items).To(BeEmpty())
 		})
 	})
 
@@ -228,7 +283,7 @@ apps:
 
 			err = cluster.Delete(clientset)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Service \"test0\" not found"))
+			Expect(err.Error()).To(Equal("Service \"test1\" not found"))
 		})
 	})
 })

@@ -8,6 +8,7 @@
 package api
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/topfreegames/mystack-controller/errors"
 	"net/http"
@@ -71,4 +72,15 @@ func usernameFromEmail(email string) string {
 	username := strings.Split(email, "@")[0]
 	username = strings.Replace(username, ".", "-", -1)
 	return username
+}
+
+func log(logger logrus.FieldLogger, format string, args ...interface{}) {
+	if logger != nil {
+		if len(args) == 0 {
+			logger.Info(format)
+			return
+		}
+
+		logger.Infof(format, args)
+	}
 }

@@ -52,10 +52,14 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	app, err = api.NewApp("0.0.0.0", 8889, config, false, l, clientset)
 	Expect(err).NotTo(HaveOccurred())
+	app.DeploymentReadiness = &oTesting.MockReadiness{}
+	app.JobReadiness = &oTesting.MockReadiness{}
 })
 
 var _ = BeforeEach(func() {
 	var err error
+	clientset = fake.NewSimpleClientset()
+	app.Clientset = clientset
 	db, err = conn.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 	app.DB = db

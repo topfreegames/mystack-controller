@@ -9,6 +9,7 @@ package models
 
 import (
 	"database/sql"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -28,4 +29,12 @@ type Credentials interface {
 type DB interface {
 	NamedExec(query string, arg interface{}) (sql.Result, error)
 	Get(dest interface{}, query string, args ...interface{}) error
+	Select(dest interface{}, query string, args ...interface{}) error
+}
+
+//Readiness is the interface that tell how much time to wait until
+//the deployment is ready
+//and its readiness probe reports Ready
+type Readiness interface {
+	WaitForCompletion(kubernetes.Interface, interface{}) error
 }

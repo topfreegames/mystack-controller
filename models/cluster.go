@@ -17,37 +17,55 @@ import (
 
 //Cluster represents a k8s cluster for a user
 type Cluster struct {
-	Namespace   string
-	Username    string
-	Deployments []*Deployment
-	Services    []*Service
+	Namespace           string
+	Username            string
+	AppDeployments      []*Deployment
+	SvcDeployments      []*Deployment
+	AppServices         []*Service
+	SvcServices         []*Service
+	Setup               *Job
+	DeploymentReadiness Readiness
+	JobReadiness        Readiness
 }
 
 //NewCluster returns a new cluster ready to start
-func NewCluster(db DB, username, clusterName string) (*Cluster, error) {
+func NewCluster(
+	db DB,
+	username, clusterName string,
+	deploymentReadiness, jobReadiness Readiness,
+) (*Cluster, error) {
 	namespace := usernameToNamespace(username)
 
-	apps, services, err := LoadClusterConfig(db, clusterName)
+	clusterConfig, err := LoadClusterConfig(db, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	portMap := make(map[string][]*PortMap)
-	k8sAppDeployments, err := buildDeployments(apps, username, portMap)
-	k8sSvcDeployments, err := buildDeployments(services, username, portMap)
+	environment := []*EnvVar{}
+	k8sAppDeployments, environment, err := buildDeployments(clusterConfig.Apps, username, portMap, environment)
+	k8sSvcDeployments, environment, err := buildDeployments(clusterConfig.Services, username, portMap, environment)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
-	k8sServices := buildServices(k8sAppDeployments, k8sSvcDeployments, username, portMap)
+	k8sAppServices := buildServices(k8sAppDeployments, username, portMap)
+	k8sSvcServices := buildServices(k8sSvcDeployments, username, portMap)
+
+	k8sJob := NewJob(username, clusterConfig.Setup["image"], environment)
 
 	cluster := &Cluster{
-		Username:    username,
-		Namespace:   namespace,
-		Deployments: append(k8sAppDeployments, k8sSvcDeployments...),
-		Services:    k8sServices,
+		Username:            username,
+		Namespace:           namespace,
+		AppDeployments:      k8sAppDeployments,
+		SvcDeployments:      k8sSvcDeployments,
+		AppServices:         k8sAppServices,
+		SvcServices:         k8sSvcServices,
+		Setup:               k8sJob,
+		DeploymentReadiness: deploymentReadiness,
+		JobReadiness:        jobReadiness,
 	}
 
 	return cluster, nil
@@ -83,39 +101,47 @@ func buildDeployments(
 	types map[string]*ClusterAppConfig,
 	username string,
 	portMap map[string][]*PortMap,
-) ([]*Deployment, error) {
+	environment []*EnvVar,
+) ([]*Deployment, []*EnvVar, error) {
 	deployments := make([]*Deployment, len(types))
 
 	i := 0
 	for name, config := range types {
 		ports, err := getPorts(name, config.Ports, portMap)
 		if err != nil {
-			return nil, err
+			return nil, environment, err
 		}
-		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment)
+		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe)
+		environment = append(environment, config.Environment...)
 		i = i + 1
 	}
 
-	return deployments, nil
+	return deployments, environment, nil
 }
 
 func buildServices(
-	apps []*Deployment,
-	svcs []*Deployment,
+	deploys []*Deployment,
 	username string,
 	portMap map[string][]*PortMap,
 ) []*Service {
-	services := make([]*Service, len(apps)+len(svcs))
+	services := make([]*Service, len(deploys))
 	i := 0
-	for _, svc := range svcs {
-		services[i] = NewService(svc.Name, username, portMap[svc.Name])
-		i = i + 1
-	}
-	for _, app := range apps {
-		services[i] = NewService(app.Name, username, portMap[app.Name])
+	for _, deploy := range deploys {
+		services[i] = NewService(deploy.Name, username, portMap[deploy.Name])
 		i = i + 1
 	}
 	return services
+}
+
+func rollback(clientset kubernetes.Interface, username string, err error) error {
+	nsErr := DeleteNamespace(clientset, username)
+	if nsErr != nil {
+		return errors.NewKubernetesError(
+			"create cluster error",
+			fmt.Errorf("error during cluster creation and could not rollback: %s", nsErr.Error()),
+		)
+	}
+	return err
 }
 
 //Create creates namespace, deployments and services
@@ -125,31 +151,50 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 		return err
 	}
 
-	for _, deployment := range c.Deployments {
-		_, err = deployment.Deploy(clientset)
+	for _, deployment := range c.SvcDeployments {
+		_, err := deployment.Deploy(clientset)
 		if err != nil {
-			nsErr := DeleteNamespace(clientset, c.Username)
-			if nsErr != nil {
-				return errors.NewKubernetesError(
-					"create cluster error",
-					fmt.Errorf("error during cluster creation and could not rollback: %s", nsErr.Error()),
-				)
-			}
-			return err
+			return rollback(clientset, c.Username, err)
 		}
 	}
 
-	for _, service := range c.Services {
+	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.SvcDeployments)
+	if err != nil {
+		return rollback(clientset, c.Username, err)
+	}
+
+	for _, service := range c.SvcServices {
 		_, err = service.Expose(clientset)
 		if err != nil {
-			nsErr := DeleteNamespace(clientset, c.Username)
-			if nsErr != nil {
-				return errors.NewKubernetesError(
-					"create cluster error",
-					fmt.Errorf("error during cluster creation and could not rollback: %s", nsErr.Error()),
-				)
-			}
-			return err
+			return rollback(clientset, c.Username, err)
+		}
+	}
+
+	_, err = c.Setup.Run(clientset)
+	if err != nil {
+		return rollback(clientset, c.Username, err)
+	}
+	err = c.JobReadiness.WaitForCompletion(clientset, c.Setup)
+	if err != nil {
+		return rollback(clientset, c.Username, err)
+	}
+
+	for _, deployment := range c.AppDeployments {
+		_, err := deployment.Deploy(clientset)
+		if err != nil {
+			return rollback(clientset, c.Username, err)
+		}
+	}
+
+	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.AppDeployments)
+	if err != nil {
+		return rollback(clientset, c.Username, err)
+	}
+
+	for _, service := range c.AppServices {
+		_, err = service.Expose(clientset)
+		if err != nil {
+			return rollback(clientset, c.Username, err)
 		}
 	}
 
@@ -159,14 +204,28 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 //Delete deletes namespace and all deployments and services
 func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	var err error
-	for _, service := range c.Services {
+	for _, service := range c.AppServices {
 		err = service.Delete(clientset)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, deployment := range c.Deployments {
+	for _, deployment := range c.AppDeployments {
+		err = deployment.Delete(clientset)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, service := range c.SvcServices {
+		err = service.Delete(clientset)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, deployment := range c.SvcDeployments {
 		err = deployment.Delete(clientset)
 		if err != nil {
 			return err

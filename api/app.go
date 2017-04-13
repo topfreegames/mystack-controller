@@ -25,15 +25,17 @@ import (
 
 //App is our API application
 type App struct {
-	Address     string
-	Config      *viper.Viper
-	DB          models.DB
-	Debug       bool
-	Logger      logrus.FieldLogger
-	Router      *mux.Router
-	Server      *http.Server
-	EmailDomain []string
-	Clientset   kubernetes.Interface
+	Address             string
+	Config              *viper.Viper
+	DB                  models.DB
+	Debug               bool
+	Logger              logrus.FieldLogger
+	Router              *mux.Router
+	Server              *http.Server
+	EmailDomain         []string
+	Clientset           kubernetes.Interface
+	DeploymentReadiness models.Readiness
+	JobReadiness        models.Readiness
 }
 
 //NewApp ctor
@@ -46,12 +48,14 @@ func NewApp(
 	clientset kubernetes.Interface,
 ) (*App, error) {
 	a := &App{
-		Config:      config,
-		Address:     fmt.Sprintf("%s:%d", host, port),
-		Debug:       debug,
-		Logger:      logger,
-		EmailDomain: config.GetStringSlice("oauth.acceptedDomains"),
-		Clientset:   clientset,
+		Config:              config,
+		Address:             fmt.Sprintf("%s:%d", host, port),
+		Debug:               debug,
+		Logger:              logger,
+		EmailDomain:         config.GetStringSlice("oauth.acceptedDomains"),
+		Clientset:           clientset,
+		DeploymentReadiness: &models.DeploymentReadiness{},
+		JobReadiness:        &models.JobReadiness{},
 	}
 	err := a.configureApp()
 	if err != nil {
@@ -109,6 +113,20 @@ func (a *App) getRouter() *mux.Router {
 		&VersionMiddleware{},
 		&AccessMiddleware{App: a},
 	)).Methods("DELETE").Name("cluster-config")
+
+	r.Handle("/cluster-configs", Chain(
+		&ClusterConfigHandler{App: a, Method: "list"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&AccessMiddleware{App: a},
+	)).Methods("GET").Name("cluster-config")
+
+	r.Handle("/cluster-configs/{name}", Chain(
+		&ClusterConfigHandler{App: a, Method: "info"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&AccessMiddleware{App: a},
+	)).Methods("GET").Name("cluster-config")
 
 	r.Handle("/dns", Chain(
 		&DNSHandler{App: a},

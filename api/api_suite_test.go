@@ -40,12 +40,14 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	app = &api.App{
-		Config:      config,
-		Address:     fmt.Sprintf("%s:%d", "0.0.0.0", 8889),
-		Debug:       false,
-		Logger:      l,
-		EmailDomain: config.GetStringSlice("email.domain"),
-		Clientset:   clientset,
+		Config:              config,
+		Address:             fmt.Sprintf("%s:%d", "0.0.0.0", 8889),
+		Debug:               false,
+		Logger:              l,
+		EmailDomain:         config.GetStringSlice("email.domain"),
+		Clientset:           clientset,
+		DeploymentReadiness: &mTest.MockReadiness{},
+		JobReadiness:        &mTest.MockReadiness{},
 	}
 	app.ConfigureServer()
 })

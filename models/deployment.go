@@ -54,24 +54,31 @@ spec:
 
 //Deployment represents a deployment
 type Deployment struct {
-	Name        string
-	Namespace   string
-	Username    string
-	Image       string
-	Ports       []int
-	Environment []*EnvVar
+	Name           string
+	Namespace      string
+	Username       string
+	Image          string
+	Ports          []int
+	Environment    []*EnvVar
+	ReadinessProbe *Probe
 }
 
 //NewDeployment is the deployment ctor
-func NewDeployment(name, username, image string, ports []int, environment []*EnvVar) *Deployment {
+func NewDeployment(
+	name, username, image string,
+	ports []int,
+	environment []*EnvVar,
+	readinessProbe *Probe,
+) *Deployment {
 	namespace := usernameToNamespace(username)
 	return &Deployment{
-		Name:        name,
-		Namespace:   namespace,
-		Username:    username,
-		Image:       image,
-		Ports:       ports,
-		Environment: environment,
+		Name:           name,
+		Namespace:      namespace,
+		Username:       username,
+		Image:          image,
+		Ports:          ports,
+		Environment:    environment,
+		ReadinessProbe: readinessProbe,
 	}
 }
 

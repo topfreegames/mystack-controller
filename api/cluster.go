@@ -29,11 +29,20 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
 	email := emailFromCtx(r.Context())
 	username := usernameFromEmail(email)
+
+	log(logger, "Creating cluster for user %s", username)
 	clusterName := GetClusterName(r)
 
-	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
+	cluster, err := models.NewCluster(
+		c.App.DB,
+		username,
+		clusterName,
+		c.App.DeploymentReadiness,
+		c.App.JobReadiness,
+	)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
@@ -46,14 +55,24 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Write(w, http.StatusOK, `{"status": "ok"}`)
+	log(logger, "Cluster successfully created for user %s", username)
 }
 
 func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
 	email := emailFromCtx(r.Context())
 	username := usernameFromEmail(email)
+
+	log(logger, "Deleting cluster for user %s", username)
 	clusterName := GetClusterName(r)
 
-	cluster, err := models.NewCluster(c.App.DB, username, clusterName)
+	cluster, err := models.NewCluster(
+		c.App.DB,
+		username,
+		clusterName,
+		c.App.DeploymentReadiness,
+		c.App.JobReadiness,
+	)
 	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
 		cluster = &models.Cluster{Username: username}
 	} else if err != nil {
@@ -68,4 +87,5 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Write(w, http.StatusOK, `{"status": "ok"}`)
+	log(logger, "Cluster deleted for user %s", username)
 }

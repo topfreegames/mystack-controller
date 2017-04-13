@@ -198,4 +198,100 @@ iam
 			Expect(bodyJSON["error"]).To(Equal("database error"))
 		})
 	})
+
+	Describe("GET /cluster-configs", func() {
+		var (
+			request *http.Request
+			err     error
+			route   = "/cluster-configs"
+		)
+
+		BeforeEach(func() {
+			request, err = http.NewRequest("GET", route, nil)
+			Expect(err).NotTo(HaveOccurred())
+			clusterConfigHandler.Method = "list"
+		})
+
+		AfterEach(func() {
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return list of cluster configs", func() {
+			mock.
+				ExpectQuery("^SELECT name FROM clusters$").
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow("cluster1").AddRow("cluster2"))
+
+			clusterConfigHandler.ServeHTTP(recorder, request)
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["names"]).To(ConsistOf("cluster1", "cluster2"))
+		})
+
+		It("should not return error is list is empty", func() {
+			mock.
+				ExpectQuery("^SELECT name FROM clusters$").
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
+
+			clusterConfigHandler.ServeHTTP(recorder, request)
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["names"]).To(BeEmpty())
+		})
+	})
+
+	Describe("GET /cluster-configs/{name}", func() {
+		var (
+			request     *http.Request
+			err         error
+			clusterName = "myCustomApps"
+			route       = fmt.Sprintf("/cluster-configs/%s", clusterName)
+		)
+
+		BeforeEach(func() {
+			request, err = http.NewRequest("GET", route, nil)
+			Expect(err).NotTo(HaveOccurred())
+			clusterConfigHandler.Method = "info"
+		})
+
+		AfterEach(func() {
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return info from cluster configs", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name(.+)$").
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			clusterConfigHandler.ServeHTTP(recorder, request)
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+
+			bodyJSON := make(map[string]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["yaml"]).To(Equal(yaml1))
+		})
+
+		It("should return error if cluster name doesn't exist", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name(.+)$").
+				WithArgs(clusterName).
+				WillReturnError(fmt.Errorf("sql: no rows in result set"))
+
+			clusterConfigHandler.ServeHTTP(recorder, request)
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusNotFound))
+		})
+	})
 })

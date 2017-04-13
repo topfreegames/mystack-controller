@@ -18,10 +18,9 @@ type DNSHandler struct {
 
 //ServeHTTP method
 func (d *DNSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	l := loggerFromContext(r.Context())
-
-	l.Debug("Performing DNS...")
+	logger := loggerFromContext(r.Context())
+	log(logger, "Performing DNS")
 
 	Write(w, http.StatusOK, `{"domains": ["test.example.test", "test2.example.test"]}`)
-	l.Debug("DNS done.")
+	log(logger, "DNS done")
 }
