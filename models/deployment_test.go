@@ -98,6 +98,7 @@ var _ = Describe("Deployment", func() {
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
+			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.Handler.Exec.Command).To(Equal(probe.Command))
 
 			dr := &mTest.MockReadiness{}
 			err = dr.WaitForCompletion(clientset, []*Deployment{deployment})

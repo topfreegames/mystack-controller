@@ -38,7 +38,7 @@ func (dr *DeploymentReadiness) WaitForCompletion(clientset kubernetes.Interface,
 		}
 		desiredNumberReplicas := *k8sDeploy.Spec.Replicas
 
-		for desiredNumberReplicas > k8sDeploy.Status.AvailableReplicas || deploy.ReadinessProbe.Status() != 0 {
+		for desiredNumberReplicas > k8sDeploy.Status.AvailableReplicas {
 			k8sDeploy, err = clientset.ExtensionsV1beta1().Deployments(deploy.Namespace).Get(deploy.Name)
 			if err != nil {
 				return err

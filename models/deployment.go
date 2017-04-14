@@ -50,6 +50,19 @@ spec:
             {{range .Ports}}
             - containerPort: {{.}}
             {{end}}
+          {{if .ReadinessProbe}}
+          readinessProbe:
+            exec:
+              command:
+              {{with .ReadinessProbe}}
+              {{range .Command}}
+                - "{{.}}"
+              {{end}}
+              {{end}}
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+          {{end}}
 `
 
 //Deployment represents a deployment
