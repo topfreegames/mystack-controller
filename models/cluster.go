@@ -9,6 +9,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/Sirupsen/logrus"
 	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 	"strconv"
@@ -144,13 +145,30 @@ func rollback(clientset kubernetes.Interface, username string, err error) error 
 	return err
 }
 
+func log(logger logrus.FieldLogger, msg string) {
+	if logger != nil {
+		logger.Debug(msg)
+	}
+}
+
 //Create creates namespace, deployments and services
-func (c *Cluster) Create(clientset kubernetes.Interface) error {
-	err := CreateNamespace(clientset, c.Username)
+func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interface) error {
+	_, err := clientset.CoreV1().Namespaces().Get(c.Namespace)
+	if err == nil {
+		return errors.NewKubernetesError(
+			"create cluster error",
+			fmt.Errorf("namespace for user '%s' already exists", c.Username),
+		)
+	}
+
+	log(logger, "creating namespace")
+	err = CreateNamespace(clientset, c.Username)
 	if err != nil {
 		return err
 	}
+	log(logger, "done creating namespace")
 
+	log(logger, "creating app deployments")
 	for _, deployment := range c.SvcDeployments {
 		_, err := deployment.Deploy(clientset)
 		if err != nil {
@@ -158,27 +176,35 @@ func (c *Cluster) Create(clientset kubernetes.Interface) error {
 		}
 	}
 
+	log(logger, "waiting app deployment completion")
 	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.SvcDeployments)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
+	log(logger, "done creating app deployments")
 
+	log(logger, "creating app services")
 	for _, service := range c.SvcServices {
 		_, err = service.Expose(clientset)
 		if err != nil {
 			return rollback(clientset, c.Username, err)
 		}
 	}
+	log(logger, "done creating app services")
 
+	log(logger, "creating setup job")
 	_, err = c.Setup.Run(clientset)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
+	log(logger, "waiting job completion")
 	err = c.JobReadiness.WaitForCompletion(clientset, c.Setup)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
+	log(logger, "done job setup")
 
+	log(logger, "creating svc deployments")
 	for _, deployment := range c.AppDeployments {
 		_, err := deployment.Deploy(clientset)
 		if err != nil {

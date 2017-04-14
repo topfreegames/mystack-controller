@@ -172,7 +172,7 @@ apps:
 	Describe("Create", func() {
 		It("should create cluster", func() {
 			cluster := mockCluster(username)
-			err := cluster.Create(clientset)
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
@@ -198,18 +198,18 @@ apps:
 
 		It("should return error if creating same cluster twice", func() {
 			cluster := mockCluster(username)
-			err := cluster.Create(clientset)
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = cluster.Create(clientset)
+			err = cluster.Create(nil, clientset)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Namespace \"mystack-user\" already exists"))
+			Expect(err.Error()).To(Equal("namespace for user 'user' already exists"))
 		})
 
 		It("should run without setup image", func() {
 			cluster := mockCluster(username)
 			cluster.Setup = nil
-			err := cluster.Create(clientset)
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
@@ -229,7 +229,7 @@ apps:
 	Describe("Delete", func() {
 		It("should delete cluster", func() {
 			cluster := mockCluster(username)
-			err := cluster.Create(clientset)
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = cluster.Delete(clientset)
@@ -248,11 +248,11 @@ apps:
 
 		It("should delete only specified cluster", func() {
 			cluster1 := mockCluster("user1")
-			err := cluster1.Create(clientset)
+			err := cluster1.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			cluster2 := mockCluster("user2")
-			err = cluster2.Create(clientset)
+			err = cluster2.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = cluster1.Delete(clientset)

@@ -154,7 +154,7 @@ apps:
 
 			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
-			err = cluster.Create(app.Clientset)
+			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx := NewContextWithEmail(request.Context(), "user@example.com")
@@ -195,7 +195,7 @@ apps:
 
 			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
-			err = cluster.Create(app.Clientset)
+			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx := NewContextWithEmail(request.Context(), "user@example.com")
