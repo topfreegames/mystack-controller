@@ -177,8 +177,8 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["description"]).To(Equal("Namespace \"mystack-derp\" not found"))
-			Expect(bodyJSON["error"]).To(Equal("delete namespace error"))
+			Expect(bodyJSON["description"]).To(Equal("namespace for user 'derp' not found"))
+			Expect(bodyJSON["error"]).To(Equal("delete cluster error"))
 			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
 		})
 

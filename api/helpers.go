@@ -51,6 +51,9 @@ func Status(err error) int {
 		if strings.Contains(err.Error(), "not found") {
 			return http.StatusNotFound
 		}
+		if strings.Contains(err.Error(), "already exists") {
+			return http.StatusConflict
+		}
 	}
 
 	return http.StatusInternalServerError

@@ -9,6 +9,7 @@
 package models_test
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/models"
@@ -81,6 +82,7 @@ apps:
 	)
 
 	mockCluster := func(username string) *Cluster {
+		namespace := fmt.Sprintf("mystack-%s", username)
 		return &Cluster{
 			Username:  username,
 			Namespace: namespace,
@@ -283,7 +285,7 @@ apps:
 
 			err = cluster.Delete(clientset)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Service \"test1\" not found"))
+			Expect(err.Error()).To(Equal("namespace for user 'user' not found"))
 		})
 	})
 })

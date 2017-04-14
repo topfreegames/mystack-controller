@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -47,16 +48,19 @@ func toLiteral(bts []byte) []byte {
 func (p *PayloadMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bts, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		p.App.HandleError(w, http.StatusBadRequest, "Error reading body", err)
+		p.App.HandleError(w, http.StatusBadRequest, "error reading body", err)
 		return
 	}
 
 	bts = toLiteral(bts)
 
+	p.App.Logger.Info(fmt.Sprintf("yaml cluster config: %s", string(bts)))
+
 	bodyJSON := make(map[string]string)
 	err = json.Unmarshal(bts, &bodyJSON)
 	if err != nil {
-		p.App.HandleError(w, http.StatusInternalServerError, "Error reading body", err)
+		msg := fmt.Sprintf("error reading body: %s", string(bts))
+		p.App.HandleError(w, http.StatusBadRequest, msg, err)
 		return
 	}
 

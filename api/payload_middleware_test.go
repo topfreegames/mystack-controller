@@ -55,7 +55,7 @@ apps:
 	const yamlFromFile = "services:\n  test0:\n    image: svc1\n    ports:\n        - \"5000\""
 
 	It("should decode valid yaml", func() {
-		payloadMiddleware := &PayloadMiddleware{}
+		payloadMiddleware := &PayloadMiddleware{App: app}
 		request, err := http.NewRequest("PUT", "", mTest.JSONFor(map[string]interface{}{
 			"yaml": validYaml,
 		}))
@@ -70,7 +70,7 @@ apps:
 	})
 
 	It("should decode valid yaml from file", func() {
-		payloadMiddleware := &PayloadMiddleware{}
+		payloadMiddleware := &PayloadMiddleware{App: app}
 		request, err := http.NewRequest("PUT", "", mTest.JSONFor(map[string]interface{}{
 			"yaml": yamlFromFile,
 		}))
@@ -85,7 +85,7 @@ apps:
 	})
 
 	It("should decode valid yaml with tabs", func() {
-		payloadMiddleware := &PayloadMiddleware{}
+		payloadMiddleware := &PayloadMiddleware{App: app}
 		request, err := http.NewRequest("PUT", "", mTest.JSONFor(map[string]interface{}{
 			"yaml": yamlFromFile,
 		}))
@@ -100,7 +100,7 @@ apps:
 	})
 
 	It("should return error if valid inyaml", func() {
-		payloadMiddleware := &PayloadMiddleware{}
+		payloadMiddleware := &PayloadMiddleware{App: app}
 		request, err := http.NewRequest("PUT", "", mTest.JSONFor(map[string]interface{}{
 			"yaml": validYamlWithTabs,
 		}))

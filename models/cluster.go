@@ -212,50 +212,49 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 		}
 	}
 
+	log(logger, "waiting svc deployments completion")
 	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.AppDeployments)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
+	log(logger, "done svc deployment")
 
+	log(logger, "creating svc service")
 	for _, service := range c.AppServices {
 		_, err = service.Expose(clientset)
 		if err != nil {
 			return rollback(clientset, c.Username, err)
 		}
 	}
+	log(logger, "done creating svc service")
 
 	return nil
 }
 
 //Delete deletes namespace and all deployments and services
 func (c *Cluster) Delete(clientset kubernetes.Interface) error {
-	var err error
+	_, err := clientset.CoreV1().Namespaces().Get(c.Namespace)
+	if err != nil {
+		return errors.NewKubernetesError(
+			"delete cluster error",
+			fmt.Errorf("namespace for user '%s' not found", c.Username),
+		)
+	}
+
 	for _, service := range c.AppServices {
-		err = service.Delete(clientset)
-		if err != nil {
-			return err
-		}
+		service.Delete(clientset)
 	}
 
 	for _, deployment := range c.AppDeployments {
-		err = deployment.Delete(clientset)
-		if err != nil {
-			return err
-		}
+		deployment.Delete(clientset)
 	}
 
 	for _, service := range c.SvcServices {
-		err = service.Delete(clientset)
-		if err != nil {
-			return err
-		}
+		service.Delete(clientset)
 	}
 
 	for _, deployment := range c.SvcDeployments {
-		err = deployment.Delete(clientset)
-		if err != nil {
-			return err
-		}
+		deployment.Delete(clientset)
 	}
 
 	err = DeleteNamespace(clientset, c.Username)
