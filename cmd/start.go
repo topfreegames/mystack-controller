@@ -55,7 +55,7 @@ environment variables to override configuration keys.`,
 			cmdL.WithError(err).Fatal("Failed to start kubernetes clientset.")
 		}
 
-		cmdL.Debug("Creating application...")
+		cmdL.Info("Creating application...")
 		app, err := api.NewApp(
 			host,
 			port,
@@ -67,9 +67,9 @@ environment variables to override configuration keys.`,
 		if err != nil {
 			cmdL.WithError(err).Fatal("Failed to start application.")
 		}
-		cmdL.Debug("Application created successfully.")
+		cmdL.Info("Application created successfully.")
 
-		cmdL.Debug("Starting application...")
+		cmdL.Info("Starting application...")
 		closer, err := app.ListenAndServe()
 		if closer != nil {
 			defer closer.Close()

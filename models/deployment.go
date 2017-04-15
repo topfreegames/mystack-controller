@@ -52,16 +52,16 @@ spec:
             {{end}}
           {{if .ReadinessProbe}}
           readinessProbe:
+            {{with .ReadinessProbe}}
             exec:
               command:
-              {{with .ReadinessProbe}}
               {{range .Command}}
                 - "{{.}}"
               {{end}}
-              {{end}}
-            initialDelaySeconds: 5
-            timeoutSeconds: 3
-            periodSeconds: 5
+            {{if .PeriodSeconds}}
+            periodSeconds: {{.PeriodSeconds}}
+            {{end}}
+            {{end}}
           {{end}}
 `
 
@@ -84,6 +84,7 @@ func NewDeployment(
 	readinessProbe *Probe,
 ) *Deployment {
 	namespace := usernameToNamespace(username)
+
 	return &Deployment{
 		Name:           name,
 		Namespace:      namespace,

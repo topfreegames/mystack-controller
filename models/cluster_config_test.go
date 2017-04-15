@@ -21,6 +21,8 @@ const (
 	yaml1 = `
 setup:
   image: setup-img
+  periodSeconds: 10
+  timeoutSeconds: 180
 services:
   postgres:
     image: postgres:1.0
@@ -29,6 +31,14 @@ services:
     readinessProbe:
       command:
         - pg_isready
+        - -h
+        - localhost
+        - -p
+        - 5432
+        - -U
+        - postgres
+      periodSeconds: 10
+      startDeploymentTimeoutSeconds: 180
   redis:
     image: redis:1.0
     ports:
@@ -89,7 +99,9 @@ var _ = Describe("ClusterConfig", func() {
 			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
 			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
 			Expect(clusterConfig.Services["postgres"].ReadinessProbe).To(BeEquivalentTo(&Probe{
-				Command: []string{"pg_isready"},
+				Command:        []string{"pg_isready", "-h", "localhost", "-p", "5432", "-U", "postgres"},
+				TimeoutSeconds: 180,
+				PeriodSeconds:  10,
 			}))
 
 			Expect(clusterConfig.Services["redis"].Image).To(Equal("redis:1.0"))

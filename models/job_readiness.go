@@ -17,13 +17,39 @@ import (
 //JobReadiness implements Readiness interface
 type JobReadiness struct{}
 
+func getJobTimes(setup *Setup) (time.Duration, time.Duration) {
+	const (
+		defaultTimeout = time.Duration(120) * time.Second
+		defaultPeriod  = time.Duration(5) * time.Second
+	)
+
+	timeout := defaultTimeout
+	if setup.TimeoutSeconds != 0 {
+		timeout = time.Duration(setup.TimeoutSeconds) * time.Second
+	}
+
+	period := defaultPeriod
+	if setup.PeriodSeconds != 0 {
+		period = time.Duration(setup.PeriodSeconds) * time.Second
+	}
+
+	return period, timeout
+}
+
 //WaitForCompletion waits until job has completed its task
-func (*JobReadiness) WaitForCompletion(clientset kubernetes.Interface, j interface{}) error {
+func (jr *JobReadiness) WaitForCompletion(
+	clientset kubernetes.Interface,
+	j interface{},
+) error {
 	if j == nil {
 		return nil
 	}
 
-	job := j.(*Job)
+	job, ok := j.(*Job)
+	if !ok {
+		return errors.NewGenericError("wait for job completion error", fmt.Errorf("interface{} is not of type *models.Job"))
+	}
+
 	if job == nil {
 		return nil
 	}
@@ -33,6 +59,7 @@ func (*JobReadiness) WaitForCompletion(clientset kubernetes.Interface, j interfa
 		return errors.NewKubernetesError("setup error", err)
 	}
 
+	period, timeout := getJobTimes(job.Setup)
 	start := time.Now()
 
 	for k8sJob.Status.Succeeded == 0 {
@@ -40,8 +67,8 @@ func (*JobReadiness) WaitForCompletion(clientset kubernetes.Interface, j interfa
 			return errors.NewKubernetesError("setup error", fmt.Errorf("failed to run stup job"))
 		}
 
-		time.Sleep(readinessProbePeriod)
-		if time.Now().Sub(start) > readinessProbeTimeout {
+		time.Sleep(period)
+		if time.Now().Sub(start) > timeout {
 			return errors.NewKubernetesError("setup error", fmt.Errorf("failed to run stup job due to timeout"))
 		}
 

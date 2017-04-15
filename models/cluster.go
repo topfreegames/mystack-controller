@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //Cluster represents a k8s cluster for a user
@@ -24,7 +25,7 @@ type Cluster struct {
 	SvcDeployments      []*Deployment
 	AppServices         []*Service
 	SvcServices         []*Service
-	Setup               *Job
+	Job                 *Job
 	DeploymentReadiness Readiness
 	JobReadiness        Readiness
 }
@@ -45,17 +46,17 @@ func NewCluster(
 	portMap := make(map[string][]*PortMap)
 	environment := []*EnvVar{}
 	k8sAppDeployments, environment, err := buildDeployments(clusterConfig.Apps, username, portMap, environment)
-	k8sSvcDeployments, environment, err := buildDeployments(clusterConfig.Services, username, portMap, environment)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
+	k8sSvcDeployments, environment, err := buildDeployments(clusterConfig.Services, username, portMap, environment)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
 	k8sAppServices := buildServices(k8sAppDeployments, username, portMap)
 	k8sSvcServices := buildServices(k8sSvcDeployments, username, portMap)
 
-	k8sJob := NewJob(username, clusterConfig.Setup["image"], environment)
+	k8sJob := NewJob(username, clusterConfig.Setup, environment)
 
 	cluster := &Cluster{
 		Username:            username,
@@ -64,7 +65,7 @@ func NewCluster(
 		SvcDeployments:      k8sSvcDeployments,
 		AppServices:         k8sAppServices,
 		SvcServices:         k8sSvcServices,
-		Setup:               k8sJob,
+		Job:                 k8sJob,
 		DeploymentReadiness: deploymentReadiness,
 		JobReadiness:        jobReadiness,
 	}
@@ -153,8 +154,7 @@ func log(logger logrus.FieldLogger, msg string) {
 
 //Create creates namespace, deployments and services
 func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interface) error {
-	_, err := clientset.CoreV1().Namespaces().Get(c.Namespace)
-	if err == nil {
+	if NamespaceExists(clientset, c.Namespace) {
 		return errors.NewKubernetesError(
 			"create cluster error",
 			fmt.Errorf("namespace for user '%s' already exists", c.Username),
@@ -162,7 +162,7 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	}
 
 	log(logger, "creating namespace")
-	err = CreateNamespace(clientset, c.Username)
+	err := CreateNamespace(clientset, c.Username)
 	if err != nil {
 		return err
 	}
@@ -193,12 +193,12 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	log(logger, "done creating app services")
 
 	log(logger, "creating setup job")
-	_, err = c.Setup.Run(clientset)
+	_, err = c.Job.Run(clientset)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
 	log(logger, "waiting job completion")
-	err = c.JobReadiness.WaitForCompletion(clientset, c.Setup)
+	err = c.JobReadiness.WaitForCompletion(clientset, c.Job)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
@@ -233,8 +233,7 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 
 //Delete deletes namespace and all deployments and services
 func (c *Cluster) Delete(clientset kubernetes.Interface) error {
-	_, err := clientset.CoreV1().Namespaces().Get(c.Namespace)
-	if err != nil {
+	if !NamespaceExists(clientset, c.Namespace) {
 		return errors.NewKubernetesError(
 			"delete cluster error",
 			fmt.Errorf("namespace for user '%s' not found", c.Username),

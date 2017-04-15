@@ -9,5 +9,9 @@ package models
 
 //Probe refers to the Kubernetes readiness probe
 type Probe struct {
-	Command []string `yaml:"command"`
+	Command       []string `yaml:"command"`
+	PeriodSeconds int      `yaml:"periodSeconds"`
+	//This timeout is different from the kubernetes object api timeoutSecond.
+	//This timeout represents the total wait time until stop deployment initiation and rollback
+	TimeoutSeconds int `yaml:"startDeploymentTimeoutSeconds"`
 }

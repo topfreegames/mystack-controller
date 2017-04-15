@@ -17,37 +17,56 @@ import (
 //DeploymentReadiness implements Readiness interface
 type DeploymentReadiness struct{}
 
-const (
-	readinessProbeInitialDelay = 5 * time.Second
-	readinessProbePeriod       = 5 * time.Second
-	readinessProbeTimeout      = 3 * time.Minute
-)
+func getDeployTimes(probe *Probe) (time.Duration, time.Duration) {
+	const (
+		defaultPeriod  = time.Duration(5) * time.Second
+		defaultTimeout = time.Duration(120) * time.Second
+	)
+
+	if probe == nil {
+		return defaultPeriod, defaultTimeout
+	}
+
+	timeout := defaultTimeout
+	if probe.TimeoutSeconds != 0 {
+		timeout = time.Duration(probe.TimeoutSeconds) * time.Second
+	}
+
+	period := defaultPeriod
+	if probe.PeriodSeconds != 0 {
+		period = time.Duration(probe.PeriodSeconds) * time.Second
+	}
+
+	return period, timeout
+}
 
 //WaitForCompletion waits until job has completed its task
 func (dr *DeploymentReadiness) WaitForCompletion(clientset kubernetes.Interface, d interface{}) error {
 	deployments, ok := d.([]*Deployment)
 	if !ok {
-		return errors.NewGenericError("wait for deployment completion error", fmt.Errorf("interface{} is not of type []*Deployment"))
+		return errors.NewGenericError("wait for deployment completion error", fmt.Errorf("interface{} is not of type []*models.Deployment"))
 	}
 
 	for _, deploy := range deployments {
-		start := time.Now()
+		period, timeout := getDeployTimes(deploy.ReadinessProbe)
 		k8sDeploy, err := clientset.ExtensionsV1beta1().Deployments(deploy.Namespace).Get(deploy.Name)
 		if err != nil {
 			return err
 		}
+
+		start := time.Now()
 		desiredNumberReplicas := *k8sDeploy.Spec.Replicas
 
 		for desiredNumberReplicas > k8sDeploy.Status.AvailableReplicas {
+			time.Sleep(period)
 			k8sDeploy, err = clientset.ExtensionsV1beta1().Deployments(deploy.Namespace).Get(deploy.Name)
 			if err != nil {
 				return err
 			}
-			time.Sleep(readinessProbePeriod)
-			if time.Now().Sub(start) > readinessProbeTimeout {
+			if time.Now().Sub(start) > timeout {
 				return errors.NewKubernetesError(
 					"wait for deployment completion error",
-					fmt.Errorf("timeout"),
+					fmt.Errorf("wait for deployment completion error due to timeout"),
 				)
 			}
 		}
