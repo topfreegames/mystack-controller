@@ -61,6 +61,13 @@ var _ = Describe("Deployment", func() {
 			Expect(deploy.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
 			Expect(deploy.ObjectMeta.Labels["app"]).To(Equal(name))
 			Expect(deploy.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
+			Expect(deploy.Spec.Template.Spec.Containers[0].Name).To(Equal(name))
+			Expect(deploy.Spec.Template.Spec.Containers[0].Image).To(Equal(image))
+			Expect(deploy.Spec.Template.Spec.Containers[0].Env).To(BeNil())
+			Expect(deploy.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort).To(BeEquivalentTo(5000))
+			Expect(deploy.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort).To(BeEquivalentTo(5001))
+			Expect(deploy.Spec.Template.Spec.Containers[0].Ports[2].ContainerPort).To(BeEquivalentTo(5002))
+			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe).To(BeNil())
 
 			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
@@ -86,7 +93,7 @@ var _ = Describe("Deployment", func() {
 			Expect(deploy.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("postgres://derp:1234@example.com"))
 		})
 
-		It("should create deployment with readiness probe", func() {
+		It("should create deployment with readiness probe and default times", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -99,24 +106,28 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
 			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.Handler.Exec.Command).To(Equal(probe.Command))
+			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.PeriodSeconds).To(BeEquivalentTo(10))
 
 			dr := &mTest.MockReadiness{}
 			err = dr.WaitForCompletion(clientset, []*Deployment{deployment})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should create deployment with readiness probe", func() {
+		It("should create deployment with readiness probe and times", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
 			probe := &Probe{
-				Command: []string{"echo", "ready"},
+				Command:        []string{"echo", "ready"},
+				PeriodSeconds:  20,
+				TimeoutSeconds: 180,
 			}
 
 			deployment := NewDeployment(name, username, image, ports, nil, probe)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(deploy).NotTo(BeNil())
+			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.Handler.Exec.Command).To(Equal(probe.Command))
+			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.PeriodSeconds).To(BeEquivalentTo(20))
 
 			dr := &mTest.MockReadiness{}
 			err = dr.WaitForCompletion(clientset, []*Deployment{deployment})

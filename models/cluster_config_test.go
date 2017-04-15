@@ -124,16 +124,18 @@ var _ = Describe("ClusterConfig", func() {
 			Expect(clusterConfig.Apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
 			Expect(clusterConfig.Apps["app2"].Environment).To(BeNil())
 
-			Expect(clusterConfig.Setup["image"]).To(Equal("setup-img"))
+			Expect(clusterConfig.Setup.Image).To(Equal("setup-img"))
+			Expect(clusterConfig.Setup.TimeoutSeconds).To(Equal(180))
+			Expect(clusterConfig.Setup.PeriodSeconds).To(Equal(10))
 		})
 
-		It("should return error with invalid yaml", func() {
+		It("should return error with invalid syntax yaml", func() {
 			invalidYaml := `
 services {
   app1 {
     image: app
 }
-			`
+      `
 			_, err := ParseYaml(invalidYaml)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("yaml: line 3: mapping values are not allowed in this context"))
@@ -168,7 +170,7 @@ services {
   app1 {
     image: app
 }
-			`
+      `
 			err := WriteClusterConfig(sqlxDB, clusterName, invalidYaml)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("yaml: line 3: mapping values are not allowed in this context"))
@@ -207,7 +209,7 @@ services {
   app1 {
     image: app
 }
-			`
+      `
 			err := WriteClusterConfig(sqlxDB, clusterName, invalidYaml)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("yaml: line 3: mapping values are not allowed in this context"))
@@ -234,7 +236,9 @@ services {
 			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
 			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
 			Expect(clusterConfig.Services["postgres"].ReadinessProbe).To(BeEquivalentTo(&Probe{
-				Command: []string{"pg_isready"},
+				Command:        []string{"pg_isready", "-h", "localhost", "-p", "5432", "-U", "postgres"},
+				TimeoutSeconds: 180,
+				PeriodSeconds:  10,
 			}))
 
 			Expect(clusterConfig.Services["redis"].Image).To(Equal("redis:1.0"))
@@ -257,7 +261,9 @@ services {
 			Expect(clusterConfig.Apps["app2"].Ports).To(BeEquivalentTo([]string{"5000:5001"}))
 			Expect(clusterConfig.Apps["app2"].Environment).To(BeNil())
 
-			Expect(clusterConfig.Setup["image"]).To(Equal("setup-img"))
+			Expect(clusterConfig.Setup.Image).To(Equal("setup-img"))
+			Expect(clusterConfig.Setup.TimeoutSeconds).To(Equal(180))
+			Expect(clusterConfig.Setup.PeriodSeconds).To(Equal(10))
 		})
 
 		It("should return error when loading non existing clusterName", func() {
@@ -287,7 +293,7 @@ services {
   app1 {
     image: app
 }
-			`
+      `
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).

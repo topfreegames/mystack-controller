@@ -34,9 +34,13 @@ var _ = Describe("Job", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			job := NewJob(username, image, []*EnvVar{
-				&EnvVar{Name: "DATABASE_URL", Value: "postgresql://derp"},
-			})
+			job := NewJob(
+				username,
+				&Setup{Image: image},
+				[]*EnvVar{
+					&EnvVar{Name: "DATABASE_URL", Value: "postgresql://derp"},
+				},
+			)
 
 			k8sJob, err := job.Run(clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -63,9 +67,21 @@ var _ = Describe("Job", func() {
 		})
 
 		It("should not run job without namespace", func() {
-			job := NewJob(username, image, nil)
+			job := NewJob(username, &Setup{Image: image}, nil)
 			_, err = job.Run(clientset)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("namespace mystack-user not found"))
+		})
+
+		It("should return nil job without setup", func() {
+			job := NewJob(username, nil, nil)
+			Expect(job).To(BeNil())
+		})
+
+		It("should not return error if job is nil", func() {
+			var job *Job
+			_, err = job.Run(clientset)
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

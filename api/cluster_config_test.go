@@ -100,7 +100,7 @@ apps:
 			Expect(bodyJSON["error"]).To(Equal("database error"))
 		})
 
-		It("should return status 422 when creating invalid cluster config", func() {
+		It("should return status 400 when creating invalid cluster config", func() {
 			invalidYaml := `
 iam 
   {invalid: 123}
@@ -132,6 +132,24 @@ iam
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
 			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
 			Expect(bodyJSON["description"]).To(Equal("invalid empty config"))
+			Expect(bodyJSON["error"]).To(Equal("write cluster config error"))
+		})
+
+		It("should return status 422 when creating empty cluster name", func() {
+			yamlReader := mTest.JSONFor(map[string]interface{}{
+				"yaml": "",
+			})
+			route := "/cluster-configs//create"
+			request, _ := http.NewRequest("PUT", route, yamlReader)
+			ctx := NewContextWithClusterConfig(request.Context(), "")
+			clusterConfigHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusUnprocessableEntity))
+			bodyJSON := make(map[string]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["code"]).To(Equal("OFF-001"))
+			Expect(bodyJSON["description"]).To(Equal("invalid empty cluster name"))
 			Expect(bodyJSON["error"]).To(Equal("write cluster config error"))
 		})
 
