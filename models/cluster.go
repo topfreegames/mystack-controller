@@ -256,9 +256,21 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 		deployment.Delete(clientset)
 	}
 
-	err = DeleteNamespace(clientset, c.Username)
+	err := DeleteNamespace(clientset, c.Username)
 	if err != nil {
 		return err
+	}
+
+	timeout := time.Duration(2) * time.Minute
+	start := time.Now()
+	for NamespaceExists(clientset, c.Namespace) {
+		if time.Now().Sub(start) > timeout {
+			return errors.NewKubernetesError(
+				"delete cluster error",
+				fmt.Errorf("delete cluster reached timeout", c.Username),
+			)
+		}
+		time.Sleep(5)
 	}
 
 	return nil
