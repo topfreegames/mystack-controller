@@ -36,7 +36,9 @@ spec:
     spec:
       containers:
       - name: {{.Name}}
+        {{with .Setup}}
         image: {{.Image}}
+        {{end}}
         env:
           {{range .Environment}}
           - name: {{.Name}}
@@ -50,13 +52,13 @@ type Job struct {
 	Name        string
 	Namespace   string
 	Username    string
-	Image       string
 	Environment []*EnvVar
+	Setup       *Setup
 }
 
 //NewJob is the job ctor
-func NewJob(username, image string, environment []*EnvVar) *Job {
-	if len(image) == 0 {
+func NewJob(username string, setup *Setup, environment []*EnvVar) *Job {
+	if setup == nil || len(setup.Image) == 0 {
 		return nil
 	}
 
@@ -65,8 +67,8 @@ func NewJob(username, image string, environment []*EnvVar) *Job {
 		Name:        "setup",
 		Namespace:   namespace,
 		Username:    username,
-		Image:       image,
 		Environment: environment,
+		Setup:       setup,
 	}
 }
 

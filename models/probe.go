@@ -7,30 +7,11 @@
 
 package models
 
-import (
-	"os/exec"
-)
-
 //Probe refers to the Kubernetes readiness probe
 type Probe struct {
-	Command []string `yaml:"command"`
-}
-
-//Status executes the probe command
-//Return 0 if exit code was 0 (successfully executed)
-//Return 1 otherwise
-func (p *Probe) Status() int {
-	if p == nil {
-		return 0
-	}
-
-	cmd := p.Command[0]
-	args := p.Command[1:]
-
-	err := exec.Command(cmd, args...).Run()
-	if err != nil {
-		return 1
-	}
-
-	return 0
+	Command       []string `yaml:"command"`
+	PeriodSeconds int      `yaml:"periodSeconds"`
+	//This timeout is different from the kubernetes object api timeoutSecond.
+	//This timeout represents the total wait time until stop deployment initiation and rollback
+	TimeoutSeconds int `yaml:"startDeploymentTimeoutSeconds"`
 }

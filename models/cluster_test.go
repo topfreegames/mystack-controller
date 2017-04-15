@@ -9,6 +9,7 @@
 package models_test
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/models"
@@ -58,6 +59,67 @@ apps:
       - name: VARIABLE_1
         value: 100
 `
+		yaml2 = `
+setup:
+  image: setup-img
+  timeoutSeconds: 180
+  periodSeconds: 10
+services:
+  test0:
+    image: svc1
+    ports: 
+      - "5000"
+      - "5001:5002"
+    readinessProbe:
+      command:
+        - echo
+        - ready
+      periodSeconds: 10
+      startDeploymentTimeoutSeconds: 180
+apps:
+  test1:
+    image: app1
+    ports: 
+      - "5000"
+      - "5001:5002"
+  test2:
+    image: app2
+    ports: 
+      - "5000"
+      - "5001:5002"
+  test3:
+    image: app3
+    ports: 
+      - "5000"
+      - "5001:5002"
+    env:
+      - name: VARIABLE_1
+        value: 100
+`
+		invalidYaml1 = `
+services:
+  postgres:
+    image: postgres:1.0
+    ports:
+      - 8!asd
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+`
+		invalidYaml2 = `
+services:
+  postgres:
+    image: postgres:1.0
+    ports:
+      - 8585:8!asd
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+`
 	)
 	var (
 		db          *sql.DB
@@ -80,7 +142,8 @@ apps:
 		}
 	)
 
-	mockCluster := func(username string) *Cluster {
+	mockCluster := func(period, timeout int, username string) *Cluster {
+		namespace := fmt.Sprintf("mystack-%s", username)
 		return &Cluster{
 			Username:  username,
 			Namespace: namespace,
@@ -92,7 +155,18 @@ apps:
 				}, nil),
 			},
 			SvcDeployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", ports, nil, &Probe{Command: []string{"echo", "ready"}}),
+				NewDeployment(
+					"test0",
+					username,
+					"svc1",
+					ports,
+					nil,
+					&Probe{
+						Command:        []string{"echo", "ready"},
+						TimeoutSeconds: timeout,
+						PeriodSeconds:  period,
+					},
+				),
 			},
 			AppServices: []*Service{
 				NewService("test1", username, portMaps),
@@ -102,9 +176,17 @@ apps:
 			SvcServices: []*Service{
 				NewService("test0", username, portMaps),
 			},
-			Setup: NewJob(username, "setup-img", []*EnvVar{
-				&EnvVar{Name: "VARIABLE_1", Value: "100"},
-			}),
+			Job: NewJob(
+				username,
+				&Setup{
+					Image:          "setup-img",
+					PeriodSeconds:  period,
+					TimeoutSeconds: timeout,
+				},
+				[]*EnvVar{
+					&EnvVar{Name: "VARIABLE_1", Value: "100"},
+				},
+			),
 			DeploymentReadiness: &mTest.MockReadiness{},
 			JobReadiness:        &mTest.MockReadiness{},
 		}
@@ -128,7 +210,7 @@ apps:
 		})
 
 		It("should return cluster from config on DB", func() {
-			mockedCluster := mockCluster(username)
+			mockedCluster := mockCluster(0, 0, username)
 
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
@@ -141,7 +223,24 @@ apps:
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
 			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
 			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
-			Expect(cluster.Setup).To(Equal(mockedCluster.Setup))
+			Expect(cluster.Job).To(Equal(mockedCluster.Job))
+		})
+
+		It("should return cluster with non default times from DB", func() {
+			mockedCluster := mockCluster(10, 180, username)
+
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml2))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
+			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
+			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
+			Expect(cluster.Job).To(Equal(mockedCluster.Job))
 		})
 
 		It("should return error if clusterName doesn't exists on DB", func() {
@@ -167,12 +266,34 @@ apps:
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
 		})
+
+		It("should return error with invalid yaml", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(invalidYaml1))
+
+			_, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
+			Expect(err.Error()).To(Equal("strconv.Atoi: parsing \"8!asd\": invalid syntax"))
+		})
+
+		It("should return error with invalid yaml 2", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(invalidYaml2))
+
+			_, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
+			Expect(err.Error()).To(Equal("strconv.Atoi: parsing \"8!asd\": invalid syntax"))
+		})
 	})
 
 	Describe("Create", func() {
 		It("should create cluster", func() {
-			cluster := mockCluster(username)
-			err := cluster.Create(clientset)
+			cluster := mockCluster(0, 0, username)
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
@@ -191,25 +312,22 @@ apps:
 			Expect(k8sJob.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
 			Expect(k8sJob.ObjectMeta.Labels["app"]).To(Equal("setup"))
 			Expect(k8sJob.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
-			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Name).To(Equal("VARIABLE_1"))
-			Expect(k8sJob.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("100"))
-			Expect(k8sJob.Spec.Template.Spec.Containers[0].Image).To(Equal("setup-img"))
 		})
 
 		It("should return error if creating same cluster twice", func() {
-			cluster := mockCluster(username)
-			err := cluster.Create(clientset)
+			cluster := mockCluster(0, 0, username)
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = cluster.Create(clientset)
+			err = cluster.Create(nil, clientset)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Namespace \"mystack-user\" already exists"))
+			Expect(err.Error()).To(Equal("namespace for user 'user' already exists"))
 		})
 
 		It("should run without setup image", func() {
-			cluster := mockCluster(username)
-			cluster.Setup = nil
-			err := cluster.Create(clientset)
+			cluster := mockCluster(0, 0, username)
+			cluster.Job = nil
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
@@ -228,8 +346,8 @@ apps:
 
 	Describe("Delete", func() {
 		It("should delete cluster", func() {
-			cluster := mockCluster(username)
-			err := cluster.Create(clientset)
+			cluster := mockCluster(0, 0, username)
+			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = cluster.Delete(clientset)
@@ -247,12 +365,12 @@ apps:
 		})
 
 		It("should delete only specified cluster", func() {
-			cluster1 := mockCluster("user1")
-			err := cluster1.Create(clientset)
+			cluster1 := mockCluster(0, 0, "user1")
+			err := cluster1.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			cluster2 := mockCluster("user2")
-			err = cluster2.Create(clientset)
+			cluster2 := mockCluster(0, 0, "user2")
+			err = cluster2.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = cluster1.Delete(clientset)
@@ -279,11 +397,11 @@ apps:
 		})
 
 		It("should return error when deleting non existing cluster", func() {
-			cluster := mockCluster(username)
+			cluster := mockCluster(0, 0, username)
 
 			err = cluster.Delete(clientset)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Service \"test1\" not found"))
+			Expect(err.Error()).To(Equal("namespace for user 'user' not found"))
 		})
 	})
 })

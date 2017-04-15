@@ -104,6 +104,33 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
+		It("should not create cluster twice", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			recorder = httptest.NewRecorder()
+			request, _ = http.NewRequest("PUT", route, nil)
+			ctx = NewContextWithEmail(request.Context(), "derp@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			bodyJSON := make(map[string]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
+			Expect(bodyJSON["description"]).To(Equal("namespace for user 'derp' already exists"))
+			Expect(bodyJSON["error"]).To(Equal("create cluster error"))
+			Expect(recorder.Code).To(Equal(http.StatusConflict))
+		})
+
 		It("should return error 404 when create non existing clusterName", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
@@ -154,7 +181,7 @@ apps:
 
 			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
-			err = cluster.Create(app.Clientset)
+			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx := NewContextWithEmail(request.Context(), "user@example.com")
@@ -177,8 +204,8 @@ apps:
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["description"]).To(Equal("Namespace \"mystack-derp\" not found"))
-			Expect(bodyJSON["error"]).To(Equal("delete namespace error"))
+			Expect(bodyJSON["description"]).To(Equal("namespace for user 'derp' not found"))
+			Expect(bodyJSON["error"]).To(Equal("delete cluster error"))
 			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
 			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 		})
@@ -195,7 +222,7 @@ apps:
 
 			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
-			err = cluster.Create(app.Clientset)
+			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx := NewContextWithEmail(request.Context(), "user@example.com")

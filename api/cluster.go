@@ -48,7 +48,7 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = cluster.Create(c.App.Clientset)
+	err = cluster.Create(c.App.Logger, c.App.Clientset)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return

@@ -15,7 +15,7 @@ import (
 
 //ClusterConfig contains the elements of a config file
 type ClusterConfig struct {
-	Setup    map[string]string            `yaml:"setup"`
+	Setup    *Setup                       `yaml:"setup"`
 	Services map[string]*ClusterAppConfig `yaml:"services"`
 	Apps     map[string]*ClusterAppConfig `yaml:"apps"`
 }

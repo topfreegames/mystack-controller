@@ -50,6 +50,19 @@ spec:
             {{range .Ports}}
             - containerPort: {{.}}
             {{end}}
+          {{if .ReadinessProbe}}
+          readinessProbe:
+            {{with .ReadinessProbe}}
+            exec:
+              command:
+              {{range .Command}}
+                - "{{.}}"
+              {{end}}
+            {{if .PeriodSeconds}}
+            periodSeconds: {{.PeriodSeconds}}
+            {{end}}
+            {{end}}
+          {{end}}
 `
 
 //Deployment represents a deployment
@@ -71,6 +84,7 @@ func NewDeployment(
 	readinessProbe *Probe,
 ) *Deployment {
 	namespace := usernameToNamespace(username)
+
 	return &Deployment{
 		Name:           name,
 		Namespace:      namespace,
