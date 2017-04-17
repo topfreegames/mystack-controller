@@ -404,4 +404,18 @@ apps:
 			Expect(err.Error()).To(Equal("namespace for user 'user' not found"))
 		})
 	})
+
+	Describe("Routes", func() {
+		It("should return correct routes", func() {
+			cluster := mockCluster(0, 0, "user")
+			routes := cluster.Routes("example.com")
+
+			Expect(routes).To(ConsistOf(
+				"test0.mystack-user.example.com",
+				"test1.mystack-user.example.com",
+				"test2.mystack-user.example.com",
+				"test3.mystack-user.example.com",
+			))
+		})
+	})
 })

@@ -275,3 +275,20 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 
 	return nil
 }
+
+func (c *Cluster) Routes(domainSufix string) []string {
+	routes := make([]string, len(c.AppServices)+len(c.SvcServices))
+
+	i := 0
+	for _, service := range c.AppServices {
+		routes[i] = fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, domainSufix)
+		i = i + 1
+	}
+
+	for _, service := range c.SvcServices {
+		routes[i] = fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, domainSufix)
+		i = i + 1
+	}
+
+	return routes
+}
