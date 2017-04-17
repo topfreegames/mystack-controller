@@ -82,7 +82,12 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["routes"]).To(ConsistOf(
+				"test0.mystack-user.kubernetes.example.com",
+				"test1.mystack-user.kubernetes.example.com",
+			))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
@@ -100,7 +105,12 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["routes"]).To(ConsistOf(
+				"test0.mystack-user.kubernetes.example.com",
+				"test1.mystack-user.kubernetes.example.com",
+			))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 

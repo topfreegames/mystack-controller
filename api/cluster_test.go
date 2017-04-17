@@ -86,8 +86,13 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["routes"]).To(ConsistOf(
+				"test0.mystack-derp.kubernetes.example.com",
+				"test1.mystack-derp.kubernetes.example.com",
+			))
 		})
 
 		It("should create existing clusterName without setup", func() {
@@ -100,8 +105,13 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["routes"]).To(ConsistOf(
+				"test0.mystack-derp.kubernetes.example.com",
+				"test1.mystack-derp.kubernetes.example.com",
+			))
 		})
 
 		It("should not create cluster twice", func() {
@@ -278,6 +288,31 @@ apps:
 				"test0.mystack-user.kubernetes.example.com",
 				"test1.mystack-user.kubernetes.example.com",
 			))
+		})
+
+		It("should return status 404 if namespace doesn't exist", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			_, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusNotFound))
+			bodyJSON := make(map[string]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["description"]).To(Equal("namespace for user 'user' not found"))
+			Expect(bodyJSON["error"]).To(Equal("get routes error"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
 		})
 	})
 })

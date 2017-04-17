@@ -58,7 +58,21 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Write(w, http.StatusOK, `{"status": "ok"}`)
+	routes, err := cluster.Routes(c.App.AppsRoutesDomain, c.App.Clientset)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "create cluster error", err)
+		return
+	}
+	routesResponse := map[string][]string{
+		"routes": routes,
+	}
+	bts, err := json.Marshal(&routesResponse)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "create cluster error", err)
+		return
+	}
+
+	WriteBytes(w, http.StatusOK, bts)
 	log(logger, "Cluster successfully created for user %s", username)
 }
 
@@ -110,7 +124,11 @@ func (c *ClusterHandler) getRoutes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	routes := cluster.Routes(c.App.AppsRoutesDomain)
+	routes, err := cluster.Routes(c.App.AppsRoutesDomain, c.App.Clientset)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "create cluster error", err)
+		return
+	}
 
 	routesResponse := make(map[string][]string)
 	routesResponse["routes"] = routes
