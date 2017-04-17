@@ -62,7 +62,7 @@ apps:
 		var (
 			err     error
 			request *http.Request
-			route   = fmt.Sprintf("/cluster/%s/create", clusterName)
+			route   = fmt.Sprintf("/clusters/%s/create", clusterName)
 		)
 
 		BeforeEach(func() {
@@ -155,7 +155,7 @@ apps:
 		var (
 			err     error
 			request *http.Request
-			route   = fmt.Sprintf("/cluster/%s/delete", clusterName)
+			route   = fmt.Sprintf("/clusters/%s/delete", clusterName)
 		)
 
 		BeforeEach(func() {
@@ -231,6 +231,53 @@ apps:
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
+		})
+	})
+
+	Describe("GET /clusters/{name}/routes", func() {
+		var (
+			err     error
+			request *http.Request
+			route   = fmt.Sprintf("/clusters/%s/routes", clusterName)
+		)
+
+		BeforeEach(func() {
+			clusterHandler.Method = "routes"
+			request, err = http.NewRequest("GET", route, nil)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return correct routes", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+			err = cluster.Create(app.Logger, app.Clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["routes"]).To(ConsistOf(
+				"test0.mystack-user.kubernetes.example.com",
+				"test1.mystack-user.kubernetes.example.com",
+			))
 		})
 	})
 })

@@ -8,9 +8,11 @@
 package api
 
 import (
-	"github.com/topfreegames/mystack-controller/models"
+	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/topfreegames/mystack-controller/models"
 )
 
 //ClusterHandler handles cluster creation and deletion
@@ -25,6 +27,8 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.create(w, r)
 	case "delete":
 		c.deleteCluster(w, r)
+	case "routes":
+		c.getRoutes(w, r)
 	}
 }
 
@@ -88,4 +92,34 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 
 	Write(w, http.StatusOK, `{"status": "ok"}`)
 	log(logger, "Cluster deleted for user %s", username)
+}
+
+func (c *ClusterHandler) getRoutes(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
+	email := emailFromCtx(r.Context())
+	username := usernameFromEmail(email)
+
+	log(logger, "Cluster routes for user %s", username)
+	clusterName := GetClusterName(r)
+
+	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil)
+	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
+		cluster = &models.Cluster{Username: username}
+	} else if err != nil {
+		c.App.HandleError(w, Status(err), "retrieve cluster error", err)
+		return
+	}
+
+	routes := cluster.Routes(c.App.AppsRoutesDomain)
+
+	routesResponse := make(map[string][]string)
+	routesResponse["routes"] = routes
+	bts, err := json.Marshal(routesResponse)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get routes error", err)
+		return
+	}
+
+	WriteBytes(w, http.StatusOK, bts)
+	log(logger, "Cluster routes built for user %s", username)
 }

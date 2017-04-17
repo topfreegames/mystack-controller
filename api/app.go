@@ -33,6 +33,7 @@ type App struct {
 	Router              *mux.Router
 	Server              *http.Server
 	EmailDomain         []string
+	AppsRoutesDomain    string
 	Clientset           kubernetes.Interface
 	DeploymentReadiness models.Readiness
 	JobReadiness        models.Readiness
@@ -53,6 +54,7 @@ func NewApp(
 		Debug:               debug,
 		Logger:              logger,
 		EmailDomain:         config.GetStringSlice("oauth.acceptedDomains"),
+		AppsRoutesDomain:    config.GetString("kubernetes.appsDomain"),
 		Clientset:           clientset,
 		DeploymentReadiness: &models.DeploymentReadiness{},
 		JobReadiness:        &models.JobReadiness{},
@@ -98,6 +100,13 @@ func (a *App) getRouter() *mux.Router {
 		&VersionMiddleware{},
 		&AccessMiddleware{App: a},
 	)).Methods("DELETE").Name("cluster")
+
+	r.Handle("/clusters/{name}/routes", Chain(
+		&ClusterHandler{App: a, Method: "routes"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&AccessMiddleware{App: a},
+	)).Methods("GET").Name("cluster")
 
 	r.Handle("/cluster-configs/{name}/create", Chain(
 		&ClusterConfigHandler{App: a, Method: "create"},

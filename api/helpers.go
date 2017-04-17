@@ -71,6 +71,18 @@ func GetClusterName(r *http.Request) string {
 	return clusterName
 }
 
+//GetDomainName gets the domain name from URL from request
+func GetDomainName(r *http.Request) string {
+	domainName := mux.Vars(r)["domain"]
+
+	if len(domainName) == 0 {
+		parts := strings.Split(r.URL.String(), "/")
+		domainName = parts[4]
+	}
+
+	return domainName
+}
+
 func usernameFromEmail(email string) string {
 	username := strings.Split(email, "@")[0]
 	username = strings.Replace(username, ".", "-", -1)
