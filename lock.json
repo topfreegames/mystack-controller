@@ -1,5 +1,5 @@
 {
-    "memo": "d2d756a0515be4d22a5e8e13fb35abcfea976717e564caeff0d9c3f25b0662ea",
+    "memo": "4a3209ef0543501458e7475551ffe7a2800611fd613d3484cd8d78ad053dbb11",
     "projects": [
         {
             "name": "cloud.google.com/go",
@@ -142,7 +142,7 @@
         {
             "name": "github.com/go-openapi/spec",
             "branch": "master",
-            "revision": "02fb9cd3430ed0581e0ceb4804d5d4b3cc702694",
+            "revision": "e51c28f07047ad90caff03f6450908720d337e0c",
             "packages": [
                 "."
             ]
@@ -150,7 +150,7 @@
         {
             "name": "github.com/go-openapi/swag",
             "branch": "master",
-            "revision": "d5f8ebc3b1c55a4cf6489eeae7354f338cfe299e",
+            "revision": "aa30237cf993e01e1a1e467eead45d1ce5ad155e",
             "packages": [
                 "."
             ]
@@ -239,7 +239,7 @@
         {
             "name": "github.com/jmoiron/sqlx",
             "branch": "master",
-            "revision": "8ed836a8adb659e8492bcaa49e0880bb84075fe2",
+            "revision": "3564e3a314b957a161fefa0e7aea85b4d741c94e",
             "packages": [
                 ".",
                 "reflectx"
@@ -383,8 +383,8 @@
         },
         {
             "name": "github.com/spf13/cast",
-            "version": "v1.0.0",
-            "revision": "ce135a4ebeee6cfe9a26c93ee0d37825f26113c7",
+            "version": "v1.1.0",
+            "revision": "acbeb36b902d72a7a4c18e8f3241075e7ab763e4",
             "packages": [
                 "."
             ]
@@ -392,7 +392,7 @@
         {
             "name": "github.com/spf13/cobra",
             "branch": "master",
-            "revision": "7aeaa2cce6ae7e18d2a6ee597b60ee137e999bd9",
+            "revision": "5deb57bbca49eb370538fc295ba4b2988f9f5e09",
             "packages": [
                 "."
             ]
@@ -408,7 +408,7 @@
         {
             "name": "github.com/spf13/pflag",
             "branch": "master",
-            "revision": "9a906f17374922ed0f74e1b2f593d3723f2ffb00",
+            "revision": "e453343e6260b4a3a89f1f0e10a2fbb07f8d9750",
             "packages": [
                 "."
             ]
@@ -416,7 +416,7 @@
         {
             "name": "github.com/spf13/viper",
             "branch": "master",
-            "revision": "84f94806c67f59dd7ae87bc5351f7a9c94a4558d",
+            "revision": "0967fc9aceab2ce9da34061253ac10fb99bba5b2",
             "packages": [
                 "."
             ]
@@ -432,7 +432,7 @@
         {
             "name": "golang.org/x/net",
             "branch": "master",
-            "revision": "d1e1b351919c6738fdeb9893d5c998b161464f0c",
+            "revision": "5602c733f70afc6dcec6766be0d5034d4c4f14de",
             "packages": [
                 "context",
                 "context/ctxhttp",
@@ -447,7 +447,7 @@
         {
             "name": "golang.org/x/oauth2",
             "branch": "master",
-            "revision": "7fdf09982454086d5570c7db3e11f360194830ca",
+            "revision": "a6bd8cefa1811bd24b86f8902872e4e8225f74c4",
             "packages": [
                 ".",
                 "google",
@@ -500,8 +500,8 @@
         },
         {
             "name": "google.golang.org/grpc",
-            "version": "v1.2.0",
-            "revision": "cdee119ee21e61eef7093a41ba148fa83585e143",
+            "version": "v1.2.1",
+            "revision": "8050b9cbc271307e5a716a9d782803d09b0d6f2d",
             "packages": [
                 ".",
                 "codes",
@@ -536,7 +536,7 @@
         {
             "name": "gopkg.in/yaml.v2",
             "branch": "v2",
-            "revision": "a3f3340b5840cee44f372bddb5880fcbc419b46a",
+            "revision": "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b",
             "packages": [
                 "."
             ]
