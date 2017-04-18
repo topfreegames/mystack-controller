@@ -84,10 +84,7 @@ apps:
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			bodyJSON := make(map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["routes"]).To(ConsistOf(
-				"test0.mystack-user.kubernetes.example.com",
-				"test1.mystack-user.kubernetes.example.com",
-			))
+			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-user", "test1.mystack-user"))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
@@ -107,10 +104,7 @@ apps:
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			bodyJSON := make(map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["routes"]).To(ConsistOf(
-				"test0.mystack-user.kubernetes.example.com",
-				"test1.mystack-user.kubernetes.example.com",
-			))
+			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-user", "test1.mystack-user"))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 

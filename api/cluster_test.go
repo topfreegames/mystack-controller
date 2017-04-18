@@ -89,10 +89,7 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			bodyJSON := make(map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["routes"]).To(ConsistOf(
-				"test0.mystack-derp.kubernetes.example.com",
-				"test1.mystack-derp.kubernetes.example.com",
-			))
+			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-derp", "test1.mystack-derp"))
 		})
 
 		It("should create existing clusterName without setup", func() {
@@ -108,10 +105,7 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			bodyJSON := make(map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["routes"]).To(ConsistOf(
-				"test0.mystack-derp.kubernetes.example.com",
-				"test1.mystack-derp.kubernetes.example.com",
-			))
+			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-derp", "test1.mystack-derp"))
 		})
 
 		It("should not create cluster twice", func() {
@@ -244,15 +238,15 @@ apps:
 		})
 	})
 
-	Describe("GET /clusters/{name}/routes", func() {
+	Describe("GET /clusters/{name}/apps", func() {
 		var (
 			err     error
 			request *http.Request
-			route   = fmt.Sprintf("/clusters/%s/routes", clusterName)
+			route   = fmt.Sprintf("/clusters/%s/apps", clusterName)
 		)
 
 		BeforeEach(func() {
-			clusterHandler.Method = "routes"
+			clusterHandler.Method = "apps"
 			request, err = http.NewRequest("GET", route, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -262,7 +256,7 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should return correct routes", func() {
+		It("should return correct apps", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -284,10 +278,7 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			bodyJSON := make(map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["routes"]).To(ConsistOf(
-				"test0.mystack-user.kubernetes.example.com",
-				"test1.mystack-user.kubernetes.example.com",
-			))
+			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-user", "test1.mystack-user"))
 		})
 
 		It("should return status 404 if namespace doesn't exist", func() {
@@ -311,7 +302,7 @@ apps:
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
 			Expect(bodyJSON["description"]).To(Equal("namespace for user 'user' not found"))
-			Expect(bodyJSON["error"]).To(Equal("get routes error"))
+			Expect(bodyJSON["error"]).To(Equal("get apps error"))
 			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
 		})
 	})

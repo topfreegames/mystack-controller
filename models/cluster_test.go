@@ -405,25 +405,25 @@ apps:
 		})
 	})
 
-	Describe("Routes", func() {
-		It("should return correct routes if cluster is running", func() {
+	Describe("Apps", func() {
+		It("should return correct apps if cluster is running", func() {
 			cluster := mockCluster(0, 0, "user")
 			err := cluster.Create(nil, clientset)
 
-			routes, err := cluster.Routes("example.com", clientset)
+			apps, err := cluster.Apps(clientset)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(routes).To(ConsistOf(
-				"test0.mystack-user.example.com",
-				"test1.mystack-user.example.com",
-				"test2.mystack-user.example.com",
-				"test3.mystack-user.example.com",
+			Expect(apps).To(ConsistOf(
+				"test0.mystack-user",
+				"test1.mystack-user",
+				"test2.mystack-user",
+				"test3.mystack-user",
 			))
 		})
 
 		It("should return error if cluster is not runnig", func() {
 			cluster := mockCluster(0, 0, "user")
-			_, err := cluster.Routes("example.com", clientset)
+			_, err := cluster.Apps(clientset)
 			Expect(err).To(HaveOccurred())
 		})
 	})

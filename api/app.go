@@ -101,8 +101,8 @@ func (a *App) getRouter() *mux.Router {
 		&AccessMiddleware{App: a},
 	)).Methods("DELETE").Name("cluster")
 
-	r.Handle("/clusters/{name}/routes", Chain(
-		&ClusterHandler{App: a, Method: "routes"},
+	r.Handle("/clusters/{name}/apps", Chain(
+		&ClusterHandler{App: a, Method: "apps"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
 		&AccessMiddleware{App: a},

@@ -27,8 +27,8 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.create(w, r)
 	case "delete":
 		c.deleteCluster(w, r)
-	case "routes":
-		c.getRoutes(w, r)
+	case "apps":
+		c.getApps(w, r)
 	}
 }
 
@@ -58,15 +58,15 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	routes, err := cluster.Routes(c.App.AppsRoutesDomain, c.App.Clientset)
+	apps, err := cluster.Apps(c.App.Clientset)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
 	}
-	routesResponse := map[string][]string{
-		"routes": routes,
+	appsResponse := map[string][]string{
+		"apps": apps,
 	}
-	bts, err := json.Marshal(&routesResponse)
+	bts, err := json.Marshal(&appsResponse)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
@@ -108,36 +108,34 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	log(logger, "Cluster deleted for user %s", username)
 }
 
-func (c *ClusterHandler) getRoutes(w http.ResponseWriter, r *http.Request) {
+func (c *ClusterHandler) getApps(w http.ResponseWriter, r *http.Request) {
 	logger := loggerFromContext(r.Context())
 	email := emailFromCtx(r.Context())
 	username := usernameFromEmail(email)
 
-	log(logger, "Cluster routes for user %s", username)
+	log(logger, "Cluster apps for user %s", username)
 	clusterName := GetClusterName(r)
 
 	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil)
-	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
-		cluster = &models.Cluster{Username: username}
-	} else if err != nil {
-		c.App.HandleError(w, Status(err), "retrieve cluster error", err)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
 	}
 
-	routes, err := cluster.Routes(c.App.AppsRoutesDomain, c.App.Clientset)
+	apps, err := cluster.Apps(c.App.Clientset)
 	if err != nil {
-		c.App.HandleError(w, Status(err), "create cluster error", err)
+		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
 	}
 
-	routesResponse := make(map[string][]string)
-	routesResponse["routes"] = routes
-	bts, err := json.Marshal(routesResponse)
+	appsResponse := make(map[string][]string)
+	appsResponse["apps"] = apps
+	bts, err := json.Marshal(appsResponse)
 	if err != nil {
-		c.App.HandleError(w, Status(err), "get routes error", err)
+		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
 	}
 
 	WriteBytes(w, http.StatusOK, bts)
-	log(logger, "Cluster routes built for user %s", username)
+	log(logger, "Cluster apps gotten for user %s", username)
 }

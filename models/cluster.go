@@ -276,26 +276,26 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	return nil
 }
 
-func (c *Cluster) Routes(domainSufix string, clientset kubernetes.Interface) ([]string, error) {
+func (c *Cluster) Apps(clientset kubernetes.Interface) ([]string, error) {
 	if !NamespaceExists(clientset, c.Namespace) {
 		return nil, errors.NewKubernetesError(
-			"get routes error",
+			"get apps error",
 			fmt.Errorf("namespace for user '%s' not found", c.Username),
 		)
 	}
 
-	routes := make([]string, len(c.AppServices)+len(c.SvcServices))
+	apps := make([]string, len(c.AppServices)+len(c.SvcServices))
 
 	i := 0
 	for _, service := range c.AppServices {
-		routes[i] = fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, domainSufix)
+		apps[i] = fmt.Sprintf("%s.%s", service.Name, service.Namespace)
 		i = i + 1
 	}
 
 	for _, service := range c.SvcServices {
-		routes[i] = fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, domainSufix)
+		apps[i] = fmt.Sprintf("%s.%s", service.Name, service.Namespace)
 		i = i + 1
 	}
 
-	return routes, nil
+	return apps, nil
 }
