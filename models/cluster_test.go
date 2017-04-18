@@ -35,7 +35,7 @@ services:
     ports: 
       - "5000"
       - "5001:5002"
-    readinessProbe:
+    readiness-probe:
       command:
         - echo
         - ready
@@ -62,20 +62,20 @@ apps:
 		yaml2 = `
 setup:
   image: setup-img
-  timeoutSeconds: 180
-  periodSeconds: 10
+  timeout-seconds: 180
+  period-seconds: 10
 services:
   test0:
     image: svc1
     ports: 
       - "5000"
       - "5001:5002"
-    readinessProbe:
+    readiness-probe:
       command:
         - echo
         - ready
-      periodSeconds: 10
-      startDeploymentTimeoutSeconds: 180
+      period-seconds: 10
+      start-deployment-timeout-seconds: 180
 apps:
   test1:
     image: app1
