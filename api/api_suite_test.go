@@ -45,7 +45,6 @@ var _ = BeforeSuite(func() {
 		Debug:               false,
 		Logger:              l,
 		EmailDomain:         config.GetStringSlice("oauth.acceptedDomains"),
-		AppsRoutesDomain:    config.GetString("kubernetes.appsDomain"),
 		Clientset:           clientset,
 		DeploymentReadiness: &mTest.MockReadiness{},
 		JobReadiness:        &mTest.MockReadiness{},

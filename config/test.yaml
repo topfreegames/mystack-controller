@@ -10,6 +10,3 @@ oauth:
   acceptedDomains: 
   - "example.com"
   - "other.com"
-kubernetes:
-  appsDomain:
-    "kubernetes.example.com"

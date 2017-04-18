@@ -33,7 +33,6 @@ type App struct {
 	Router              *mux.Router
 	Server              *http.Server
 	EmailDomain         []string
-	AppsRoutesDomain    string
 	Clientset           kubernetes.Interface
 	DeploymentReadiness models.Readiness
 	JobReadiness        models.Readiness
@@ -54,7 +53,6 @@ func NewApp(
 		Debug:               debug,
 		Logger:              logger,
 		EmailDomain:         config.GetStringSlice("oauth.acceptedDomains"),
-		AppsRoutesDomain:    config.GetString("kubernetes.appsDomain"),
 		Clientset:           clientset,
 		DeploymentReadiness: &models.DeploymentReadiness{},
 		JobReadiness:        &models.JobReadiness{},
