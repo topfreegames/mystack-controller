@@ -284,18 +284,16 @@ func (c *Cluster) Apps(clientset kubernetes.Interface) ([]string, error) {
 		)
 	}
 
-	apps := make([]string, len(c.AppServices)+len(c.SvcServices))
-
-	i := 0
-	for _, service := range c.AppServices {
-		apps[i] = fmt.Sprintf("%s.%s", service.Name, service.Namespace)
-		i = i + 1
+	service, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
+	if err != nil {
+		return nil, errors.NewKubernetesError("get apps error", err)
 	}
 
-	for _, service := range c.SvcServices {
-		apps[i] = fmt.Sprintf("%s.%s", service.Name, service.Namespace)
-		i = i + 1
+	services := make([]string, len(service.Items))
+
+	for i, service := range service.Items {
+		services[i] = fmt.Sprintf("%s.%s", service.Name, service.Namespace)
 	}
 
-	return apps, nil
+	return services, nil
 }
