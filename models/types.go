@@ -18,5 +18,5 @@ type ClusterAppConfig struct {
 	Image          string    `yaml:"image"`
 	Ports          []string  `yaml:"ports"`
 	Environment    []*EnvVar `yaml:"env,flow"`
-	ReadinessProbe *Probe    `yaml:"readiness-probe"`
+	ReadinessProbe *Probe    `yaml:"readinessProbe"`
 }

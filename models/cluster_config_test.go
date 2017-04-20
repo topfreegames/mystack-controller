@@ -21,14 +21,14 @@ const (
 	yaml1 = `
 setup:
   image: setup-img
-  period-seconds: 10
-  timeout-seconds: 180
+  periodSeconds: 10
+  timeoutSeconds: 180
 services:
   postgres:
     image: postgres:1.0
     ports:
       - 8585:5432
-    readiness-probe:
+    readinessProbe:
       command:
         - pg_isready
         - -h
@@ -37,8 +37,8 @@ services:
         - 5432
         - -U
         - postgres
-      period-seconds: 10
-      start-deployment-timeout-seconds: 180
+      periodSeconds: 10
+      startDeploymentTimeoutSeconds: 180
   redis:
     image: redis:1.0
     ports:
