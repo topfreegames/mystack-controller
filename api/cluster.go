@@ -8,9 +8,11 @@
 package api
 
 import (
-	"github.com/topfreegames/mystack-controller/models"
+	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/topfreegames/mystack-controller/models"
 )
 
 //ClusterHandler handles cluster creation and deletion
@@ -25,6 +27,8 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.create(w, r)
 	case "delete":
 		c.deleteCluster(w, r)
+	case "apps":
+		c.getApps(w, r)
 	}
 }
 
@@ -54,7 +58,21 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Write(w, http.StatusOK, `{"status": "ok"}`)
+	apps, err := cluster.Apps(c.App.Clientset)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "create cluster error", err)
+		return
+	}
+	appsResponse := map[string][]string{
+		"apps": apps,
+	}
+	bts, err := json.Marshal(&appsResponse)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "create cluster error", err)
+		return
+	}
+
+	WriteBytes(w, http.StatusOK, bts)
 	log(logger, "Cluster successfully created for user %s", username)
 }
 
@@ -88,4 +106,36 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 
 	Write(w, http.StatusOK, `{"status": "ok"}`)
 	log(logger, "Cluster deleted for user %s", username)
+}
+
+func (c *ClusterHandler) getApps(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
+	email := emailFromCtx(r.Context())
+	username := usernameFromEmail(email)
+
+	log(logger, "Cluster apps for user %s", username)
+	clusterName := GetClusterName(r)
+
+	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get apps error", err)
+		return
+	}
+
+	apps, err := cluster.Apps(c.App.Clientset)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get apps error", err)
+		return
+	}
+
+	appsResponse := make(map[string][]string)
+	appsResponse["apps"] = apps
+	bts, err := json.Marshal(appsResponse)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get apps error", err)
+		return
+	}
+
+	WriteBytes(w, http.StatusOK, bts)
+	log(logger, "Cluster apps gotten for user %s", username)
 }

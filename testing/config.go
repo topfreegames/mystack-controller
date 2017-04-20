@@ -15,18 +15,18 @@ import (
 
 //GetDefaultConfig returns the configuration at ./config/test.yaml
 func GetDefaultConfig() (*viper.Viper, error) {
-	cfg := viper.New()
-	cfg.SetConfigFile("../config/test.yaml")
-	cfg.SetConfigType("yaml")
-	cfg.SetEnvPrefix("MYSTACK_CONTROLLER")
-	cfg.AddConfigPath(".")
-	cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	cfg.AutomaticEnv()
+	config := viper.New()
+	config.SetConfigFile("../config/test.yaml")
+	config.SetConfigType("yaml")
+	config.SetEnvPrefix("mystack")
+	config.AddConfigPath(".")
+	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	config.AutomaticEnv()
 
 	// If a config file is found, read it in.
-	if err := cfg.ReadInConfig(); err != nil {
+	if err := config.ReadInConfig(); err != nil {
 		return nil, err
 	}
 
-	return cfg, nil
+	return config, nil
 }

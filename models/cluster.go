@@ -275,3 +275,25 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 
 	return nil
 }
+
+func (c *Cluster) Apps(clientset kubernetes.Interface) ([]string, error) {
+	if !NamespaceExists(clientset, c.Namespace) {
+		return nil, errors.NewKubernetesError(
+			"get apps error",
+			fmt.Errorf("namespace for user '%s' not found", c.Username),
+		)
+	}
+
+	service, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
+	if err != nil {
+		return nil, errors.NewKubernetesError("get apps error", err)
+	}
+
+	services := make([]string, len(service.Items))
+
+	for i, service := range service.Items {
+		services[i] = fmt.Sprintf("%s.%s", service.Name, service.Namespace)
+	}
+
+	return services, nil
+}

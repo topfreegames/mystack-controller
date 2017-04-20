@@ -8,5 +8,5 @@ postgres:
   maxOpenConns: 10
 oauth:
   acceptedDomains: 
-  - "tfgco.com"
-  - "topfreegames.com"
+  - "example.com"
+  - "other.com"
