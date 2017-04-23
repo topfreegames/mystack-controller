@@ -6,36 +6,32 @@
 // http://www.opensource.org/licenses/mit-license
 // Copyright © 2017 Top Free Games <backend@tfgco.com>
 
-package integration_test
+package api_test
 
 import (
-	"io"
-
 	"github.com/Sirupsen/logrus"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/viper"
-
-	"testing"
-
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"github.com/spf13/viper"
 	"github.com/topfreegames/mystack-controller/api"
 	oTesting "github.com/topfreegames/mystack-controller/testing"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"testing"
+
+	_ "github.com/lib/pq"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var clientset kubernetes.Interface
 var app *api.App
 var conn *sqlx.DB
 var db *sqlx.Tx
-var closer io.Closer
 var config *viper.Viper
 
-func TestIntegration(t *testing.T) {
+func TestApi(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Integration Suite")
+	RunSpecs(t, "Api Integration Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -77,10 +73,5 @@ var _ = AfterSuite(func() {
 		err := conn.Close()
 		Expect(err).NotTo(HaveOccurred())
 		db = nil
-	}
-
-	if closer != nil {
-		closer.Close()
-		closer = nil
 	}
 })

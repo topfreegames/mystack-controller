@@ -10,11 +10,13 @@ package models_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/models"
 
 	"database/sql"
+
 	"github.com/jmoiron/sqlx"
 	mTest "github.com/topfreegames/mystack-controller/testing"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
