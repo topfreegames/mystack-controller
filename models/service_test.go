@@ -49,6 +49,7 @@ var _ = Describe("Service", func() {
 			servicev1, err := service.Expose(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(servicev1.GetNamespace()).To(Equal(namespace))
+			Expect(servicev1.ObjectMeta.Labels["mystack/cluster"]).To(Equal(clusterName))
 
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
