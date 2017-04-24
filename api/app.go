@@ -135,7 +135,7 @@ func (a *App) getRouter() *mux.Router {
 		&AccessMiddleware{App: a},
 	)).Methods("GET").Name("cluster-config")
 
-	r.Handle("/dns", Chain(
+	r.Handle("/cluster-configs/{name}/domains", Chain(
 		&DNSHandler{App: a},
 		&LoggingMiddleware{App: a},
 		&AccessMiddleware{App: a},

@@ -143,3 +143,20 @@ func ClusterConfigDetails(db DB, clusterName string) (string, error) {
 
 	return yamlStr, nil
 }
+
+func ClusterCustomDomains(db DB, clusterName string) (map[string][]string, error) {
+	clusterConfig, err := LoadClusterConfig(db, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	customDomains := make(map[string][]string)
+	for name, app := range clusterConfig.Apps {
+		customDomains[name] = app.CustomDomains
+	}
+	for name, svc := range clusterConfig.Services {
+		customDomains[name] = svc.CustomDomains
+	}
+
+	return customDomains, nil
+}
