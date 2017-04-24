@@ -19,4 +19,5 @@ type ClusterAppConfig struct {
 	Ports          []string  `yaml:"ports"`
 	Environment    []*EnvVar `yaml:"env,flow"`
 	ReadinessProbe *Probe    `yaml:"readinessProbe"`
+	CustomDomains  []string  `yaml:"customDomains"`
 }
