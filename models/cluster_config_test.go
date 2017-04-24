@@ -395,4 +395,48 @@ services {
 			Expect(config).To(BeEmpty())
 		})
 	})
+
+	Describe("ClusterCustomDomains", func() {
+		var yaml1 = `
+services:
+  svc1:
+    image: svc-img
+    customDomains:
+      - svc1.example.com
+apps:
+  app1:
+    image: app1
+    customDomains:
+      - app1.example.com
+      - app1.another.com
+  app2:
+    image: app2
+    customDomains:
+      - app2.example.com
+      - app2.another.com
+`
+		It("should return correct custom domains", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name(.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			customDomains, err := ClusterCustomDomains(sqlxDB, clusterName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(customDomains["svc1"]).To(Equal([]string{"svc1.example.com"}))
+			Expect(customDomains["app1"]).To(ConsistOf("app1.example.com", "app1.another.com"))
+			Expect(customDomains["app2"]).To(ConsistOf("app2.example.com", "app2.another.com"))
+		})
+
+		It("should return error if invalid config", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name(.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow("i am invalid"))
+
+			_, err := ClusterCustomDomains(sqlxDB, clusterName)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `i am in...` into models.ClusterConfig"))
+		})
+	})
 })
