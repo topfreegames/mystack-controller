@@ -26,6 +26,7 @@ metadata:
   namespace: {{.Namespace}}
   labels:
     mystack/routable: "true"
+    mystack/cluster: {{.ClusterName}}
 spec:
   selector:
     app: {{.Name}}
@@ -48,13 +49,14 @@ type PortMap struct {
 
 //Service represents a service
 type Service struct {
-	Name      string
-	Namespace string
-	Ports     []*PortMap
+	Name        string
+	Namespace   string
+	Ports       []*PortMap
+	ClusterName string
 }
 
 //NewService is the service ctor
-func NewService(name, username string, ports []*PortMap) *Service {
+func NewService(name, username, clusterName string, ports []*PortMap) *Service {
 	namespace := usernameToNamespace(username)
 	for i, port := range ports {
 		if len(port.Name) == 0 {
@@ -62,9 +64,10 @@ func NewService(name, username string, ports []*PortMap) *Service {
 		}
 	}
 	return &Service{
-		Name:      name,
-		Namespace: namespace,
-		Ports:     ports,
+		Name:        name,
+		Namespace:   namespace,
+		Ports:       ports,
+		ClusterName: clusterName,
 	}
 }
 
