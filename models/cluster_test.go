@@ -171,12 +171,12 @@ apps:
 				),
 			},
 			AppServices: []*Service{
-				NewService("test1", username, portMaps),
-				NewService("test2", username, portMaps),
-				NewService("test3", username, portMaps),
+				NewService("test1", username, clusterName, portMaps),
+				NewService("test2", username, clusterName, portMaps),
+				NewService("test3", username, clusterName, portMaps),
 			},
 			SvcServices: []*Service{
-				NewService("test0", username, portMaps),
+				NewService("test0", username, clusterName, portMaps),
 			},
 			Job: NewJob(
 				username,
