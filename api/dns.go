@@ -10,8 +10,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/topfreegames/mystack-controller/models"
 )
 
 //DNSHandler handler
@@ -25,7 +23,12 @@ func (d *DNSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	clusterName := GetClusterName(r)
 
 	log(logger, "Getting domains of cluster config '%s'", clusterName)
-	customDomains, err := models.ClusterCustomDomains(d.App.DB, clusterName)
+	customDomains := map[string]map[string][]string{
+		"domains": map[string][]string{
+			"app1": []string{"i am temporay"},
+		},
+	}
+	var err error
 	if err != nil {
 		d.App.HandleError(w, Status(err), "cluster custom domains error", err)
 		return

@@ -37,6 +37,10 @@ spec:
     metadata:
       labels:
         app: {{.Name}}
+      annotations:
+        customDomains: {{range .CustomDomains}}
+          - {{.}}
+        {{end}}
     spec:
       containers:
         - name: {{.Name}}
@@ -74,6 +78,7 @@ type Deployment struct {
 	Ports          []int
 	Environment    []*EnvVar
 	ReadinessProbe *Probe
+	CustomDomains  []string
 }
 
 //NewDeployment is the deployment ctor
@@ -82,6 +87,7 @@ func NewDeployment(
 	ports []int,
 	environment []*EnvVar,
 	readinessProbe *Probe,
+	customDomains []string,
 ) *Deployment {
 	namespace := usernameToNamespace(username)
 
@@ -93,6 +99,7 @@ func NewDeployment(
 		Ports:          ports,
 		Environment:    environment,
 		ReadinessProbe: readinessProbe,
+		CustomDomains:  customDomains,
 	}
 }
 

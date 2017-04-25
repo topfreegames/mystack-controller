@@ -8,7 +8,6 @@
 package models
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/topfreegames/mystack-controller/errors"
@@ -63,7 +62,7 @@ func WriteClusterConfig(
 	if len(clusterName) == 0 {
 		return errors.NewGenericError("write cluster config error", fmt.Errorf("invalid empty cluster name"))
 	}
-	clusterConfig, err := ParseYaml(yamlStr)
+	_, err := ParseYaml(yamlStr)
 	if err != nil {
 		return errors.NewYamlError("write cluster config error", err)
 	}
@@ -84,44 +83,7 @@ func WriteClusterConfig(
 		return errors.NewDatabaseError(fmt.Errorf("couldn't insert on database"))
 	}
 
-	if hasInsert, query := BuildQuery(clusterName, clusterConfig); hasInsert {
-		res, err = db.NamedExec(query, map[string]interface{}{})
-		if err != nil {
-			return errors.NewDatabaseError(err)
-		}
-	}
-
 	return nil
-}
-
-func BuildQuery(clusterName string, clusterConfig *ClusterConfig) (bool, string) {
-	var buffer bytes.Buffer
-	buffer.WriteString("INSERT INTO custom_domains VALUES")
-	hasInsert := false
-
-	for name, appConfig := range clusterConfig.Apps {
-		if len(appConfig.CustomDomains) > 0 {
-			hasInsert = true
-			buffer.WriteString("('")
-			buffer.WriteString(clusterName)
-			buffer.WriteString("', '")
-			buffer.WriteString(name)
-			buffer.WriteString("', '{")
-
-			for _, domain := range appConfig.CustomDomains {
-				buffer.WriteString(`"`)
-				buffer.WriteString(domain)
-				buffer.WriteString(`", `)
-			}
-
-			buffer.Truncate(buffer.Len() - 2)
-			buffer.WriteString("}'")
-			buffer.WriteString("),")
-		}
-	}
-
-	buffer.Truncate(buffer.Len() - 1)
-	return hasInsert, buffer.String()
 }
 
 //RemoveClusterConfig writes cluster config on DB
@@ -143,12 +105,6 @@ func RemoveClusterConfig(
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		err = fmt.Errorf("sql: no rows in result set")
-		return errors.NewDatabaseError(err)
-	}
-
-	query = `DELETE FROM custom_domains WHERE cluster=:name`
-	res, err = db.NamedExec(query, values)
-	if err != nil {
 		return errors.NewDatabaseError(err)
 	}
 
@@ -190,21 +146,4 @@ func ClusterConfigDetails(db DB, clusterName string) (string, error) {
 	}
 
 	return yamlStr, nil
-}
-
-func ClusterCustomDomains(db DB, clusterName string) (map[string][]string, error) {
-	clusterConfig, err := LoadClusterConfig(db, clusterName)
-	if err != nil {
-		return nil, err
-	}
-
-	customDomains := make(map[string][]string)
-	for name, app := range clusterConfig.Apps {
-		customDomains[name] = app.CustomDomains
-	}
-	for name, svc := range clusterConfig.Services {
-		customDomains[name] = svc.CustomDomains
-	}
-
-	return customDomains, nil
 }

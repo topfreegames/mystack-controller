@@ -116,7 +116,14 @@ func buildDeployments(
 		if err != nil {
 			return nil, environment, err
 		}
-		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe)
+		customDomains := types[name].CustomDomains
+		deployments[i] = NewDeployment(
+			name, username, config.Image,
+			ports,
+			config.Environment,
+			config.ReadinessProbe,
+			customDomains,
+		)
 		environment = append(environment, config.Environment...)
 		i = i + 1
 	}
@@ -288,24 +295,23 @@ func (c *Cluster) Apps(db DB, clientset kubernetes.Interface, k8sDomain string) 
 		)
 	}
 
-	domains, err := ClusterCustomDomains(db, c.ClusterName)
-	if err != nil {
-		return nil, errors.NewDatabaseError(err)
-	}
-
-	services, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
+	deployments, err := clientset.ExtensionsV1beta1().Deployments(c.Namespace).List(listOptions)
 	if err != nil {
 		return nil, errors.NewKubernetesError("get apps error", err)
 	}
 
-	for _, service := range services.Items {
-		list := domains[service.Name]
-		if list == nil {
-			list = []string{}
+	domains := make(map[string][]string)
+
+	for _, deployment := range deployments.Items {
+		customDomainsMap := deployment.GetAnnotations()
+		customDomains := []string{}
+		for _, domain := range customDomainsMap {
+			customDomains = append(customDomains, domain)
 		}
-		domains[service.GetName()] = append(
-			list,
-			fmt.Sprintf("%s.%s.%s", service.GetName(), service.GetNamespace(), k8sDomain),
+
+		domains[deployment.GetName()] = append(
+			customDomains,
+			fmt.Sprintf("%s.%s.%s", deployment.GetName(), deployment.GetNamespace(), k8sDomain),
 		)
 	}
 

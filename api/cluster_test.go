@@ -76,7 +76,7 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should create existing clusterName", func() {
+		FIt("should create existing clusterName", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -119,10 +119,6 @@ apps:
 		})
 
 		It("should not create cluster twice", func() {
-			mock.
-				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
-				WithArgs(clusterName).
-				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
