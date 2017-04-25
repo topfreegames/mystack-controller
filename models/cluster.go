@@ -19,6 +19,7 @@ import (
 
 //Cluster represents a k8s cluster for a user
 type Cluster struct {
+	ClusterName         string
 	Namespace           string
 	Username            string
 	AppDeployments      []*Deployment
@@ -59,6 +60,7 @@ func NewCluster(
 	k8sJob := NewJob(username, clusterConfig.Setup, environment)
 
 	cluster := &Cluster{
+		ClusterName:         clusterName,
 		Username:            username,
 		Namespace:           namespace,
 		AppDeployments:      k8sAppDeployments,
