@@ -129,6 +129,7 @@ apps:
 		mock        sqlmock.Sqlmock
 		err         error
 		clusterName = "MyCustomApps"
+		domain      = "mystack.com"
 		clientset   *fake.Clientset
 		username    = "user"
 		namespace   = "mystack-user"
@@ -412,20 +413,18 @@ apps:
 			cluster := mockCluster(0, 0, "user")
 			err := cluster.Create(nil, clientset)
 
-			apps, err := cluster.Apps(clientset)
+			domains, err := cluster.Apps(clientset, domain)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(apps).To(ConsistOf(
-				"test0.mystack-user",
-				"test1.mystack-user",
-				"test2.mystack-user",
-				"test3.mystack-user",
-			))
+			Expect(domains["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(domains["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
+			Expect(domains["test2"]).To(Equal([]string{"test2.mystack-user.mystack.com"}))
+			Expect(domains["test3"]).To(Equal([]string{"test3.mystack-user.mystack.com"}))
 		})
 
 		It("should return error if cluster is not runnig", func() {
 			cluster := mockCluster(0, 0, "user")
-			_, err := cluster.Apps(clientset)
+			_, err := cluster.Apps(clientset, domain)
 			Expect(err).To(HaveOccurred())
 		})
 	})

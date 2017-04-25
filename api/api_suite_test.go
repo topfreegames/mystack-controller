@@ -56,6 +56,7 @@ var _ = BeforeSuite(func() {
 		Clientset:           clientset,
 		DeploymentReadiness: &mTest.MockReadiness{},
 		JobReadiness:        &mTest.MockReadiness{},
+		K8sDomain:           "mystack.com",
 	}
 	app.ConfigureServer()
 })

@@ -10,3 +10,5 @@ oauth:
   acceptedDomains: 
   - "example.com"
   - "other.com"
+kubernetes:
+  service-domain-sufix: mystack.com

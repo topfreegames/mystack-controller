@@ -82,10 +82,10 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			bodyJSON := make(map[string][]string)
+			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-user", "test1.mystack-user"))
-			Expect(recorder.Code).To(Equal(http.StatusOK))
+			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
 		It("should create clusterName without setup", func() {
@@ -102,10 +102,10 @@ apps:
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
-			bodyJSON := make(map[string][]string)
+			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-user", "test1.mystack-user"))
-			Expect(recorder.Code).To(Equal(http.StatusOK))
+			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
 		It("should return error 404 when create non existing clusterName", func() {
