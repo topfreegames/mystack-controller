@@ -325,6 +325,10 @@ services {
 				ExpectExec("^DELETE FROM clusters WHERE name=(.+)$").
 				WithArgs(clusterName).
 				WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.
+				ExpectExec("^DELETE FROM custom_domains WHERE cluster=(.+)$").
+				WithArgs(clusterName).
+				WillReturnResult(sqlmock.NewResult(1, 1))
 
 			err = RemoveClusterConfig(sqlxDB, clusterName)
 			Expect(err).NotTo(HaveOccurred())
@@ -437,6 +441,49 @@ apps:
 			_, err := ClusterCustomDomains(sqlxDB, clusterName)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `i am in...` into models.ClusterConfig"))
+		})
+	})
+
+	Describe("BuildQuery", func() {
+		It("should build a valid query", func() {
+			yaml1 := `
+apps:
+  app1:
+    image: app1
+    customDomains:
+      - app1.example.com
+`
+
+			clusterConfig, err := ParseYaml(yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			hasInsert, query := BuildQuery(clusterName, clusterConfig)
+			Expect(hasInsert).To(BeTrue())
+			Expect(query).To(Equal(`INSERT INTO custom_domains VALUES('MyCustomApps', 'app1', '{"app1.example.com"}')`))
+		})
+
+		It("should build a valid multiple query", func() {
+			yaml1 := `
+apps:
+  app1:
+    image: app1
+    customDomains:
+      - app1.example.com
+  app2:
+    image: app2
+    customDomains:
+      - app2.example.com
+      - app2.other.com
+`
+
+			clusterConfig, err := ParseYaml(yaml1)
+			Expect(err).NotTo(HaveOccurred())
+
+			hasInsert, query := BuildQuery(clusterName, clusterConfig)
+			Expect(hasInsert).To(BeTrue())
+			Expect(query).To(SatisfyAny(
+				Equal(`INSERT INTO custom_domains VALUES('MyCustomApps', 'app2', '{"app2.example.com", "app2.other.com"}'),('MyCustomApps', 'app1', '{"app1.example.com"}')`),
+				Equal(`INSERT INTO custom_domains VALUES('MyCustomApps', 'app1', '{"app1.example.com"}'),('MyCustomApps', 'app2', '{"app2.example.com", "app2.other.com"}')`)))
 		})
 	})
 })

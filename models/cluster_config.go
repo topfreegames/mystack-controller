@@ -8,7 +8,9 @@
 package models
 
 import (
+	"bytes"
 	"fmt"
+
 	"github.com/topfreegames/mystack-controller/errors"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -61,7 +63,8 @@ func WriteClusterConfig(
 	if len(clusterName) == 0 {
 		return errors.NewGenericError("write cluster config error", fmt.Errorf("invalid empty cluster name"))
 	}
-	if _, err := ParseYaml(yamlStr); err != nil {
+	clusterConfig, err := ParseYaml(yamlStr)
+	if err != nil {
 		return errors.NewYamlError("write cluster config error", err)
 	}
 	if len(yamlStr) == 0 {
@@ -80,7 +83,45 @@ func WriteClusterConfig(
 	if n, _ := res.RowsAffected(); n == 0 {
 		return errors.NewDatabaseError(fmt.Errorf("couldn't insert on database"))
 	}
+
+	if hasInsert, query := BuildQuery(clusterName, clusterConfig); hasInsert {
+		res, err = db.NamedExec(query, map[string]interface{}{})
+		if err != nil {
+			return errors.NewDatabaseError(err)
+		}
+	}
+
 	return nil
+}
+
+func BuildQuery(clusterName string, clusterConfig *ClusterConfig) (bool, string) {
+	var buffer bytes.Buffer
+	buffer.WriteString("INSERT INTO custom_domains VALUES")
+	hasInsert := false
+
+	for name, appConfig := range clusterConfig.Apps {
+		if len(appConfig.CustomDomains) > 0 {
+			hasInsert = true
+			buffer.WriteString("('")
+			buffer.WriteString(clusterName)
+			buffer.WriteString("', '")
+			buffer.WriteString(name)
+			buffer.WriteString("', '{")
+
+			for _, domain := range appConfig.CustomDomains {
+				buffer.WriteString(`"`)
+				buffer.WriteString(domain)
+				buffer.WriteString(`", `)
+			}
+
+			buffer.Truncate(buffer.Len() - 2)
+			buffer.WriteString("}'")
+			buffer.WriteString("),")
+		}
+	}
+
+	buffer.Truncate(buffer.Len() - 1)
+	return hasInsert, buffer.String()
 }
 
 //RemoveClusterConfig writes cluster config on DB
@@ -104,6 +145,13 @@ func RemoveClusterConfig(
 		err = fmt.Errorf("sql: no rows in result set")
 		return errors.NewDatabaseError(err)
 	}
+
+	query = `DELETE FROM custom_domains WHERE cluster=:name`
+	res, err = db.NamedExec(query, values)
+	if err != nil {
+		return errors.NewDatabaseError(err)
+	}
+
 	return nil
 }
 

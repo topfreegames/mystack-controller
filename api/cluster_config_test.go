@@ -190,6 +190,10 @@ iam
 				ExpectExec("DELETE FROM clusters").
 				WithArgs(clusterName).
 				WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.
+				ExpectExec("^DELETE FROM custom_domains WHERE cluster=(.+)$").
+				WithArgs(clusterName).
+				WillReturnResult(sqlmock.NewResult(1, 1))
 
 			Expect(err).NotTo(HaveOccurred())
 			clusterConfigHandler.ServeHTTP(recorder, request)

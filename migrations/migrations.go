@@ -2,6 +2,7 @@
 // sources:
 // migrations/0001-CreateUserTable.sql
 // migrations/0002-CreateClusterTable.sql
+// migrations/0003-CreateCustomDomainsTable.sql
 // DO NOT EDIT!
 
 package migrations
@@ -109,6 +110,26 @@ func migrations0002CreateclustertableSql() (*asset, error) {
 	return a, nil
 }
 
+var _migrations0003CreatecustomdomainstableSql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x7c\x8e\xc1\x4a\x33\x31\x14\x85\xf7\x79\x8a\xbb\x6c\xa1\x69\xfe\xbf\x50\x17\x55\xc4\x5a\x46\x29\x8c\x15\x65\xba\x12\x91\x34\x73\x3b\x13\x3a\xc9\x0d\xc9\x1d\x87\x3e\x92\xaf\xe1\x93\xc9\xd8\x29\x08\x82\xcb\xe4\x9c\xef\xbb\x47\x4a\x70\xc7\xc4\xda\x1c\xa4\x21\xcf\x91\x9a\x06\x23\xe8\x60\x85\x94\x50\x33\x87\xb4\x50\xaa\xb2\x5c\xb7\xbb\xa9\x21\xa7\x98\xc2\x3e\x22\x56\xda\x61\x52\xbf\x49\x21\x65\x0f\xe6\xd6\xa0\x4f\x58\x42\xeb\x4b\x8c\xc0\x35\xc2\xc3\xba\x80\xe6\xf4\xbd\x38\xbb\x17\x4a\x75\x5d\x37\xa5\x80\x3e\x51\x1b\x0d\x4e\x29\x56\x6a\x68\x25\xe5\x2c\xcb\xe1\xd1\x13\x2b\x0a\xc7\x68\xab\x9a\xe1\xf3\x03\x66\xff\xfe\x5f\x40\x41\x01\xee\x22\x22\xdc\xf7\x73\xe0\x6a\xa7\xcd\x01\x7d\x79\xc3\xfb\xca\x50\x3f\xf7\x5a\x88\xd5\x73\xb6\x2c\x32\x28\x96\xb7\x79\x06\xa6\x4d\x4c\xee\xad\x24\xa7\xad\x4f\x30\x12\x00\x00\xa6\x69\x13\x63\x84\x77\x1d\x4d\xad\xe3\x68\x36\x9f\x8f\x61\xf3\x58\xc0\x66\x9b\xe7\x93\xef\x8a\x0e\xe1\xaf\xf8\xec\xfb\x59\x79\x79\x3d\x65\xdb\xcd\xfa\x69\x9b\x8d\x86\x23\x93\x5e\x35\x16\xe3\x4b\xf1\x15\x00\x00\xff\xff\x27\x37\xb5\xa2\x79\x01\x00\x00")
+
+func migrations0003CreatecustomdomainstableSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migrations0003CreatecustomdomainstableSql,
+		"migrations/0003-CreateCustomDomainsTable.sql",
+	)
+}
+
+func migrations0003CreatecustomdomainstableSql() (*asset, error) {
+	bytes, err := migrations0003CreatecustomdomainstableSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migrations/0003-CreateCustomDomainsTable.sql", size: 377, mode: os.FileMode(420), modTime: time.Unix(1493082156, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -163,6 +184,7 @@ func AssetNames() []string {
 var _bindata = map[string]func() (*asset, error){
 	"migrations/0001-CreateUserTable.sql": migrations0001CreateusertableSql,
 	"migrations/0002-CreateClusterTable.sql": migrations0002CreateclustertableSql,
+	"migrations/0003-CreateCustomDomainsTable.sql": migrations0003CreatecustomdomainstableSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -208,6 +230,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"migrations": &bintree{nil, map[string]*bintree{
 		"0001-CreateUserTable.sql": &bintree{migrations0001CreateusertableSql, map[string]*bintree{}},
 		"0002-CreateClusterTable.sql": &bintree{migrations0002CreateclustertableSql, map[string]*bintree{}},
+		"0003-CreateCustomDomainsTable.sql": &bintree{migrations0003CreatecustomdomainstableSql, map[string]*bintree{}},
 	}},
 }}
 
