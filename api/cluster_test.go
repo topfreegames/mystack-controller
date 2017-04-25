@@ -81,15 +81,20 @@ apps:
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
-			bodyJSON := make(map[string][]string)
+			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-derp", "test1.mystack-derp"))
+			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
 		It("should create existing clusterName without setup", func() {
@@ -97,15 +102,20 @@ apps:
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithoutSetup))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithoutSetup))
 
-			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
-			bodyJSON := make(map[string][]string)
+			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-derp", "test1.mystack-derp"))
+			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
 		It("should not create cluster twice", func() {
@@ -117,20 +127,24 @@ apps:
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			recorder = httptest.NewRecorder()
 			request, _ = http.NewRequest("PUT", route, nil)
-			ctx = NewContextWithEmail(request.Context(), "derp@example.com")
+			ctx = NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
 			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
-			Expect(bodyJSON["description"]).To(Equal("namespace for user 'derp' already exists"))
+			Expect(bodyJSON["description"]).To(Equal("namespace for user 'user' already exists"))
 			Expect(bodyJSON["error"]).To(Equal("create cluster error"))
 			Expect(recorder.Code).To(Equal(http.StatusConflict))
 		})
@@ -141,7 +155,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnError(fmt.Errorf("sql: no rows in result set"))
 
-			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
@@ -202,13 +216,13 @@ apps:
 				WithArgs(clusterName).
 				WillReturnError(fmt.Errorf("sql: no rows in result set"))
 
-			ctx := NewContextWithEmail(request.Context(), "derp@example.com")
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
 			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["description"]).To(Equal("namespace for user 'derp' not found"))
+			Expect(bodyJSON["description"]).To(Equal("namespace for user 'user' not found"))
 			Expect(bodyJSON["error"]).To(Equal("delete cluster error"))
 			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
 			Expect(recorder.Code).To(Equal(http.StatusNotFound))
@@ -265,6 +279,10 @@ apps:
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
 			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())
@@ -276,9 +294,10 @@ apps:
 
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			Expect(recorder.Code).To(Equal(http.StatusOK))
-			bodyJSON := make(map[string][]string)
+			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["apps"]).To(ConsistOf("test0.mystack-user", "test1.mystack-user"))
+			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
 		It("should return status 404 if namespace doesn't exist", func() {

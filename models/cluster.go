@@ -9,12 +9,13 @@ package models
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/topfreegames/mystack-controller/errors"
-	"k8s.io/client-go/kubernetes"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/topfreegames/mystack-controller/errors"
+	"k8s.io/client-go/kubernetes"
 )
 
 //Cluster represents a k8s cluster for a user
@@ -287,17 +288,24 @@ func (c *Cluster) Apps(db DB, clientset kubernetes.Interface, k8sDomain string) 
 		)
 	}
 
-	service, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
+	domains, err := ClusterCustomDomains(db, c.ClusterName)
+	if err != nil {
+		return nil, errors.NewDatabaseError(err)
+	}
+
+	services, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
 	if err != nil {
 		return nil, errors.NewKubernetesError("get apps error", err)
 	}
 
-	domains, err := ClusterCustomDomains(db, c.ClusterName)
-
-	for _, service := range service.Items {
-		domains[service.Name] = append(
-			domains[service.Name],
-			fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, k8sDomain),
+	for _, service := range services.Items {
+		list := domains[service.Name]
+		if list == nil {
+			list = []string{}
+		}
+		domains[service.GetName()] = append(
+			list,
+			fmt.Sprintf("%s.%s.%s", service.GetName(), service.GetNamespace(), k8sDomain),
 		)
 	}
 

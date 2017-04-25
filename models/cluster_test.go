@@ -129,6 +129,7 @@ apps:
 		mock        sqlmock.Sqlmock
 		err         error
 		clusterName = "MyCustomApps"
+		domain      = "mystack.com"
 		clientset   *fake.Clientset
 		username    = "user"
 		namespace   = "mystack-user"
@@ -147,8 +148,9 @@ apps:
 	mockCluster := func(period, timeout int, username string) *Cluster {
 		namespace := fmt.Sprintf("mystack-%s", username)
 		return &Cluster{
-			Username:  username,
-			Namespace: namespace,
+			Username:    username,
+			ClusterName: clusterName,
+			Namespace:   namespace,
 			AppDeployments: []*Deployment{
 				NewDeployment("test1", username, "app1", ports, nil, nil),
 				NewDeployment("test2", username, "app2", ports, nil, nil),
@@ -408,24 +410,39 @@ apps:
 	})
 
 	Describe("Apps", func() {
+		BeforeEach(func() {
+			db, mock, err = sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			sqlxDB = sqlx.NewDb(db, "postgres")
+		})
+
+		AfterEach(func() {
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+			db.Close()
+		})
+
 		It("should return correct apps if cluster is running", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
 			cluster := mockCluster(0, 0, "user")
 			err := cluster.Create(nil, clientset)
 
-			apps, err := cluster.Apps(clientset)
+			domains, err := cluster.Apps(sqlxDB, clientset, domain)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(apps).To(ConsistOf(
-				"test0.mystack-user",
-				"test1.mystack-user",
-				"test2.mystack-user",
-				"test3.mystack-user",
-			))
+			Expect(domains["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(domains["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
+			Expect(domains["test2"]).To(Equal([]string{"test2.mystack-user.mystack.com"}))
+			Expect(domains["test3"]).To(Equal([]string{"test3.mystack-user.mystack.com"}))
 		})
 
 		It("should return error if cluster is not runnig", func() {
 			cluster := mockCluster(0, 0, "user")
-			_, err := cluster.Apps(clientset)
+			_, err := cluster.Apps(sqlxDB, clientset, domain)
 			Expect(err).To(HaveOccurred())
 		})
 	})
