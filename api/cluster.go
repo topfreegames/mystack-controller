@@ -58,7 +58,7 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domains, err := cluster.Apps(c.App.DB, c.App.Clientset, c.App.K8sDomain)
+	domains, err := cluster.Apps(c.App.Clientset, c.App.K8sDomain)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
@@ -121,7 +121,7 @@ func (c *ClusterHandler) getApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domains, err := cluster.Apps(c.App.DB, c.App.Clientset, c.App.K8sDomain)
+	domains, err := cluster.Apps(c.App.Clientset, c.App.K8sDomain)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "get apps error", err)
 		return

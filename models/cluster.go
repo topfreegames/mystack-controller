@@ -277,7 +277,7 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 }
 
 //Apps returns a list of accessible domains
-func (c *Cluster) Apps(db DB, clientset kubernetes.Interface, k8sDomain string) (map[string][]string, error) {
+func (c *Cluster) Apps(clientset kubernetes.Interface, k8sDomain string) (map[string][]string, error) {
 	if !NamespaceExists(clientset, c.Namespace) {
 		return nil, errors.NewKubernetesError(
 			"get apps error",
@@ -290,13 +290,11 @@ func (c *Cluster) Apps(db DB, clientset kubernetes.Interface, k8sDomain string) 
 		return nil, errors.NewKubernetesError("get apps error", err)
 	}
 
-	domains, err := ClusterCustomDomains(db, c.ClusterName)
+	//Return array for further improvements (e.g. custom domains)
+	domains := make(map[string][]string)
 
 	for _, service := range service.Items {
-		domains[service.Name] = append(
-			domains[service.Name],
-			fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, k8sDomain),
-		)
+		domains[service.Name] = []string{fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, k8sDomain)}
 	}
 
 	return domains, nil
