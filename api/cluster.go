@@ -58,15 +58,14 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apps, err := cluster.Apps(c.App.Clientset)
+	domains, err := cluster.Apps(c.App.DB, c.App.Clientset, c.App.K8sDomain)
 	if err != nil {
-		c.App.HandleError(w, Status(err), "create cluster error", err)
+		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
 	}
-	appsResponse := map[string][]string{
-		"apps": apps,
-	}
-	bts, err := json.Marshal(&appsResponse)
+
+	response := map[string]map[string][]string{"domains": domains}
+	bts, err := json.Marshal(&response)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
@@ -122,15 +121,14 @@ func (c *ClusterHandler) getApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apps, err := cluster.Apps(c.App.Clientset)
+	domains, err := cluster.Apps(c.App.DB, c.App.Clientset, c.App.K8sDomain)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
 	}
 
-	appsResponse := make(map[string][]string)
-	appsResponse["apps"] = apps
-	bts, err := json.Marshal(appsResponse)
+	response := map[string]map[string][]string{"domains": domains}
+	bts, err := json.Marshal(response)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
