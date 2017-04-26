@@ -28,15 +28,15 @@ metadata:
   namespace: {{.Namespace}}
   labels:
     mystack/routable: "true"
-    mystack/owner: {{.Username}}
     app: {{.Name}}
-    heritage: mystack
 spec:
   replicas: 1
   template:
     metadata:
       labels:
         app: {{.Name}}
+        mystack/owner: {{.Username}}
+        heritage: mystack
     spec:
       containers:
         - name: {{.Name}}
