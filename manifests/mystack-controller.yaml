@@ -13,6 +13,8 @@ metadata:
 spec:
   selector:
     app: mystack-controller
+  labels:
+    mystack/routable: "true"
   ports:
     - protocol: TCP
       port: 8080
