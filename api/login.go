@@ -70,7 +70,7 @@ func (l *LoginHandler) exchangeAccess(w http.ResponseWriter, r *http.Request) {
 
 	authCode := r.FormValue("code")
 	if len(authCode) == 0 {
-		l.App.HandleError(w, http.StatusBadRequest, "state must not be empty", fmt.Errorf("state must not be empty"))
+		l.App.HandleError(w, http.StatusBadRequest, "code must not be empty", fmt.Errorf("state must not be empty"))
 		return
 	}
 
