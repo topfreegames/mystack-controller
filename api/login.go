@@ -8,10 +8,12 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/topfreegames/mystack-controller/extensions"
 	"github.com/topfreegames/mystack-controller/models"
-	"net/http"
 )
 
 //LoginHandler handles login url requests
@@ -47,9 +49,18 @@ func (l *LoginHandler) generateURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body := fmt.Sprintf(`{"url": "%s"}`, url)
+	bodyResponse := map[string]string{
+		"url":            url,
+		"controllerHost": fmt.Sprintf("controller.%s", l.App.K8sDomain),
+	}
+	bts, err := json.Marshal(bodyResponse)
+	if err != nil {
+		logger.WithError(err).Errorln("error parsing map")
+		l.App.HandleError(w, http.StatusInternalServerError, "error parsing map", err)
+		return
+	}
 
-	Write(w, http.StatusOK, body)
+	WriteBytes(w, http.StatusOK, bts)
 	log(logger, "Login URL generated")
 }
 

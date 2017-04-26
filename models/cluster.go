@@ -9,12 +9,13 @@ package models
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/topfreegames/mystack-controller/errors"
-	"k8s.io/client-go/kubernetes"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/topfreegames/mystack-controller/errors"
+	"k8s.io/client-go/kubernetes"
 )
 
 //Cluster represents a k8s cluster for a user
@@ -274,4 +275,31 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	}
 
 	return nil
+}
+
+//Apps returns a list of accessible domains
+func (c *Cluster) Apps(clientset kubernetes.Interface, k8sDomain string) (map[string][]string, error) {
+	if !NamespaceExists(clientset, c.Namespace) {
+		return nil, errors.NewKubernetesError(
+			"get apps error",
+			fmt.Errorf("namespace for user '%s' not found", c.Username),
+		)
+	}
+
+	services, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
+	if err != nil {
+		return nil, errors.NewKubernetesError(
+			"get apps error",
+			fmt.Errorf("couldn't retrieve services"),
+		)
+	}
+
+	//Return array for further improvements (e.g. custom domains)
+	domains := make(map[string][]string)
+
+	for _, service := range services.Items {
+		domains[service.Name] = []string{fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, k8sDomain)}
+	}
+
+	return domains, nil
 }

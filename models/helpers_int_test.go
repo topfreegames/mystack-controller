@@ -6,9 +6,10 @@
 // http://www.opensource.org/licenses/mit-license
 // Copyright © 2017 Top Free Games <backend@tfgco.com>
 
-package integration_test
+package models_test
 
 import (
+	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/topfreegames/mystack-controller/models"

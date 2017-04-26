@@ -33,6 +33,7 @@ type App struct {
 	Router              *mux.Router
 	Server              *http.Server
 	EmailDomain         []string
+	K8sDomain           string
 	Clientset           kubernetes.Interface
 	DeploymentReadiness models.Readiness
 	JobReadiness        models.Readiness
@@ -99,6 +100,13 @@ func (a *App) getRouter() *mux.Router {
 		&AccessMiddleware{App: a},
 	)).Methods("DELETE").Name("cluster")
 
+	r.Handle("/clusters/{name}/apps", Chain(
+		&ClusterHandler{App: a, Method: "apps"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&AccessMiddleware{App: a},
+	)).Methods("GET").Name("cluster")
+
 	r.Handle("/cluster-configs/{name}/create", Chain(
 		&ClusterConfigHandler{App: a, Method: "create"},
 		&VersionMiddleware{},
@@ -128,17 +136,12 @@ func (a *App) getRouter() *mux.Router {
 		&AccessMiddleware{App: a},
 	)).Methods("GET").Name("cluster-config")
 
-	r.Handle("/dns", Chain(
-		&DNSHandler{App: a},
-		&LoggingMiddleware{App: a},
-		&AccessMiddleware{App: a},
-		&VersionMiddleware{},
-	)).Methods("GET").Name("dns")
-
 	return r
 }
 
 func (a *App) configureApp() error {
+	a.K8sDomain = a.Config.GetString("kubernetes.service-domain-sufix")
+
 	a.configureLogger()
 
 	err := a.configureDatabase()

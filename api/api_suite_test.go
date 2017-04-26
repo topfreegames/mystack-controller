@@ -1,3 +1,11 @@
+// mystack-controller api
+// +build unit
+// https://github.com/topfreegames/mystack-controller
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2017 Top Free Games <backend@tfgco.com>
+
 package api_test
 
 import (
@@ -44,10 +52,11 @@ var _ = BeforeSuite(func() {
 		Address:             fmt.Sprintf("%s:%d", "0.0.0.0", 8889),
 		Debug:               false,
 		Logger:              l,
-		EmailDomain:         config.GetStringSlice("email.domain"),
+		EmailDomain:         config.GetStringSlice("oauth.acceptedDomains"),
 		Clientset:           clientset,
 		DeploymentReadiness: &mTest.MockReadiness{},
 		JobReadiness:        &mTest.MockReadiness{},
+		K8sDomain:           "mystack.com",
 	}
 	app.ConfigureServer()
 })

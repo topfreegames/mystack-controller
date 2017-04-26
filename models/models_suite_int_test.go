@@ -1,5 +1,5 @@
 // mystack-controller api
-// +build unit
+// +build integration
 // https://github.com/topfreegames/mystack-controller
 //
 // Licensed under the MIT license:
@@ -9,36 +9,48 @@
 package models_test
 
 import (
+	"github.com/Sirupsen/logrus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"database/sql"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+	_ "github.com/lib/pq"
+	oTesting "github.com/topfreegames/mystack-controller/testing"
 )
 
-var (
-	db     *sql.DB
-	sqlxDB *sqlx.DB
-	mock   sqlmock.Sqlmock
-	err    error
-)
+var conn *sqlx.DB
+var db *sqlx.Tx
+var err error
 
 func TestModels(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Models Suite")
+	RunSpecs(t, "Models Integration Suite")
 }
 
-var _ = BeforeEach(func() {
-	db, mock, err = sqlmock.New()
+var _ = BeforeSuite(func() {
+	l := logrus.New()
+	l.Level = logrus.FatalLevel
+
+	conn, err = oTesting.GetTestDB()
 	Expect(err).NotTo(HaveOccurred())
-	sqlxDB = sqlx.NewDb(db, "postgres")
+})
+
+var _ = BeforeEach(func() {
+	db, err = conn.Beginx()
+	Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = AfterEach(func() {
-	defer db.Close()
-	err = mock.ExpectationsWereMet()
+	err = db.Rollback()
 	Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = AfterSuite(func() {
+	if conn != nil {
+		err := conn.Close()
+		Expect(err).NotTo(HaveOccurred())
+		db = nil
+	}
 })

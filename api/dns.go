@@ -21,6 +21,6 @@ func (d *DNSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := loggerFromContext(r.Context())
 	log(logger, "Performing DNS")
 
-	Write(w, http.StatusOK, `{"domains": ["test.example.test", "test2.example.test"]}`)
+	Write(w, http.StatusOK, `{"domains": ["mystack.com"]}`)
 	log(logger, "DNS done")
 }

@@ -10,11 +10,13 @@ package models_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/topfreegames/mystack-controller/models"
 
 	"database/sql"
+
 	"github.com/jmoiron/sqlx"
 	mTest "github.com/topfreegames/mystack-controller/testing"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
@@ -127,6 +129,7 @@ apps:
 		mock        sqlmock.Sqlmock
 		err         error
 		clusterName = "MyCustomApps"
+		domain      = "mystack.com"
 		clientset   *fake.Clientset
 		username    = "user"
 		namespace   = "mystack-user"
@@ -402,6 +405,27 @@ apps:
 			err = cluster.Delete(clientset)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("namespace for user 'user' not found"))
+		})
+	})
+
+	Describe("Apps", func() {
+		It("should return correct apps if cluster is running", func() {
+			cluster := mockCluster(0, 0, "user")
+			err := cluster.Create(nil, clientset)
+
+			domains, err := cluster.Apps(clientset, domain)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(domains["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
+			Expect(domains["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
+			Expect(domains["test2"]).To(Equal([]string{"test2.mystack-user.mystack.com"}))
+			Expect(domains["test3"]).To(Equal([]string{"test3.mystack-user.mystack.com"}))
+		})
+
+		It("should return error if cluster is not runnig", func() {
+			cluster := mockCluster(0, 0, "user")
+			_, err := cluster.Apps(clientset, domain)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

@@ -8,7 +8,7 @@ metadata:
   namespace: mystack
 spec:
   ports:
-    - port: 5432
+    - port: 8585
       targetPort: 5432
   selector:
     app: mystack-postgres
