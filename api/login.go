@@ -52,6 +52,7 @@ func (l *LoginHandler) generateURL(w http.ResponseWriter, r *http.Request) {
 	bodyResponse := map[string]string{
 		"url":            url,
 		"controllerHost": fmt.Sprintf("controller.%s", l.App.K8sDomain),
+		"loggerHost":     fmt.Sprintf("logger.%s", l.App.K8sDomain),
 	}
 	bts, err := json.Marshal(bodyResponse)
 	if err != nil {
