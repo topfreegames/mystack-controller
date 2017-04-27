@@ -11,4 +11,4 @@ oauth:
   - "example.com"
   - "other.com"
 kubernetes:
-  service-domain-sufix: mystack.com
+  service-domain-suffix: mystack.com

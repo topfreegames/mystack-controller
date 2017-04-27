@@ -140,7 +140,7 @@ func (a *App) getRouter() *mux.Router {
 }
 
 func (a *App) configureApp() error {
-	a.K8sDomain = a.Config.GetString("kubernetes.service-domain-sufix")
+	a.K8sDomain = a.Config.GetString("kubernetes.service-domain-suffix")
 
 	a.configureLogger()
 
