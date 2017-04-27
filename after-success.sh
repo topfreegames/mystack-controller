@@ -17,7 +17,7 @@ if [ $TRAVIS_PULL_REQUEST = 'false' ]; then
 
   # If this commit has a tag, use on the registry too.
   if ! test -z $TRAVIS_TAG; then
-    docker tag myapp $REPO:${TRAVIS_TAG} \
+    docker tag mystack-controller:latest $REPO:${TRAVIS_TAG} \
       && docker push $REPO:${TRAVIS_TAG};
   fi
 fi
