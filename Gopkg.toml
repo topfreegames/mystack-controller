@@ -1,0 +1,8 @@
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/onsi/ginkgo"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/topfreegames/mystack-cli"

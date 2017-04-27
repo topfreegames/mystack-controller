@@ -22,7 +22,6 @@ setup-ci:
 	@go get github.com/onsi/ginkgo/ginkgo
 	@go get -u github.com/wadey/gocovmerge
 	@go get -u github.com/jteeuwen/go-bindata/...
-	@dep init
 	@dep ensure
 
 build:
