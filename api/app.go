@@ -12,6 +12,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -207,7 +208,11 @@ func (a *App) configureLogger() {
 //ConfigureServer construct the routes
 func (a *App) ConfigureServer() {
 	a.Router = a.getRouter()
-	a.Server = &http.Server{Addr: a.Address, Handler: a.Router}
+	a.Server = &http.Server{
+		Addr:         a.Address,
+		Handler:      a.Router,
+		WriteTimeout: 10 * time.Minute,
+	}
 }
 
 //HandleError writes an error response with message and status
