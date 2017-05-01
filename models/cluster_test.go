@@ -345,6 +345,31 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(jobs.Items).To(BeEmpty())
 		})
+
+		It("should run with env var as object", func() {
+			obj := "{\\\"key\\\": \\\"value\\\"}"
+			cluster := &Cluster{
+				Username:  username,
+				Namespace: namespace,
+				AppDeployments: []*Deployment{
+					NewDeployment("test1", username, "app1", ports, []*EnvVar{
+						&EnvVar{Name: "VARIABLE_1", Value: obj},
+					}, nil),
+				},
+				AppServices: []*Service{
+					NewService("test1", username, portMaps),
+				},
+				DeploymentReadiness: &mTest.MockReadiness{},
+				JobReadiness:        &mTest.MockReadiness{},
+			}
+			err := cluster.Create(nil, clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			deploy := deploys.Items[0]
+			Expect(deploy.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("{\"key\": \"value\"}"))
+		})
 	})
 
 	Describe("Delete", func() {
