@@ -42,7 +42,7 @@ var _ = Describe("Healthcheck", func() {
 
 			It("returns the version as a header", func() {
 				app.Router.ServeHTTP(recorder, request)
-				Expect(recorder.Header().Get("x-mystack-controller-version")).To(Equal("0.1.0"))
+				Expect(recorder.Header().Get("x-mystack-controller-version")).To(Equal("0.1.1"))
 			})
 		})
 	})
