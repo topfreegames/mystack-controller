@@ -222,6 +222,23 @@ services {
 			Expect(err.Error()).To(Equal("invalid empty config"))
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
 		})
+
+		It("should write object as string on env var", func() {
+			validYaml := `
+apps:
+  app1:
+    image: img
+    env:
+      - name: OBJ
+        value: "{\"key\": \"value\"}"
+      `
+			mock.
+				ExpectExec("INSERT INTO clusters").
+				WithArgs(clusterName, validYaml).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+			err := WriteClusterConfig(sqlxDB, clusterName, validYaml)
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 
 	Describe("LoadClusterConfig", func() {
