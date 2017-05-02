@@ -19,7 +19,7 @@ type JobReadiness struct{}
 
 func getJobTimes(setup *Setup) (time.Duration, time.Duration) {
 	const (
-		defaultTimeout = time.Duration(120) * time.Second
+		defaultTimeout = time.Duration(10) * time.Minute
 		defaultPeriod  = time.Duration(5) * time.Second
 	)
 

@@ -20,7 +20,7 @@ type DeploymentReadiness struct{}
 func getDeployTimes(probe *Probe) (time.Duration, time.Duration) {
 	const (
 		defaultPeriod  = time.Duration(5) * time.Second
-		defaultTimeout = time.Duration(120) * time.Second
+		defaultTimeout = time.Duration(10) * time.Minute
 	)
 
 	if probe == nil {
