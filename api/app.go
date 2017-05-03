@@ -211,7 +211,7 @@ func (a *App) ConfigureServer() {
 	a.Server = &http.Server{
 		Addr:         a.Address,
 		Handler:      a.Router,
-		WriteTimeout: 10 * time.Minute,
+		WriteTimeout: 20 * time.Minute,
 	}
 }
 
