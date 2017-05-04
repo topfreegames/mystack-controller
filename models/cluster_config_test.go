@@ -83,6 +83,62 @@ apps:
     ports:
       - 5000:5001
 `
+	yamlWithVolume = `
+volumes:
+  - name: postgres-volume
+    storage: 1Gi
+services:
+  postgres:
+    image: postgres:1.0
+    ports:
+      - 8585:5432
+    env:
+      - name: PGDATA
+        value: /var/lib/postgresql/data/pgdata
+    volumeMount:
+      name: postgres-volume
+      mountPath: /var/lib/postgresql/data
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+    env:
+      - name: DATABASE_URL
+        value: postgresql://derp:1234@example.com
+      - name: USERNAME
+        value: derp
+`
+	yamlWith2Volumes = `
+volumes:
+  - name: postgres-volume
+    storage: 1Gi
+  - name: redis-volume
+    storage: 1Gi
+services:
+  postgres:
+    image: postgres:1.0
+    ports:
+      - 8585:5432
+    env:
+      - name: PGDATA
+        value: /var/lib/postgresql/data/pgdata
+    volumeMount:
+      name: postgres-volume
+      mountPath: /var/lib/postgresql/data
+  redis:
+    image: redis:1.0
+    ports:
+      - 6333
+    volumeMount:
+      name: redis-volume
+      mountPath: /data
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000
+`
 )
 
 var _ = Describe("ClusterConfig", func() {
@@ -92,7 +148,7 @@ var _ = Describe("ClusterConfig", func() {
 	)
 
 	Describe("ParseYaml", func() {
-		It("should build correct struct form yaml", func() {
+		It("should build correct struct from yaml", func() {
 			clusterConfig, err := ParseYaml(yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -129,6 +185,54 @@ var _ = Describe("ClusterConfig", func() {
 			Expect(clusterConfig.Setup.PeriodSeconds).To(Equal(10))
 		})
 
+		It("should build correct struct from yaml with volume", func() {
+			clusterConfig, err := ParseYaml(yamlWithVolume)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
+			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
+			Expect(clusterConfig.Services["postgres"].ReadinessProbe).To(BeNil())
+			Expect(clusterConfig.Services["postgres"].Environment).To(BeEquivalentTo([]*EnvVar{
+				&EnvVar{
+					Name:  "PGDATA",
+					Value: "/var/lib/postgresql/data/pgdata",
+				},
+			}))
+		})
+
+		It("should build correct struct from yaml with two volumes", func() {
+			clusterConfig, err := ParseYaml(yamlWith2Volumes)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
+			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
+			Expect(clusterConfig.Services["postgres"].ReadinessProbe).To(BeNil())
+			Expect(clusterConfig.Services["postgres"].Environment).To(BeEquivalentTo([]*EnvVar{
+				&EnvVar{
+					Name:  "PGDATA",
+					Value: "/var/lib/postgresql/data/pgdata",
+				},
+			}))
+
+			volumeMount := clusterConfig.Services["postgres"].VolumeMount
+			Expect(volumeMount.Name).To(Equal("postgres-volume"))
+			Expect(volumeMount.MountPath).To(Equal("/var/lib/postgresql/data"))
+
+			volumeMount = clusterConfig.Services["redis"].VolumeMount
+			Expect(volumeMount.Name).To(Equal("redis-volume"))
+			Expect(volumeMount.MountPath).To(Equal("/data"))
+
+			pvcs := clusterConfig.Volumes
+			Expect(pvcs).To(HaveLen(2))
+			Expect(pvcs[0].Name).To(Equal("postgres-volume"))
+			Expect(pvcs[0].Namespace).To(Equal(""))
+			Expect(pvcs[0].Storage).To(Equal("1Gi"))
+
+			Expect(pvcs[1].Name).To(Equal("redis-volume"))
+			Expect(pvcs[1].Namespace).To(Equal(""))
+			Expect(pvcs[1].Storage).To(Equal("1Gi"))
+		})
+
 		It("should return error with invalid syntax yaml", func() {
 			invalidYaml := `
 services {
@@ -146,7 +250,7 @@ services {
 	Describe("WriteClusterConfig", func() {
 		It("should write cluster config", func() {
 			mock.
-				ExpectExec("INSERT INTO clusters").
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
 				WithArgs(clusterName, yaml1).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -156,11 +260,21 @@ services {
 
 		It("should write cluster config without setup", func() {
 			mock.
-				ExpectExec("INSERT INTO clusters").
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
 				WithArgs(clusterName, yamlWithoutSetup).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
 			err = WriteClusterConfig(sqlxDB, clusterName, yamlWithoutSetup)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should write cluster config with volumes", func() {
+			mock.
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
+				WithArgs(clusterName, yamlWithVolume).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+
+			err = WriteClusterConfig(sqlxDB, clusterName, yamlWithVolume)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -179,11 +293,11 @@ services {
 
 		It("should return error when writing cluster with same name", func() {
 			mock.
-				ExpectExec("INSERT INTO clusters").
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
 				WithArgs(clusterName, yaml1).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 			mock.
-				ExpectExec("INSERT INTO clusters").
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
 				WithArgs(clusterName, yaml1).
 				WillReturnError(fmt.Errorf(`pq: duplicate key value violates unique constraint "clusters_name_key"`))
 
@@ -233,7 +347,7 @@ apps:
         value: "{\"key\": \"value\"}"
       `
 			mock.
-				ExpectExec("INSERT INTO clusters").
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
 				WithArgs(clusterName, validYaml).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 			err := WriteClusterConfig(sqlxDB, clusterName, validYaml)
@@ -281,6 +395,35 @@ apps:
 			Expect(clusterConfig.Setup.Image).To(Equal("setup-img"))
 			Expect(clusterConfig.Setup.TimeoutSeconds).To(Equal(180))
 			Expect(clusterConfig.Setup.PeriodSeconds).To(Equal(10))
+		})
+
+		It("should load cluster config with volumes", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithVolume))
+
+			clusterConfig, err := LoadClusterConfig(sqlxDB, clusterName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(clusterConfig.Services["postgres"].Image).To(Equal("postgres:1.0"))
+			Expect(clusterConfig.Services["postgres"].Ports).To(BeEquivalentTo([]string{"8585:5432"}))
+			Expect(clusterConfig.Services["postgres"].ReadinessProbe).To(BeNil())
+			Expect(clusterConfig.Services["postgres"].Environment).To(BeEquivalentTo([]*EnvVar{
+				&EnvVar{
+					Name:  "PGDATA",
+					Value: "/var/lib/postgresql/data/pgdata",
+				},
+			}))
+
+			volumeMount := clusterConfig.Services["postgres"].VolumeMount
+			Expect(volumeMount.Name).To(Equal("postgres-volume"))
+			Expect(volumeMount.MountPath).To(Equal("/var/lib/postgresql/data"))
+
+			pvcs := clusterConfig.Volumes
+			Expect(pvcs).To(HaveLen(1))
+			Expect(pvcs[0].Name).To(Equal("postgres-volume"))
+			Expect(pvcs[0].Namespace).To(Equal(""))
+			Expect(pvcs[0].Storage).To(Equal("1Gi"))
 		})
 
 		It("should return error when loading non existing clusterName", func() {

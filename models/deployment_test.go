@@ -134,6 +134,27 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		It("should create deployment with volumes", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			volume := &VolumeMount{
+				Name:      "svc-volume",
+				MountPath: "/data",
+			}
+
+			deployment := NewDeployment(name, username, image, ports, nil, nil, volume)
+			deploy, err := deployment.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploy).NotTo(BeNil())
+			Expect(deploy.Spec.Template.Spec.Volumes[0].Name).To(Equal(volume.Name))
+			Expect(deploy.Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal(volume.Name))
+			Expect(deploy.Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ReadOnly).To(BeFalse())
+			Expect(deploy.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(volume.Name))
+			Expect(deploy.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal(volume.MountPath))
+			Expect(deploy.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly).To(BeFalse())
+		})
+
 		It("should return error if duplicate deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
