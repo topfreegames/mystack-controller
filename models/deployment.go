@@ -60,9 +60,18 @@ spec:
               {{end}}
             {{if .PeriodSeconds}}
             periodSeconds: {{.PeriodSeconds}}
-            {{end}}
-            {{end}}
+            {{end}}{{end}}{{end}}
+          {{with .Volume}}
+          volumeMounts: 
+            - name: {{.Name}}
+              mountPath: {{.MountPath}}
           {{end}}
+      {{with .Volume}}
+      volumes: 
+        - name: {{.Name}}
+          persistentVolumeClaim:
+            claimName: {{.Name}}
+      {{end}}
 `
 
 //Deployment represents a deployment
@@ -74,6 +83,7 @@ type Deployment struct {
 	Ports          []int
 	Environment    []*EnvVar
 	ReadinessProbe *Probe
+	Volume         *VolumeMount
 }
 
 //NewDeployment is the deployment ctor
@@ -82,6 +92,7 @@ func NewDeployment(
 	ports []int,
 	environment []*EnvVar,
 	readinessProbe *Probe,
+	volume *VolumeMount,
 ) *Deployment {
 	namespace := usernameToNamespace(username)
 
@@ -93,6 +104,7 @@ func NewDeployment(
 		Ports:          ports,
 		Environment:    environment,
 		ReadinessProbe: readinessProbe,
+		Volume:         volume,
 	}
 }
 

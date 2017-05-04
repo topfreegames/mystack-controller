@@ -13,10 +13,17 @@ type EnvVar struct {
 	Value string `yaml:"value"`
 }
 
+//VolumeMount helps getting PersistentVolume from yaml
+type VolumeMount struct {
+	Name      string `yaml:"name"`
+	MountPath string `yaml:"mountPath"`
+}
+
 //ClusterAppConfig defines the configuration of an app and service
 type ClusterAppConfig struct {
-	Image          string    `yaml:"image"`
-	Ports          []string  `yaml:"ports"`
-	Environment    []*EnvVar `yaml:"env,flow"`
-	ReadinessProbe *Probe    `yaml:"readinessProbe"`
+	Image          string       `yaml:"image"`
+	Ports          []string     `yaml:"ports"`
+	Environment    []*EnvVar    `yaml:"env,flow"`
+	ReadinessProbe *Probe       `yaml:"readinessProbe"`
+	VolumeMount    *VolumeMount `yaml:"volumeMount"`
 }
