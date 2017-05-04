@@ -151,11 +151,11 @@ apps:
 			Username:  username,
 			Namespace: namespace,
 			AppDeployments: []*Deployment{
-				NewDeployment("test1", username, "app1", ports, nil, nil),
-				NewDeployment("test2", username, "app2", ports, nil, nil),
+				NewDeployment("test1", username, "app1", ports, nil, nil, nil),
+				NewDeployment("test2", username, "app2", ports, nil, nil, nil),
 				NewDeployment("test3", username, "app3", ports, []*EnvVar{
 					&EnvVar{Name: "VARIABLE_1", Value: "100"},
-				}, nil),
+				}, nil, nil),
 			},
 			SvcDeployments: []*Deployment{
 				NewDeployment(
@@ -168,7 +168,7 @@ apps:
 						Command:        []string{"echo", "ready"},
 						TimeoutSeconds: timeout,
 						PeriodSeconds:  period,
-					},
+					}, nil,
 				),
 			},
 			AppServices: []*Service{
@@ -354,7 +354,7 @@ apps:
 				AppDeployments: []*Deployment{
 					NewDeployment("test1", username, "app1", ports, []*EnvVar{
 						&EnvVar{Name: "VARIABLE_1", Value: obj},
-					}, nil),
+					}, nil, nil),
 				},
 				AppServices: []*Service{
 					NewService("test1", username, portMaps),
