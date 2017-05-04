@@ -26,6 +26,9 @@ metadata:
   namespace: {{.Namespace}}
   annotations:
     volume.alpha.kubernetes.io/storage-class: "gp2"
+  labels:
+    mystack/routable: "true"
+    app: {{.Name}}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -87,4 +90,16 @@ func (p *PersistentVolumeClaim) Start(clientset kubernetes.Interface) (*v1.Persi
 	}
 
 	return pvc, nil
+}
+
+//Delete deletes persistent volume cluster
+func (p *PersistentVolumeClaim) Delete(clientset kubernetes.Interface) error {
+	deleteOptions := &v1.DeleteOptions{}
+
+	err := clientset.CoreV1().PersistentVolumeClaims(p.Namespace).Delete(p.Name, deleteOptions)
+	if err != nil {
+		return errors.NewKubernetesError("create service error", err)
+	}
+
+	return nil
 }

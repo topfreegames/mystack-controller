@@ -278,6 +278,10 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 		deployment.Delete(clientset)
 	}
 
+	for _, pvc := range c.PersistentVolumeClaims {
+		pvc.Delete(clientset)
+	}
+
 	err := DeleteNamespace(clientset, c.Username)
 	if err != nil {
 		return err
