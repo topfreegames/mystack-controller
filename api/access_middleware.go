@@ -8,12 +8,13 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/topfreegames/mystack-controller/errors"
-	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/topfreegames/mystack-controller/errors"
+	"github.com/topfreegames/mystack-controller/extensions"
+	"github.com/topfreegames/mystack-controller/models"
 )
 
 //AccessMiddleware guarantees that the user is logged
@@ -43,10 +44,16 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := loggerFromContext(r.Context())
 	log(logger, "Checking access token")
 
-	token := r.Header.Get("Authorization")
-	token = strings.TrimPrefix(token, "Bearer ")
-	url := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s", token)
-	resp, err := http.Get(url)
+	accessToken := r.Header.Get("Authorization")
+	accessToken = strings.TrimPrefix(accessToken, "Bearer ")
+
+	token, err := extensions.Token(accessToken, m.App.DB)
+	if err != nil {
+		m.App.HandleError(w, http.StatusUnauthorized, "", err)
+		return
+	}
+
+	msg, status, err := extensions.Authenticate(token, &models.OSCredentials{})
 
 	if err != nil {
 		logger.WithError(err).Error("error fetching googleapis")
@@ -54,31 +61,21 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logger.WithError(err).Error("error parsing response")
-		m.App.HandleError(w, http.StatusInternalServerError, "Error parsing response", err)
-		return
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
+	if status == http.StatusBadRequest {
 		logger.WithError(err).Error("error validating access token")
-		err := errors.NewAccessError("Unauthorized access token", fmt.Errorf(string(body)))
+		err := errors.NewAccessError("Unauthorized access token", fmt.Errorf(msg))
 		m.App.HandleError(w, http.StatusUnauthorized, "Unauthorized access token", err)
 		return
 	}
 
-	if resp.StatusCode != 200 {
+	if status != http.StatusOK {
 		logger.WithError(err).Error("invalid access token")
-		err := errors.NewAccessError("invalid access token", fmt.Errorf(string(body)))
-		m.App.HandleError(w, resp.StatusCode, "error validating access token", err)
+		err := errors.NewAccessError("invalid access token", fmt.Errorf(msg))
+		m.App.HandleError(w, status, "error validating access token", err)
 		return
 	}
 
-	var bodyObj map[string]interface{}
-	json.Unmarshal(body, &bodyObj)
-	email := bodyObj["email"].(string)
+	email := msg
 	if !m.verifyEmailDomain(email) {
 		logger.WithError(err).Error("Invalid email")
 		err := errors.NewAccessError(
@@ -88,6 +85,7 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m.App.HandleError(w, http.StatusUnauthorized, "error validating access token", err)
 		return
 	}
+
 	ctx := NewContextWithEmail(r.Context(), email)
 
 	log(logger, "Access token checked")

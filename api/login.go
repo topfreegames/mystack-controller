@@ -81,7 +81,16 @@ func (l *LoginHandler) exchangeAccess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body := fmt.Sprintf(`{"token": "%s"}`, token)
+	//If the last error didn't occur, then the error from Authenticate method won't happen
+	email, _, _ := extensions.Authenticate(token, &models.OSCredentials{})
+
+	err = extensions.SaveToken(token, email, l.App.DB)
+	if err != nil {
+		l.App.HandleError(w, http.StatusBadRequest, "", err)
+		return
+	}
+
+	body := fmt.Sprintf(`{"token": "%s"}`, token.AccessToken)
 
 	Write(w, http.StatusOK, body)
 	log(logger, "Returning access token")

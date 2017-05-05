@@ -9,7 +9,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
-    email varchar(255) NOT NULL,
     created_at timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at timestamp WITH TIME ZONE NULL
 );
