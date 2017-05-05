@@ -24,8 +24,7 @@ func SaveToken(token *oauth2.Token, email string, db models.DB) error {
 									expiry = excluded.expiry;`
 
 	if token.RefreshToken == "" {
-		query = `
-		UPDATE tokens 
+		query = `UPDATE tokens 
 		SET access_token = :access_token,
 				expiry = :expiry
 		WHERE email = :email
@@ -40,7 +39,12 @@ func SaveToken(token *oauth2.Token, email string, db models.DB) error {
 		"email":         email,
 	}
 	_, err := db.NamedExec(query, values)
-	return errors.NewDatabaseError(err)
+
+	if err != nil {
+		return errors.NewDatabaseError(err)
+	}
+
+	return nil
 }
 
 //Token reads token from DB
