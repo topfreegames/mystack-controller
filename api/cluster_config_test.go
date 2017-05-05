@@ -40,6 +40,32 @@ apps:
     image: app3
     port: 5000
 `
+	var yamlWithVolume = `
+volumes:
+  - name: postgres-volume
+    storage: 1Gi
+services:
+  postgres:
+    image: postgres:1.0
+    ports:
+      - 8585:5432
+    env:
+      - name: PGDATA
+        value: /var/lib/postgresql/data/pgdata
+    volumeMount:
+      name: postgres-volume
+      mountPath: /var/lib/postgresql/data
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+    env:
+      - name: DATABASE_URL
+        value: postgresql://derp:1234@example.com
+      - name: USERNAME
+        value: derp
+`
 
 	BeforeEach(func() {
 		recorder = httptest.NewRecorder()
@@ -70,7 +96,7 @@ apps:
 
 		It("should return status 200 when creating valid cluster config", func() {
 			mock.
-				ExpectExec("INSERT INTO clusters").
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
 				WithArgs(clusterName, yaml1).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -82,9 +108,23 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 		})
 
+		It("should return status 200 when creating valid cluster config with volume", func() {
+			mock.
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
+				WithArgs(clusterName, yamlWithVolume).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+
+			ctx := NewContextWithClusterConfig(request.Context(), yamlWithVolume)
+			clusterConfigHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+		})
+
 		It("should return status 409 when creating cluster config with known name", func() {
 			mock.
-				ExpectExec("INSERT INTO clusters").
+				ExpectExec("^INSERT INTO clusters\\(name, yaml\\) VALUES\\((.+)\\)$").
 				WithArgs(clusterName, yaml1).
 				WillReturnError(fmt.Errorf(`pq: duplicate key value violates unique constraint "clusters_name_key"`))
 

@@ -98,6 +98,26 @@ apps:
       - name: VARIABLE_1
         value: 100
 `
+		yamlWithVolume = `
+setup:
+  image: setup-img
+volumes:
+  - name: svc-volume
+    storage: 1Gi
+services:
+  svc1:
+    image: svc1
+    ports: 
+      - "5000"
+    volumeMount:
+      name: svc-volume
+      mountPath: /data
+apps:
+  app1:
+    image: app1
+    ports: 
+      - "5000"
+`
 		invalidYaml1 = `
 services:
   postgres:
@@ -151,11 +171,11 @@ apps:
 			Username:  username,
 			Namespace: namespace,
 			AppDeployments: []*Deployment{
-				NewDeployment("test1", username, "app1", ports, nil, nil),
-				NewDeployment("test2", username, "app2", ports, nil, nil),
+				NewDeployment("test1", username, "app1", ports, nil, nil, nil),
+				NewDeployment("test2", username, "app2", ports, nil, nil, nil),
 				NewDeployment("test3", username, "app3", ports, []*EnvVar{
 					&EnvVar{Name: "VARIABLE_1", Value: "100"},
-				}, nil),
+				}, nil, nil),
 			},
 			SvcDeployments: []*Deployment{
 				NewDeployment(
@@ -168,7 +188,7 @@ apps:
 						Command:        []string{"echo", "ready"},
 						TimeoutSeconds: timeout,
 						PeriodSeconds:  period,
-					},
+					}, nil,
 				),
 			},
 			AppServices: []*Service{
@@ -193,6 +213,37 @@ apps:
 			DeploymentReadiness: &mTest.MockReadiness{},
 			JobReadiness:        &mTest.MockReadiness{},
 		}
+	}
+
+	mockedClusterWithVolume := &Cluster{
+		Username:  username,
+		Namespace: namespace,
+		PersistentVolumeClaims: []*PersistentVolumeClaim{
+			&PersistentVolumeClaim{Name: "svc-volume", Storage: "1Gi", Namespace: namespace},
+		},
+		AppDeployments: []*Deployment{
+			NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil),
+		},
+		SvcDeployments: []*Deployment{
+			NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, &VolumeMount{Name: "svc-volume", MountPath: "/data"}),
+		},
+		AppServices: []*Service{
+			NewService("app1", username, []*PortMap{
+				&PortMap{Port: 5000, TargetPort: 5000},
+			}),
+		},
+		SvcServices: []*Service{
+			NewService("svc1", username, []*PortMap{
+				&PortMap{Port: 5000, TargetPort: 5000},
+			}),
+		},
+		Job: NewJob(username, &Setup{
+			Image:          "setup-img",
+			PeriodSeconds:  0,
+			TimeoutSeconds: 0,
+		}, []*EnvVar{}),
+		DeploymentReadiness: &mTest.MockReadiness{},
+		JobReadiness:        &mTest.MockReadiness{},
 	}
 
 	BeforeEach(func() {
@@ -244,6 +295,22 @@ apps:
 			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
 			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
 			Expect(cluster.Job).To(Equal(mockedCluster.Job))
+		})
+
+		It("should return cluster with volume from DB", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithVolume))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedClusterWithVolume.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedClusterWithVolume.SvcDeployments))
+			Expect(cluster.SvcServices).To(ConsistOf(mockedClusterWithVolume.SvcServices))
+			Expect(cluster.AppServices).To(ConsistOf(mockedClusterWithVolume.AppServices))
+			Expect(cluster.Job).To(Equal(mockedClusterWithVolume.Job))
+			Expect(cluster.PersistentVolumeClaims).To(Equal(mockedClusterWithVolume.PersistentVolumeClaims))
 		})
 
 		It("should return error if clusterName doesn't exists on DB", func() {
@@ -317,6 +384,41 @@ apps:
 			Expect(k8sJob.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
 		})
 
+		It("should create cluster with volumes", func() {
+			cluster := mockedClusterWithVolume
+			err := cluster.Create(nil, clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(2))
+
+			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(services.Items).To(HaveLen(2))
+
+			k8sJob, err := clientset.BatchV1().Jobs(namespace).Get("setup")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(k8sJob).NotTo(BeNil())
+			Expect(k8sJob.ObjectMeta.Namespace).To(Equal(namespace))
+			Expect(k8sJob.ObjectMeta.Name).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["mystack/owner"]).To(Equal(username))
+			Expect(k8sJob.ObjectMeta.Labels["app"]).To(Equal("setup"))
+			Expect(k8sJob.ObjectMeta.Labels["heritage"]).To(Equal("mystack"))
+
+			volumes, err := clientset.CoreV1().PersistentVolumeClaims(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(volumes.Items).To(HaveLen(1))
+
+			volume := volumes.Items[0]
+			Expect(volume.ObjectMeta.Name).To(Equal("svc-volume"))
+			Expect(volume.ObjectMeta.Namespace).To(Equal(namespace))
+			Expect(volume.ObjectMeta.Annotations["volume.alpha.kubernetes.io/storage-class"]).To(Equal("gp2"))
+			Expect(volume.ObjectMeta.Labels["app"]).To(Equal("svc-volume"))
+			Expect(volume.ObjectMeta.Labels["mystack/routable"]).To(Equal("true"))
+			Expect(volume.Spec.AccessModes).To(Equal([]v1.PersistentVolumeAccessMode{"ReadWriteOnce"}))
+		})
+
 		It("should return error if creating same cluster twice", func() {
 			cluster := mockCluster(0, 0, username)
 			err := cluster.Create(nil, clientset)
@@ -354,7 +456,7 @@ apps:
 				AppDeployments: []*Deployment{
 					NewDeployment("test1", username, "app1", ports, []*EnvVar{
 						&EnvVar{Name: "VARIABLE_1", Value: obj},
-					}, nil),
+					}, nil, nil),
 				},
 				AppServices: []*Service{
 					NewService("test1", username, portMaps),
@@ -422,6 +524,29 @@ apps:
 			services, err = clientset.CoreV1().Services("mystack-user2").List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services.Items).To(HaveLen(4))
+		})
+
+		It("should delete cluster with volumes", func() {
+			cluster := mockedClusterWithVolume
+			err := cluster.Create(nil, clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = cluster.Delete(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(NamespaceExists(clientset, namespace)).To(BeFalse())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(BeEmpty())
+
+			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(services.Items).To(BeEmpty())
+
+			volumes, err := clientset.CoreV1().PersistentVolumeClaims(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(volumes.Items).To(BeEmpty())
 		})
 
 		It("should return error when deleting non existing cluster", func() {

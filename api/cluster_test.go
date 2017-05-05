@@ -50,6 +50,32 @@ apps:
     image: app1
     port: 5000
 `
+		yamlWithVolume = `
+volumes:
+  - name: postgres-volume
+    storage: 1Gi
+services:
+  postgres:
+    image: postgres:1.0
+    ports:
+      - 8585:5432
+    env:
+      - name: PGDATA
+        value: /var/lib/postgresql/data/pgdata
+    volumeMount:
+      name: postgres-volume
+      mountPath: /var/lib/postgresql/data
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+    env:
+      - name: DATABASE_URL
+        value: postgresql://derp:1234@example.com
+      - name: USERNAME
+        value: derp
+`
 	)
 
 	BeforeEach(func() {
@@ -108,6 +134,23 @@ apps:
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
 			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
 			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
+		})
+
+		It("should create existing clusterName with volume", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithVolume))
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+			bodyJSON := make(map[string]map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["domains"]["postgres"]).To(Equal([]string{"postgres.mystack-user.mystack.com"}))
+			Expect(bodyJSON["domains"]["app1"]).To(Equal([]string{"app1.mystack-user.mystack.com"}))
 		})
 
 		It("should not create cluster twice", func() {
@@ -184,6 +227,29 @@ apps:
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+			err = cluster.Create(app.Logger, app.Clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Body.String()).To(Equal(`{"status": "ok"}`))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+		})
+
+		It("should delete existing clusterName with volumes", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithVolume))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithVolume))
 
 			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
 			Expect(err).NotTo(HaveOccurred())

@@ -55,12 +55,12 @@ apps:
 			Username:  username,
 			Namespace: namespace,
 			AppDeployments: []*Deployment{
-				NewDeployment("test1", username, "app1", ports, nil, nil),
-				NewDeployment("test2", username, "app2", ports, nil, nil),
-				NewDeployment("test3", username, "app3", ports, nil, nil),
+				NewDeployment("test1", username, "app1", ports, nil, nil, nil),
+				NewDeployment("test2", username, "app2", ports, nil, nil, nil),
+				NewDeployment("test3", username, "app3", ports, nil, nil, nil),
 			},
 			SvcDeployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", ports, nil, nil),
+				NewDeployment("test0", username, "svc1", ports, nil, nil, nil),
 			},
 			AppServices: []*Service{
 				NewService("test1", username, portMap),

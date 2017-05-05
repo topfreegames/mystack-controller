@@ -20,15 +20,16 @@ import (
 
 //Cluster represents a k8s cluster for a user
 type Cluster struct {
-	Namespace           string
-	Username            string
-	AppDeployments      []*Deployment
-	SvcDeployments      []*Deployment
-	AppServices         []*Service
-	SvcServices         []*Service
-	Job                 *Job
-	DeploymentReadiness Readiness
-	JobReadiness        Readiness
+	Namespace              string
+	Username               string
+	AppDeployments         []*Deployment
+	SvcDeployments         []*Deployment
+	AppServices            []*Service
+	SvcServices            []*Service
+	Job                    *Job
+	PersistentVolumeClaims []*PersistentVolumeClaim
+	DeploymentReadiness    Readiness
+	JobReadiness           Readiness
 }
 
 //NewCluster returns a new cluster ready to start
@@ -59,16 +60,19 @@ func NewCluster(
 
 	k8sJob := NewJob(username, clusterConfig.Setup, environment)
 
+	k8sPersistentVolumeClaims := buildPersistentVolumeClaims(clusterConfig.Volumes, username)
+
 	cluster := &Cluster{
-		Username:            username,
-		Namespace:           namespace,
-		AppDeployments:      k8sAppDeployments,
-		SvcDeployments:      k8sSvcDeployments,
-		AppServices:         k8sAppServices,
-		SvcServices:         k8sSvcServices,
-		Job:                 k8sJob,
-		DeploymentReadiness: deploymentReadiness,
-		JobReadiness:        jobReadiness,
+		Username:               username,
+		Namespace:              namespace,
+		AppDeployments:         k8sAppDeployments,
+		SvcDeployments:         k8sSvcDeployments,
+		AppServices:            k8sAppServices,
+		SvcServices:            k8sSvcServices,
+		Job:                    k8sJob,
+		DeploymentReadiness:    deploymentReadiness,
+		JobReadiness:           jobReadiness,
+		PersistentVolumeClaims: k8sPersistentVolumeClaims,
 	}
 
 	return cluster, nil
@@ -114,7 +118,7 @@ func buildDeployments(
 		if err != nil {
 			return nil, environment, err
 		}
-		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe)
+		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount)
 		environment = append(environment, config.Environment...)
 		i = i + 1
 	}
@@ -147,6 +151,14 @@ func rollback(clientset kubernetes.Interface, username string, err error) error 
 	return err
 }
 
+func buildPersistentVolumeClaims(persistentVolumeClaims []*PersistentVolumeClaim, username string) []*PersistentVolumeClaim {
+	for _, pvc := range persistentVolumeClaims {
+		pvc.Namespace = usernameToNamespace(username)
+	}
+
+	return persistentVolumeClaims
+}
+
 func log(logger logrus.FieldLogger, msg string) {
 	if logger != nil {
 		logger.Debug(msg)
@@ -169,7 +181,16 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	}
 	log(logger, "done creating namespace")
 
-	log(logger, "creating app deployments")
+	log(logger, "creating svc volume")
+	for _, pvc := range c.PersistentVolumeClaims {
+		_, err = pvc.Start(clientset)
+		if err != nil {
+			return rollback(clientset, c.Username, err)
+		}
+	}
+	log(logger, "done creating svc volume")
+
+	log(logger, "creating svc deployments")
 	for _, deployment := range c.SvcDeployments {
 		_, err := deployment.Deploy(clientset)
 		if err != nil {
@@ -177,21 +198,21 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 		}
 	}
 
-	log(logger, "waiting app deployment completion")
+	log(logger, "waiting svc deployment completion")
 	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.SvcDeployments)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
-	log(logger, "done creating app deployments")
+	log(logger, "done creating svc deployments")
 
-	log(logger, "creating app services")
+	log(logger, "creating svc services")
 	for _, service := range c.SvcServices {
 		_, err = service.Expose(clientset)
 		if err != nil {
 			return rollback(clientset, c.Username, err)
 		}
 	}
-	log(logger, "done creating app services")
+	log(logger, "done creating svc services")
 
 	log(logger, "creating setup job")
 	_, err = c.Job.Run(clientset)
@@ -205,7 +226,7 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	}
 	log(logger, "done job setup")
 
-	log(logger, "creating svc deployments")
+	log(logger, "creating app deployments")
 	for _, deployment := range c.AppDeployments {
 		_, err := deployment.Deploy(clientset)
 		if err != nil {
@@ -213,21 +234,21 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 		}
 	}
 
-	log(logger, "waiting svc deployments completion")
+	log(logger, "waiting app deployments completion")
 	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.AppDeployments)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
-	log(logger, "done svc deployment")
+	log(logger, "done app deployment")
 
-	log(logger, "creating svc service")
+	log(logger, "creating app service")
 	for _, service := range c.AppServices {
 		_, err = service.Expose(clientset)
 		if err != nil {
 			return rollback(clientset, c.Username, err)
 		}
 	}
-	log(logger, "done creating svc service")
+	log(logger, "done creating app service")
 
 	return nil
 }
@@ -255,6 +276,10 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 
 	for _, deployment := range c.SvcDeployments {
 		deployment.Delete(clientset)
+	}
+
+	for _, pvc := range c.PersistentVolumeClaims {
+		pvc.Delete(clientset)
 	}
 
 	err := DeleteNamespace(clientset, c.Username)
