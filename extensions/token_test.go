@@ -29,7 +29,7 @@ var _ = Describe("Token", func() {
 	Describe("SaveToken", func() {
 		It("should save valid token and email", func() {
 			mock.
-				ExpectExec(`^INSERT INTO tokens\(access_token, refresh_token, expiry, token_type, email\)
+				ExpectExec(`^INSERT INTO users\(access_token, refresh_token, expiry, token_type, email\)
 					VALUES\((.+)\)
 					ON CONFLICT\(email\) DO UPDATE
 						SET access_token = excluded.access_token,
@@ -55,7 +55,7 @@ var _ = Describe("Token", func() {
 			newExpiry := time.Unix(100, 0)
 
 			mock.
-				ExpectExec(`^UPDATE tokens 
+				ExpectExec(`^UPDATE users 
 				SET access_token = (.+),
 						expiry = (.+)
 				WHERE email = (.+)$`).
@@ -75,7 +75,7 @@ var _ = Describe("Token", func() {
 
 		It("should return error if email not found", func() {
 			mock.
-				ExpectExec(`^INSERT INTO tokens\(access_token, refresh_token, expiry, token_type, email\)
+				ExpectExec(`^INSERT INTO users\(access_token, refresh_token, expiry, token_type, email\)
 					VALUES\((.+)\)
 					ON CONFLICT\(email\) DO UPDATE
 						SET access_token = excluded.access_token,
@@ -105,7 +105,7 @@ var _ = Describe("Token", func() {
 			mock.
 				ExpectQuery(`
 					^SELECT access_token, refresh_token, expiry, token_type
-					FROM tokens
+					FROM users
 					WHERE access_token = (.+)$`).
 				WithArgs(accessToken).
 				WillReturnRows(rows)
@@ -122,7 +122,7 @@ var _ = Describe("Token", func() {
 			mock.
 				ExpectQuery(`
 					^SELECT access_token, refresh_token, expiry, token_type
-					FROM tokens
+					FROM users
 					WHERE access_token = (.+)$`).
 				WithArgs(accessToken).
 				WillReturnError(fmt.Errorf("sql: no rows in result set"))

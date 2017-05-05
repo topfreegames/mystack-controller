@@ -197,7 +197,7 @@ iam
 			mock.
 				ExpectQuery(`
 				^SELECT access_token, refresh_token, expiry, token_type
-				FROM tokens
+				FROM users
 				WHERE access_token = (.+)$`).
 				WillReturnError(fmt.Errorf("pq: no rows in result set"))
 

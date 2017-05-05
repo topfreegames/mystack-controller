@@ -16,7 +16,7 @@ import (
 
 //SaveToken writes the token parameters on DB
 func SaveToken(token *oauth2.Token, email string, db models.DB) error {
-	query := `INSERT INTO tokens(access_token, refresh_token, expiry, token_type, email) 
+	query := `INSERT INTO users(access_token, refresh_token, expiry, token_type, email) 
 						VALUES(:access_token, :refresh_token, :expiry, :token_type, :email)
 						ON CONFLICT(email) DO UPDATE
 							SET access_token = excluded.access_token,
@@ -24,7 +24,7 @@ func SaveToken(token *oauth2.Token, email string, db models.DB) error {
 									expiry = excluded.expiry;`
 
 	if token.RefreshToken == "" {
-		query = `UPDATE tokens 
+		query = `UPDATE users 
 		SET access_token = :access_token,
 				expiry = :expiry
 		WHERE email = :email
@@ -50,7 +50,7 @@ func SaveToken(token *oauth2.Token, email string, db models.DB) error {
 //Token reads token from DB
 func Token(accessToken string, db models.DB) (*oauth2.Token, error) {
 	query := `SELECT access_token, refresh_token, expiry, token_type
-						FROM tokens
+						FROM users
 						WHERE access_token = $1`
 
 	destToken := struct {
