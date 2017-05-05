@@ -137,6 +137,12 @@ func (a *App) getRouter() *mux.Router {
 		&AccessMiddleware{App: a},
 	)).Methods("GET").Name("cluster-config")
 
+	r.Handle("/users", Chain(
+		&UserHandler{App: a},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+	)).Methods("GET").Name("users")
+
 	return r
 }
 
