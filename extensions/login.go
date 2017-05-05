@@ -8,7 +8,11 @@
 package extensions
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/topfreegames/mystack-controller/errors"
 	"github.com/topfreegames/mystack-controller/models"
 	"golang.org/x/oauth2"
@@ -25,44 +29,87 @@ var (
 )
 
 //getClientCredentials receive Credentials interface and fills ClientID and ClientSecret
-func getClientCredentials(credentials models.Credentials) {
+func getClientCredentials(credentials models.Credentials) (*oauth2.Config, error) {
 	googleOauthConfig.ClientID = credentials.GetID()
-	googleOauthConfig.ClientSecret = credentials.GetSecret()
-}
-
-//GenerateLoginURL generates the login url using googleapis OAuth2 Client Secret and OAuth2 Client ID
-func GenerateLoginURL(oauthState string, credentials models.Credentials) (string, error) {
-	getClientCredentials(credentials)
-
 	if len(googleOauthConfig.ClientID) == 0 {
-		return "", errors.NewAccessError(
+		return nil, errors.NewAccessError(
 			fmt.Sprintf("Undefined environment variable %s", models.ClientIDEnvVar),
 			fmt.Errorf("Define your app's OAuth2 Client ID on %s environment variable and run again", models.ClientIDEnvVar),
 		)
 	}
 
+	googleOauthConfig.ClientSecret = credentials.GetSecret()
 	if len(googleOauthConfig.ClientSecret) == 0 {
-		return "", errors.NewAccessError(
+		return nil, errors.NewAccessError(
 			fmt.Sprintf("Undefined environment variable %s", models.ClientSecretEnvVar),
 			fmt.Errorf("Define your app's OAuth2 Client Secret on %s environment variable and run again", models.ClientSecretEnvVar),
 		)
 	}
 
-	url := googleOauthConfig.AuthCodeURL(oauthState)
+	return googleOauthConfig, nil
+}
+
+//GenerateLoginURL generates the login url using googleapis OAuth2 Client Secret and OAuth2 Client ID
+func GenerateLoginURL(oauthState string, credentials models.Credentials) (string, error) {
+	googleOauthConfig, err := getClientCredentials(credentials)
+	if err != nil {
+		return "", err
+	}
+
+	url := googleOauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOffline)
 	return url, nil
 }
 
 //GetAccessToken exchange authorization code with access token
-func GetAccessToken(code string) (string, error) {
+func GetAccessToken(code string) (*oauth2.Token, error) {
 	token, err := googleOauthConfig.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		err := errors.NewAccessError("GoogleCallback: Code exchange failed", err)
-		return "", err
+		return nil, err
 	}
 	if !token.Valid() {
 		err := errors.NewAccessError("GoogleCallback", fmt.Errorf("Invalid token received from Authorization Server"))
-		return "", err
+		return nil, err
 	}
 
-	return token.AccessToken, nil
+	return token, nil
+}
+
+//Authenticate authenticates an access token or gets a new one with the refresh token
+//The returned string is either the error message or the user email
+func Authenticate(token *oauth2.Token, credentials models.Credentials) (string, int, error) {
+	var email string
+	var status int
+
+	googleOauthConfig, err := getClientCredentials(credentials)
+	if err != nil {
+		return email, status, errors.NewAccessError("error getting access token", err)
+	}
+
+	newToken, err := googleOauthConfig.TokenSource(oauth2.NoContext, token).Token()
+	if err != nil {
+		return email, status, errors.NewAccessError("error getting access token", err)
+	}
+
+	client := googleOauthConfig.Client(oauth2.NoContext, newToken)
+	url := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s", newToken.AccessToken)
+	resp, err := client.Get(url)
+
+	defer resp.Body.Close()
+
+	status = resp.StatusCode
+	bts, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return email, status, errors.NewGenericError("error reading google response body", err)
+	}
+
+	if status != http.StatusOK {
+		return string(bts), status, nil
+	}
+
+	var bodyObj map[string]interface{}
+	json.Unmarshal(bts, &bodyObj)
+	email = bodyObj["email"].(string)
+
+	return email, status, nil
 }
