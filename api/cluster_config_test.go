@@ -194,6 +194,13 @@ iam
 		})
 
 		It("should return status 401", func() {
+			mock.
+				ExpectQuery(`
+				^SELECT access_token, refresh_token, expiry, token_type
+				FROM users
+				WHERE access_token = (.+)$`).
+				WillReturnError(fmt.Errorf("pq: no rows in result set"))
+
 			request.Header.Add("Authorization", "Bearer invalid-token")
 			app.Router.ServeHTTP(recorder, request)
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
@@ -201,8 +208,8 @@ iam
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
 			Expect(bodyJSON["code"]).To(Equal("OFF-002"))
-			Expect(bodyJSON["description"]).To(Equal("{\n \"error\": \"invalid_token\",\n \"error_description\": \"Invalid Value\"\n}\n"))
-			Expect(bodyJSON["error"]).To(Equal("Unauthorized access token"))
+			Expect(bodyJSON["error"]).To(Equal("Access Token not found (have you logged in?)"))
+			Expect(bodyJSON["description"]).To(Equal("pq: no rows in result set"))
 		})
 	})
 
