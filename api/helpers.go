@@ -54,6 +54,9 @@ func Status(err error) int {
 		if strings.Contains(err.Error(), "already exists") {
 			return http.StatusConflict
 		}
+		if strings.Contains(err.Error(), "Upon completion, this namespace will automatically be purged by the system.") {
+			return http.StatusBadRequest
+		}
 	}
 
 	return http.StatusInternalServerError
