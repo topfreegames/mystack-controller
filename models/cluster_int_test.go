@@ -51,24 +51,21 @@ apps:
 	)
 
 	mockCluster := func(username string) *Cluster {
+		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, nil, nil)
+		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil)
+		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil)
+		appDeployment3 := NewDeployment("test3", username, "app3", ports, nil, nil, nil)
+
 		return &Cluster{
-			Username:  username,
-			Namespace: namespace,
-			AppDeployments: []*Deployment{
-				NewDeployment("test1", username, "app1", ports, nil, nil, nil),
-				NewDeployment("test2", username, "app2", ports, nil, nil, nil),
-				NewDeployment("test3", username, "app3", ports, nil, nil, nil),
-			},
-			SvcDeployments: []*Deployment{
-				NewDeployment("test0", username, "svc1", ports, nil, nil, nil),
-			},
-			AppServices: []*Service{
-				NewService("test1", username, portMap, false),
-				NewService("test2", username, portMap, false),
-				NewService("test3", username, portMap, false),
-			},
-			SvcServices: []*Service{
-				NewService("test0", username, portMap, true),
+			Username:       username,
+			Namespace:      namespace,
+			AppDeployments: []*Deployment{appDeployment1, appDeployment2, appDeployment3},
+			SvcDeployments: []*Deployment{svcDeployment1},
+			K8sServices: map[*Deployment]*Service{
+				appDeployment1: NewService("test1", username, portMap, false),
+				appDeployment2: NewService("test2", username, portMap, false),
+				appDeployment3: NewService("test3", username, portMap, false),
+				svcDeployment1: NewService("test0", username, portMap, true),
 			},
 		}
 	}
@@ -84,8 +81,9 @@ apps:
 			mockedCluster := mockCluster(username)
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
-			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
-			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
+			for dp, svc := range mockedCluster.K8sServices {
+				Expect(cluster.K8sServices).To(HaveKeyWithValue(dp, svc))
+			}
 		})
 
 		It("should return error if cluster name not found", func() {

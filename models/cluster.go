@@ -141,7 +141,7 @@ func buildDeployments(
 				if err != nil {
 					return nil, environment, err
 				}
-				deployment = NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount)
+				deployment := NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount)
 				for _, link := range config.Links {
 					deployment.Links = append(deployment.Links, createdDeployments[link])
 				}
@@ -252,7 +252,7 @@ func (c *Cluster) startDeploymentsAndItsServicesWithLinks(
 	clientset kubernetes.Interface,
 	deployments []*Deployment,
 ) error {
-	logger.Info("Creating linked services")
+	log(logger, "Creating linked services")
 	deploymentsNotReady := make(map[*Deployment]bool)
 	for _, deployment := range deployments {
 		deploymentsNotReady[deployment] = true

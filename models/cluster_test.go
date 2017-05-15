@@ -167,37 +167,29 @@ apps:
 
 	mockCluster := func(period, timeout int, username string) *Cluster {
 		namespace := fmt.Sprintf("mystack-%s", username)
+
+		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil)
+		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil)
+		appDeployment3 := NewDeployment("test3", username, "app3", ports, []*EnvVar{
+			&EnvVar{Name: "VARIABLE_1", Value: "100"},
+		}, nil, nil)
+
+		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, &Probe{
+			Command:        []string{"echo", "ready"},
+			TimeoutSeconds: timeout,
+			PeriodSeconds:  period,
+		}, nil)
+
 		return &Cluster{
-			Username:  username,
-			Namespace: namespace,
-			AppDeployments: []*Deployment{
-				NewDeployment("test1", username, "app1", ports, nil, nil, nil),
-				NewDeployment("test2", username, "app2", ports, nil, nil, nil),
-				NewDeployment("test3", username, "app3", ports, []*EnvVar{
-					&EnvVar{Name: "VARIABLE_1", Value: "100"},
-				}, nil, nil),
-			},
-			SvcDeployments: []*Deployment{
-				NewDeployment(
-					"test0",
-					username,
-					"svc1",
-					ports,
-					nil,
-					&Probe{
-						Command:        []string{"echo", "ready"},
-						TimeoutSeconds: timeout,
-						PeriodSeconds:  period,
-					}, nil,
-				),
-			},
-			AppServices: []*Service{
-				NewService("test1", username, portMaps, false),
-				NewService("test2", username, portMaps, false),
-				NewService("test3", username, portMaps, false),
-			},
-			SvcServices: []*Service{
-				NewService("test0", username, portMaps, true),
+			Username:       username,
+			Namespace:      namespace,
+			AppDeployments: []*Deployment{appDeployment1, appDeployment2, appDeployment3},
+			SvcDeployments: []*Deployment{svcDeployment1},
+			K8sServices: map[*Deployment]*Service{
+				appDeployment1: NewService("test1", username, portMaps, false),
+				appDeployment2: NewService("test2", username, portMaps, false),
+				appDeployment3: NewService("test3", username, portMaps, false),
+				svcDeployment1: NewService("test0", username, portMaps, true),
 			},
 			Job: NewJob(
 				username,
@@ -215,25 +207,22 @@ apps:
 		}
 	}
 
+	appDeploymentClusterWithVolume := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
+	svcDeploymentClusterWithVolume := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, &VolumeMount{Name: "svc-volume", MountPath: "/data"})
+
 	mockedClusterWithVolume := &Cluster{
 		Username:  username,
 		Namespace: namespace,
 		PersistentVolumeClaims: []*PersistentVolumeClaim{
 			&PersistentVolumeClaim{Name: "svc-volume", Storage: "1Gi", Namespace: namespace},
 		},
-		AppDeployments: []*Deployment{
-			NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil),
-		},
-		SvcDeployments: []*Deployment{
-			NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, &VolumeMount{Name: "svc-volume", MountPath: "/data"}),
-		},
-		AppServices: []*Service{
-			NewService("app1", username, []*PortMap{
+		AppDeployments: []*Deployment{appDeploymentClusterWithVolume},
+		SvcDeployments: []*Deployment{svcDeploymentClusterWithVolume},
+		K8sServices: map[*Deployment]*Service{
+			appDeploymentClusterWithVolume: NewService("app1", username, []*PortMap{
 				&PortMap{Port: 5000, TargetPort: 5000},
 			}, false),
-		},
-		SvcServices: []*Service{
-			NewService("svc1", username, []*PortMap{
+			svcDeploymentClusterWithVolume: NewService("svc1", username, []*PortMap{
 				&PortMap{Port: 5000, TargetPort: 5000},
 			}, true),
 		},
@@ -275,8 +264,11 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
-			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
-			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
+
+			for dp, svc := range mockedCluster.K8sServices {
+				Expect(cluster.K8sServices).To(HaveKeyWithValue(dp, svc))
+			}
+
 			Expect(cluster.Job).To(Equal(mockedCluster.Job))
 		})
 
@@ -292,8 +284,11 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
-			Expect(cluster.SvcServices).To(ConsistOf(mockedCluster.SvcServices))
-			Expect(cluster.AppServices).To(ConsistOf(mockedCluster.AppServices))
+
+			for dp, svc := range mockedCluster.K8sServices {
+				Expect(cluster.K8sServices).To(HaveKeyWithValue(dp, svc))
+			}
+
 			Expect(cluster.Job).To(Equal(mockedCluster.Job))
 		})
 
@@ -307,8 +302,11 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedClusterWithVolume.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedClusterWithVolume.SvcDeployments))
-			Expect(cluster.SvcServices).To(ConsistOf(mockedClusterWithVolume.SvcServices))
-			Expect(cluster.AppServices).To(ConsistOf(mockedClusterWithVolume.AppServices))
+
+			for dp, svc := range mockedClusterWithVolume.K8sServices {
+				Expect(cluster.K8sServices).To(HaveKeyWithValue(dp, svc))
+			}
+
 			Expect(cluster.Job).To(Equal(mockedClusterWithVolume.Job))
 			Expect(cluster.PersistentVolumeClaims).To(Equal(mockedClusterWithVolume.PersistentVolumeClaims))
 		})
@@ -450,16 +448,16 @@ apps:
 
 		It("should run with env var as object", func() {
 			obj := "{\\\"key\\\": \\\"value\\\"}"
+			appDeployment := NewDeployment("test1", username, "app1", ports, []*EnvVar{
+				&EnvVar{Name: "VARIABLE_1", Value: obj},
+			}, nil, nil)
+
 			cluster := &Cluster{
-				Username:  username,
-				Namespace: namespace,
-				AppDeployments: []*Deployment{
-					NewDeployment("test1", username, "app1", ports, []*EnvVar{
-						&EnvVar{Name: "VARIABLE_1", Value: obj},
-					}, nil, nil),
-				},
-				AppServices: []*Service{
-					NewService("test1", username, portMaps, false),
+				Username:       username,
+				Namespace:      namespace,
+				AppDeployments: []*Deployment{appDeployment},
+				K8sServices: map[*Deployment]*Service{
+					appDeployment: NewService("test1", username, portMaps, false),
 				},
 				DeploymentReadiness: &mTest.MockReadiness{},
 				JobReadiness:        &mTest.MockReadiness{},
@@ -477,6 +475,7 @@ apps:
 	Describe("Delete", func() {
 		It("should delete cluster", func() {
 			cluster := mockCluster(0, 0, username)
+
 			err := cluster.Create(nil, clientset)
 			Expect(err).NotTo(HaveOccurred())
 
