@@ -12,3 +12,4 @@ oauth:
   - "other.com"
 kubernetes:
   service-domain-suffix: mystack.com
+  port-forward-tcp-port: 28000

@@ -115,7 +115,6 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
 			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
@@ -132,7 +131,6 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
 			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
@@ -149,7 +147,6 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["domains"]["postgres"]).To(Equal([]string{"postgres.mystack-user.mystack.com"}))
 			Expect(bodyJSON["domains"]["app1"]).To(Equal([]string{"app1.mystack-user.mystack.com"}))
 		})
 
@@ -346,7 +343,6 @@ apps:
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
 			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
@@ -373,6 +369,75 @@ apps:
 			Expect(bodyJSON["description"]).To(Equal("namespace for user 'user' not found"))
 			Expect(bodyJSON["error"]).To(Equal("get apps error"))
 			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
+		})
+	})
+
+	Describe("GET /clusters/{name}/services", func() {
+		var (
+			err     error
+			request *http.Request
+			route   = fmt.Sprintf("/clusters/%s/services", clusterName)
+		)
+
+		BeforeEach(func() {
+			clusterHandler.Method = "services"
+			request, err = http.NewRequest("GET", route, nil)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err = mock.ExpectationsWereMet()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return correct services", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+			err = cluster.Create(app.Logger, app.Clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+			bodyJSON := make(map[string][]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["services"]).To(Equal([]string{"test0"}))
+		})
+
+		It("should return status 404 if namespace doesn't exist", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			_, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
+			bodyJSON := make(map[string]string)
+			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
+			Expect(bodyJSON["description"]).To(Equal("namespace for user 'user' not found"))
+			Expect(bodyJSON["error"]).To(Equal("get apps error"))
+			Expect(bodyJSON["code"]).To(Equal("OFF-004"))
+			Expect(recorder.Code).To(Equal(http.StatusNotFound))
 		})
 	})
 })

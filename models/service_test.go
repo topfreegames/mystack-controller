@@ -42,7 +42,7 @@ var _ = Describe("Service", func() {
 
 	Describe("Expose", func() {
 		It("should expose a new Service", func() {
-			service := NewService(name, username, portMaps)
+			service := NewService(name, username, portMaps, false)
 			Expect(service.Namespace).To(Equal(namespace))
 
 			servicev1, err := service.Expose(clientset)
@@ -52,10 +52,27 @@ var _ = Describe("Service", func() {
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services.Items).To(HaveLen(1))
+
+			Expect(servicev1.GetLabels()["mystack/service"]).To(Equal("false"))
+		})
+
+		It("should expose a new Service that is not mystack service", func() {
+			service := NewService(name, username, portMaps, true)
+			Expect(service.Namespace).To(Equal(namespace))
+
+			servicev1, err := service.Expose(clientset)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(servicev1.GetNamespace()).To(Equal(namespace))
+
+			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(services.Items).To(HaveLen(1))
+
+			Expect(servicev1.GetLabels()["mystack/service"]).To(Equal("true"))
 		})
 
 		It("should return error when creating same service twice", func() {
-			service := NewService(name, username, portMaps)
+			service := NewService(name, username, portMaps, false)
 			Expect(service.Namespace).To(Equal(namespace))
 
 			_, err := service.Expose(clientset)
@@ -70,13 +87,13 @@ var _ = Describe("Service", func() {
 
 	Describe("Delete", func() {
 		It("should return error if trying to delete unexposed service", func() {
-			service := NewService(name, username, portMaps)
+			service := NewService(name, username, portMaps, false)
 			err := service.Delete(clientset)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should delete service", func() {
-			service := NewService(name, username, portMaps)
+			service := NewService(name, username, portMaps, false)
 			_, err := service.Expose(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -89,11 +106,11 @@ var _ = Describe("Service", func() {
 		})
 
 		It("should not delete all services", func() {
-			service := NewService(name, username, portMaps)
+			service := NewService(name, username, portMaps, false)
 			_, err := service.Expose(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			service2 := NewService("test2", username, portMaps)
+			service2 := NewService("test2", username, portMaps, false)
 			_, err = service2.Expose(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -103,6 +120,36 @@ var _ = Describe("Service", func() {
 			services, err := clientset.CoreV1().Services(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(services.Items).To(HaveLen(1))
+		})
+	})
+
+	Describe("ServicePort", func() {
+		It("should return error if namespace doesn't exist", func() {
+			_, err := ServicePort(clientset, name, username)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal(`Service "test" not found`))
+		})
+
+		It("should return error if service doesn't exist", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = ServicePort(clientset, name, username)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal(`Service "test" not found`))
+		})
+
+		It("should return correct port", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			service := NewService(name, username, portMaps, true)
+			_, err = service.Expose(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			port, err := ServicePort(clientset, name, username)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(port).To(Equal(80))
 		})
 	})
 })

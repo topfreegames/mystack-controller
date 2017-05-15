@@ -16,6 +16,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/fields"
+	"k8s.io/client-go/pkg/labels"
 )
 
 //Cluster represents a k8s cluster for a user
@@ -55,8 +58,8 @@ func NewCluster(
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
-	k8sAppServices := buildServices(k8sAppDeployments, username, portMap)
-	k8sSvcServices := buildServices(k8sSvcDeployments, username, portMap)
+	k8sAppServices := buildServices(k8sAppDeployments, username, portMap, false)
+	k8sSvcServices := buildServices(k8sSvcDeployments, username, portMap, true)
 
 	k8sJob := NewJob(username, clusterConfig.Setup, environment)
 
@@ -130,11 +133,12 @@ func buildServices(
 	deploys []*Deployment,
 	username string,
 	portMap map[string][]*PortMap,
+	isMystackSvc bool,
 ) []*Service {
 	services := make([]*Service, len(deploys))
 	i := 0
 	for _, deploy := range deploys {
-		services[i] = NewService(deploy.Name, username, portMap[deploy.Name])
+		services[i] = NewService(deploy.Name, username, portMap[deploy.Name], isMystackSvc)
 		i = i + 1
 	}
 	return services
@@ -302,13 +306,22 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 	return nil
 }
 
-//Apps returns a list of accessible domains
+//Apps returns a list of cluster apps
 func (c *Cluster) Apps(clientset kubernetes.Interface, k8sDomain string) (map[string][]string, error) {
 	if !NamespaceExists(clientset, c.Namespace) {
 		return nil, errors.NewKubernetesError(
 			"get apps error",
 			fmt.Errorf("namespace for user '%s' not found", c.Username),
 		)
+	}
+
+	labelMap := labels.Set{
+		"mystack/routable": "true",
+		"mystack/service":  "false",
+	}
+	listOptions := v1.ListOptions{
+		LabelSelector: labelMap.AsSelector().String(),
+		FieldSelector: fields.Everything().String(),
 	}
 
 	services, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
@@ -327,4 +340,38 @@ func (c *Cluster) Apps(clientset kubernetes.Interface, k8sDomain string) (map[st
 	}
 
 	return domains, nil
+}
+
+//Services returns a list of cluster services
+func (c *Cluster) Services(clientset kubernetes.Interface) ([]string, error) {
+	if !NamespaceExists(clientset, c.Namespace) {
+		return nil, errors.NewKubernetesError(
+			"get apps error",
+			fmt.Errorf("namespace for user '%s' not found", c.Username),
+		)
+	}
+
+	labelMap := labels.Set{
+		"mystack/routable": "true",
+		"mystack/service":  "true",
+	}
+	listOptions := v1.ListOptions{
+		LabelSelector: labelMap.AsSelector().String(),
+		FieldSelector: fields.Everything().String(),
+	}
+
+	services, err := clientset.CoreV1().Services(c.Namespace).List(listOptions)
+	if err != nil {
+		return nil, errors.NewKubernetesError(
+			"get apps error",
+			fmt.Errorf("couldn't retrieve services"),
+		)
+	}
+
+	serviceNames := []string{}
+	for _, service := range services.Items {
+		serviceNames = append(serviceNames, service.Name)
+	}
+
+	return serviceNames, nil
 }

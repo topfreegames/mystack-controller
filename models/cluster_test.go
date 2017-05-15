@@ -192,12 +192,12 @@ apps:
 				),
 			},
 			AppServices: []*Service{
-				NewService("test1", username, portMaps),
-				NewService("test2", username, portMaps),
-				NewService("test3", username, portMaps),
+				NewService("test1", username, portMaps, false),
+				NewService("test2", username, portMaps, false),
+				NewService("test3", username, portMaps, false),
 			},
 			SvcServices: []*Service{
-				NewService("test0", username, portMaps),
+				NewService("test0", username, portMaps, true),
 			},
 			Job: NewJob(
 				username,
@@ -230,12 +230,12 @@ apps:
 		AppServices: []*Service{
 			NewService("app1", username, []*PortMap{
 				&PortMap{Port: 5000, TargetPort: 5000},
-			}),
+			}, false),
 		},
 		SvcServices: []*Service{
 			NewService("svc1", username, []*PortMap{
 				&PortMap{Port: 5000, TargetPort: 5000},
-			}),
+			}, true),
 		},
 		Job: NewJob(username, &Setup{
 			Image:          "setup-img",
@@ -459,7 +459,7 @@ apps:
 					}, nil, nil),
 				},
 				AppServices: []*Service{
-					NewService("test1", username, portMaps),
+					NewService("test1", username, portMaps, false),
 				},
 				DeploymentReadiness: &mTest.MockReadiness{},
 				JobReadiness:        &mTest.MockReadiness{},
@@ -566,7 +566,6 @@ apps:
 			domains, err := cluster.Apps(clientset, domain)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(domains["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
 			Expect(domains["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 			Expect(domains["test2"]).To(Equal([]string{"test2.mystack-user.mystack.com"}))
 			Expect(domains["test3"]).To(Equal([]string{"test3.mystack-user.mystack.com"}))
@@ -576,6 +575,26 @@ apps:
 			cluster := mockCluster(0, 0, "user")
 			_, err := cluster.Apps(clientset, domain)
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("Services", func() {
+		It("should return correct services if cluster is running", func() {
+			cluster := mockCluster(0, 0, "user")
+			err := cluster.Create(nil, clientset)
+
+			services, err := cluster.Services(clientset)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(services).To(Equal([]string{"test0"}))
+		})
+
+		It("should return error if cluster is not runnig", func() {
+			cluster := mockCluster(0, 0, "user")
+			_, err := cluster.Services(clientset)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("namespace for user 'user' not found"))
+			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.KubernetesError"))
 		})
 	})
 })
