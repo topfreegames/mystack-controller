@@ -53,6 +53,7 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
 		return
 	}
+	log(logger, "Created cluster %#v", cluster)
 
 	err = cluster.Create(c.App.Logger, c.App.Clientset)
 	if err != nil {
