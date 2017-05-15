@@ -63,12 +63,12 @@ apps:
 				NewDeployment("test0", username, "svc1", ports, nil, nil, nil),
 			},
 			AppServices: []*Service{
-				NewService("test1", username, portMap),
-				NewService("test2", username, portMap),
-				NewService("test3", username, portMap),
+				NewService("test1", username, portMap, false),
+				NewService("test2", username, portMap, false),
+				NewService("test3", username, portMap, false),
 			},
 			SvcServices: []*Service{
-				NewService("test0", username, portMap),
+				NewService("test0", username, portMap, true),
 			},
 		}
 	}

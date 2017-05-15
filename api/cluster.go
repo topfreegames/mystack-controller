@@ -29,6 +29,8 @@ func (c *ClusterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.deleteCluster(w, r)
 	case "apps":
 		c.getApps(w, r)
+	case "services":
+		c.getServices(w, r)
 	}
 }
 
@@ -136,4 +138,35 @@ func (c *ClusterHandler) getApps(w http.ResponseWriter, r *http.Request) {
 
 	WriteBytes(w, http.StatusOK, bts)
 	log(logger, "Cluster apps gotten for user %s", username)
+}
+
+func (c *ClusterHandler) getServices(w http.ResponseWriter, r *http.Request) {
+	logger := loggerFromContext(r.Context())
+	email := emailFromCtx(r.Context())
+	username := usernameFromEmail(email)
+
+	log(logger, "Cluster services for user %s", username)
+	clusterName := GetClusterName(r)
+
+	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get services error", err)
+		return
+	}
+
+	serviceNames, err := cluster.Services(c.App.Clientset)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get services error", err)
+		return
+	}
+
+	response := map[string][]string{"services": serviceNames}
+	bts, err := json.Marshal(response)
+	if err != nil {
+		c.App.HandleError(w, Status(err), "get services error", err)
+		return
+	}
+
+	WriteBytes(w, http.StatusOK, bts)
+	log(logger, "Cluster services gotten for user %s", username)
 }

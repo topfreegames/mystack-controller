@@ -54,7 +54,6 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	msg, status, err := extensions.Authenticate(token, &models.OSCredentials{})
-
 	if err != nil {
 		logger.WithError(err).Error("error fetching googleapis")
 		m.App.HandleError(w, http.StatusInternalServerError, "Error fetching googleapis", err)
@@ -76,7 +75,7 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	email := msg
-	if !m.verifyEmailDomain(email) {
+	if !m.App.verifyEmailDomain(email) {
 		logger.WithError(err).Error("Invalid email")
 		err := errors.NewAccessError(
 			"authorization access error",
@@ -90,15 +89,6 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log(logger, "Access token checked")
 	m.next.ServeHTTP(w, r.WithContext(ctx))
-}
-
-func (m *AccessMiddleware) verifyEmailDomain(email string) bool {
-	for _, domain := range m.App.EmailDomain {
-		if strings.HasSuffix(email, domain) {
-			return true
-		}
-	}
-	return false
 }
 
 //SetNext handler

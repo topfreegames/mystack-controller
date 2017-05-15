@@ -31,5 +31,6 @@ COPY ./config/local.yaml /app/config/local.yaml
 WORKDIR /app
 
 EXPOSE 8080
+EXPOSE 28000
 
 CMD /app/mystack-controller start -v3

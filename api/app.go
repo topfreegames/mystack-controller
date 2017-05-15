@@ -12,6 +12,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -103,6 +104,13 @@ func (a *App) getRouter() *mux.Router {
 
 	r.Handle("/clusters/{name}/apps", Chain(
 		&ClusterHandler{App: a, Method: "apps"},
+		&LoggingMiddleware{App: a},
+		&VersionMiddleware{},
+		&AccessMiddleware{App: a},
+	)).Methods("GET").Name("cluster")
+
+	r.Handle("/clusters/{name}/services", Chain(
+		&ClusterHandler{App: a, Method: "services"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
 		&AccessMiddleware{App: a},
@@ -237,6 +245,12 @@ func (a *App) HandleError(w http.ResponseWriter, status int, msg string, err int
 
 //ListenAndServe requests
 func (a *App) ListenAndServe() (io.Closer, error) {
+	port := fmt.Sprintf(
+		":%d",
+		a.Config.GetInt("kubernetes.port-forward-tcp-port"),
+	)
+	go a.listenTCP(port)
+
 	listener, err := net.Listen("tcp", a.Address)
 	if err != nil {
 		return nil, err
@@ -249,4 +263,13 @@ func (a *App) ListenAndServe() (io.Closer, error) {
 	}
 
 	return listener, nil
+}
+
+func (a *App) verifyEmailDomain(email string) bool {
+	for _, domain := range a.EmailDomain {
+		if strings.HasSuffix(email, domain) {
+			return true
+		}
+	}
+	return false
 }

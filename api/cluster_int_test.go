@@ -84,7 +84,6 @@ apps:
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
 			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 
@@ -104,7 +103,6 @@ apps:
 			Expect(recorder.Header().Get("Content-Type")).To(Equal("application/json"))
 			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["domains"]["test0"]).To(Equal([]string{"test0.mystack-user.mystack.com"}))
 			Expect(bodyJSON["domains"]["test1"]).To(Equal([]string{"test1.mystack-user.mystack.com"}))
 		})
 

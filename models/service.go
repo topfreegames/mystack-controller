@@ -26,6 +26,7 @@ metadata:
   namespace: {{.Namespace}}
   labels:
     mystack/routable: "true"
+    mystack/service: "{{.IsMystackSvc}}"
 spec:
   selector:
     app: {{.Name}}
@@ -48,13 +49,14 @@ type PortMap struct {
 
 //Service represents a service
 type Service struct {
-	Name      string
-	Namespace string
-	Ports     []*PortMap
+	Name         string
+	Namespace    string
+	Ports        []*PortMap
+	IsMystackSvc bool
 }
 
 //NewService is the service ctor
-func NewService(name, username string, ports []*PortMap) *Service {
+func NewService(name, username string, ports []*PortMap, isMystackSvc bool) *Service {
 	namespace := usernameToNamespace(username)
 	for i, port := range ports {
 		if len(port.Name) == 0 {
@@ -62,9 +64,10 @@ func NewService(name, username string, ports []*PortMap) *Service {
 		}
 	}
 	return &Service{
-		Name:      name,
-		Namespace: namespace,
-		Ports:     ports,
+		Name:         name,
+		Namespace:    namespace,
+		Ports:        ports,
+		IsMystackSvc: isMystackSvc,
 	}
 }
 
@@ -114,4 +117,15 @@ func (s *Service) Delete(clientset kubernetes.Interface) error {
 	}
 
 	return nil
+}
+
+func ServicePort(clientset kubernetes.Interface, name, username string) (int, error) {
+	namespace := usernameToNamespace(username)
+	service, err := clientset.CoreV1().Services(namespace).Get(name)
+	if err != nil {
+		return 0, err
+	}
+
+	port := service.Spec.Ports[0].Port
+	return int(port), nil
 }
