@@ -27,8 +27,7 @@ type Cluster struct {
 	Username               string
 	AppDeployments         []*Deployment
 	SvcDeployments         []*Deployment
-	AppServices            []*Service
-	SvcServices            []*Service
+	K8sServices            map[*Deployment]*Service
 	Job                    *Job
 	PersistentVolumeClaims []*PersistentVolumeClaim
 	DeploymentReadiness    Readiness
@@ -58,8 +57,10 @@ func NewCluster(
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
-	k8sAppServices := buildServices(k8sAppDeployments, username, portMap, false)
-	k8sSvcServices := buildServices(k8sSvcDeployments, username, portMap, true)
+
+	clusterServices := make(map[*Deployment]*Service)
+	clusterServices = buildServices(k8sAppDeployments, username, portMap, false, clusterServices)
+	clusterServices = buildServices(k8sSvcDeployments, username, portMap, true, clusterServices)
 
 	k8sJob := NewJob(username, clusterConfig.Setup, environment)
 
@@ -70,8 +71,7 @@ func NewCluster(
 		Namespace:              namespace,
 		AppDeployments:         k8sAppDeployments,
 		SvcDeployments:         k8sSvcDeployments,
-		AppServices:            k8sAppServices,
-		SvcServices:            k8sSvcServices,
+		K8sServices:            clusterServices,
 		Job:                    k8sJob,
 		DeploymentReadiness:    deploymentReadiness,
 		JobReadiness:           jobReadiness,
@@ -107,6 +107,17 @@ func getPorts(name string, ports []string, portMap map[string][]*PortMap) ([]int
 	return containerPorts, nil
 }
 
+func hasSatisfiedDependencies(links []string, createdDeployments map[string]*Deployment) bool {
+	for _, link := range links {
+		_, ok := createdDeployments[link]
+		if !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
 func buildDeployments(
 	types map[string]*ClusterAppConfig,
 	username string,
@@ -114,16 +125,35 @@ func buildDeployments(
 	environment []*EnvVar,
 ) ([]*Deployment, []*EnvVar, error) {
 	deployments := make([]*Deployment, len(types))
+	createdDeployments := make(map[string]*Deployment)
+	notCreatedDeployments := make(map[string]bool)
+
+	for name := range types {
+		notCreatedDeployments[name] = true
+	}
 
 	i := 0
-	for name, config := range types {
-		ports, err := getPorts(name, config.Ports, portMap)
-		if err != nil {
-			return nil, environment, err
+	for len(notCreatedDeployments) > 0 {
+		for name := range notCreatedDeployments {
+			config := types[name]
+			if hasSatisfiedDependencies(config.Links, createdDeployments) {
+				ports, err := getPorts(name, config.Ports, portMap)
+				if err != nil {
+					return nil, environment, err
+				}
+				deployment = NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount)
+				for _, link := range config.Links {
+					deployment.Links = append(deployment.Links, createdDeployments[link])
+				}
+
+				createdDeployments[name] = deployment
+
+				deployments[i] = deployment
+				environment = append(environment, config.Environment...)
+				i = i + 1
+				delete(notCreatedDeployments, name)
+			}
 		}
-		deployments[i] = NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount)
-		environment = append(environment, config.Environment...)
-		i = i + 1
 	}
 
 	return deployments, environment, nil
@@ -134,12 +164,10 @@ func buildServices(
 	username string,
 	portMap map[string][]*PortMap,
 	isMystackSvc bool,
-) []*Service {
-	services := make([]*Service, len(deploys))
-	i := 0
+	services map[*Deployment]*Service,
+) map[*Deployment]*Service {
 	for _, deploy := range deploys {
-		services[i] = NewService(deploy.Name, username, portMap[deploy.Name], isMystackSvc)
-		i = i + 1
+		services[deploy] = NewService(deploy.Name, username, portMap[deploy.Name], isMystackSvc)
 	}
 	return services
 }
@@ -165,7 +193,7 @@ func buildPersistentVolumeClaims(persistentVolumeClaims []*PersistentVolumeClaim
 
 func log(logger logrus.FieldLogger, msg string) {
 	if logger != nil {
-		logger.Debug(msg)
+		logger.Info(msg)
 	}
 }
 
@@ -194,29 +222,10 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	}
 	log(logger, "done creating svc volume")
 
-	log(logger, "creating svc deployments")
-	for _, deployment := range c.SvcDeployments {
-		_, err := deployment.Deploy(clientset)
-		if err != nil {
-			return rollback(clientset, c.Username, err)
-		}
-	}
-
-	log(logger, "waiting svc deployment completion")
-	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.SvcDeployments)
+	err = c.startDeploymentsAndItsServicesWithLinks(logger, clientset, c.SvcDeployments)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
-	log(logger, "done creating svc deployments")
-
-	log(logger, "creating svc services")
-	for _, service := range c.SvcServices {
-		_, err = service.Expose(clientset)
-		if err != nil {
-			return rollback(clientset, c.Username, err)
-		}
-	}
-	log(logger, "done creating svc services")
 
 	log(logger, "creating setup job")
 	_, err = c.Job.Run(clientset)
@@ -230,29 +239,86 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	}
 	log(logger, "done job setup")
 
-	log(logger, "creating app deployments")
-	for _, deployment := range c.AppDeployments {
+	err = c.startDeploymentsAndItsServicesWithLinks(logger, clientset, c.AppDeployments)
+	if err != nil {
+		return rollback(clientset, c.Username, err)
+	}
+
+	return nil
+}
+
+func (c *Cluster) startDeploymentsAndItsServicesWithLinks(
+	logger logrus.FieldLogger,
+	clientset kubernetes.Interface,
+	deployments []*Deployment,
+) error {
+	logger.Info("Creating linked services")
+	deploymentsNotReady := make(map[*Deployment]bool)
+	for _, deployment := range deployments {
+		deploymentsNotReady[deployment] = true
+	}
+
+	for len(deploymentsNotReady) > 0 {
+		runnableDeployments := []*Deployment{}
+		for deployment := range deploymentsNotReady {
+			if canRun(deployment, deploymentsNotReady) {
+				runnableDeployments = append(runnableDeployments, deployment)
+			}
+		}
+
+		err := c.startDeploymentsAndItsServices(logger, clientset, runnableDeployments, c.K8sServices)
+		if err != nil {
+			return err
+		}
+
+		for _, deployment := range runnableDeployments {
+			delete(deploymentsNotReady, deployment)
+		}
+	}
+
+	return nil
+}
+
+//A deployment can start if all its dependencies (links) are already running
+func canRun(deployment *Deployment, deploymentsNotReady map[*Deployment]bool) bool {
+	for _, dependencie := range deployment.Links {
+		if _, contains := deploymentsNotReady[dependencie]; contains {
+			return false
+		}
+	}
+	return true
+}
+
+func (c *Cluster) startDeploymentsAndItsServices(
+	logger logrus.FieldLogger,
+	clientset kubernetes.Interface,
+	deployments []*Deployment,
+	services map[*Deployment]*Service,
+) error {
+	log(logger, "creating deployments")
+	for _, deployment := range deployments {
 		_, err := deployment.Deploy(clientset)
 		if err != nil {
 			return rollback(clientset, c.Username, err)
 		}
 	}
 
-	log(logger, "waiting app deployments completion")
-	err = c.DeploymentReadiness.WaitForCompletion(clientset, c.AppDeployments)
+	log(logger, "waiting deployment completion")
+	err := c.DeploymentReadiness.WaitForCompletion(clientset, deployments)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
-	log(logger, "done app deployment")
+	log(logger, "done creating deployments")
 
-	log(logger, "creating app service")
-	for _, service := range c.AppServices {
+	log(logger, "creating services")
+	for _, deployment := range deployments {
+		service := services[deployment]
 		_, err = service.Expose(clientset)
 		if err != nil {
 			return rollback(clientset, c.Username, err)
 		}
 	}
-	log(logger, "done creating app service")
+	log(logger, "done creating services")
 
 	return nil
 }
@@ -266,16 +332,12 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 		)
 	}
 
-	for _, service := range c.AppServices {
+	for _, service := range c.K8sServices {
 		service.Delete(clientset)
 	}
 
 	for _, deployment := range c.AppDeployments {
 		deployment.Delete(clientset)
-	}
-
-	for _, service := range c.SvcServices {
-		service.Delete(clientset)
 	}
 
 	for _, deployment := range c.SvcDeployments {

@@ -26,4 +26,5 @@ type ClusterAppConfig struct {
 	Environment    []*EnvVar    `yaml:"env,flow"`
 	ReadinessProbe *Probe       `yaml:"readinessProbe"`
 	VolumeMount    *VolumeMount `yaml:"volumeMount"`
+	Links          []string     `yaml:"links"`
 }

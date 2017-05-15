@@ -84,6 +84,7 @@ type Deployment struct {
 	Environment    []*EnvVar
 	ReadinessProbe *Probe
 	Volume         *VolumeMount
+	Links          []*Deployment
 }
 
 //NewDeployment is the deployment ctor
@@ -105,6 +106,7 @@ func NewDeployment(
 		Environment:    environment,
 		ReadinessProbe: readinessProbe,
 		Volume:         volume,
+		Links:          []*Deployment{},
 	}
 }
 
