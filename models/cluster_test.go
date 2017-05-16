@@ -98,26 +98,6 @@ apps:
       - name: VARIABLE_1
         value: 100
 `
-		yamlWithVolume = `
-setup:
-  image: setup-img
-volumes:
-  - name: svc-volume
-    storage: 1Gi
-services:
-  svc1:
-    image: svc1
-    ports: 
-      - "5000"
-    volumeMount:
-      name: svc-volume
-      mountPath: /data
-apps:
-  app1:
-    image: app1
-    ports: 
-      - "5000"
-`
 		invalidYaml1 = `
 services:
   postgres:
@@ -293,6 +273,26 @@ apps:
 		})
 
 		It("should return cluster with volume from DB", func() {
+			yamlWithVolume := `
+setup:
+  image: setup-img
+volumes:
+  - name: svc-volume
+    storage: 1Gi
+services:
+  svc1:
+    image: svc1
+    ports: 
+      - "5000"
+    volumeMount:
+      name: svc-volume
+      mountPath: /data
+apps:
+  app1:
+    image: app1
+    ports: 
+      - "5000"
+`
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
@@ -309,6 +309,144 @@ apps:
 
 			Expect(cluster.Job).To(Equal(mockedClusterWithVolume.Job))
 			Expect(cluster.PersistentVolumeClaims).To(Equal(mockedClusterWithVolume.PersistentVolumeClaims))
+		})
+
+		It("should return cluster with links on services", func() {
+			yamlWithLinks := `
+setup:
+  image: setup-img
+services:
+  svc1:
+    image: svc1
+    ports: 
+      - "5000"
+    links:
+      - svc2
+  svc2:
+    image: svc2
+    ports: 
+      - "5000"
+apps:
+  app1:
+    image: app1
+    ports: 
+      - "5000"
+`
+			appDeploymentCluster := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
+			svcDeploymentCluster1 := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil)
+			svcDeploymentCluster2 := NewDeployment("svc2", username, "svc2", []int{5000}, nil, nil, nil)
+
+			svcDeploymentCluster1.Links = []*Deployment{svcDeploymentCluster2}
+
+			mockedClusterWithLinks := &Cluster{
+				Username:       username,
+				Namespace:      namespace,
+				AppDeployments: []*Deployment{appDeploymentCluster},
+				SvcDeployments: []*Deployment{svcDeploymentCluster1, svcDeploymentCluster2},
+				K8sServices: map[*Deployment]*Service{
+					appDeploymentCluster: NewService("app1", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, false),
+					svcDeploymentCluster1: NewService("svc1", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, true),
+					svcDeploymentCluster2: NewService("svc2", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, true),
+				},
+				Job: NewJob(username, &Setup{
+					Image:          "setup-img",
+					PeriodSeconds:  0,
+					TimeoutSeconds: 0,
+				}, []*EnvVar{}),
+				DeploymentReadiness: &mTest.MockReadiness{},
+				JobReadiness:        &mTest.MockReadiness{},
+			}
+
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithLinks))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedClusterWithLinks.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedClusterWithLinks.SvcDeployments))
+
+			for dp, svc := range mockedClusterWithLinks.K8sServices {
+				Expect(cluster.K8sServices).To(HaveKeyWithValue(dp, svc))
+			}
+
+			Expect(cluster.Job).To(Equal(mockedClusterWithLinks.Job))
+		})
+
+		It("should return cluster with links on apps", func() {
+			yamlWithLinks := `
+setup:
+  image: setup-img
+services:
+  svc1:
+    image: svc1
+    ports: 
+      - "5000"
+apps:
+  app1:
+    image: app1
+    ports: 
+      - "5000"
+    links:
+      - app2
+  app2:
+    image: app2
+    ports: 
+      - "5000"
+`
+			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
+			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil)
+			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil)
+
+			appDeploymentCluster1.Links = []*Deployment{appDeploymentCluster2}
+
+			mockedClusterWithLinks := &Cluster{
+				Username:       username,
+				Namespace:      namespace,
+				AppDeployments: []*Deployment{appDeploymentCluster1, appDeploymentCluster2},
+				SvcDeployments: []*Deployment{svcDeploymentCluster},
+				K8sServices: map[*Deployment]*Service{
+					appDeploymentCluster1: NewService("app1", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, false),
+					appDeploymentCluster2: NewService("app2", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, false),
+					svcDeploymentCluster: NewService("svc1", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, true),
+				},
+				Job: NewJob(username, &Setup{
+					Image:          "setup-img",
+					PeriodSeconds:  0,
+					TimeoutSeconds: 0,
+				}, []*EnvVar{}),
+				DeploymentReadiness: &mTest.MockReadiness{},
+				JobReadiness:        &mTest.MockReadiness{},
+			}
+
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithLinks))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedClusterWithLinks.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedClusterWithLinks.SvcDeployments))
+
+			for dp, svc := range mockedClusterWithLinks.K8sServices {
+				Expect(cluster.K8sServices).To(HaveKeyWithValue(dp, svc))
+			}
+
+			Expect(cluster.Job).To(Equal(mockedClusterWithLinks.Job))
 		})
 
 		It("should return error if clusterName doesn't exists on DB", func() {
@@ -469,6 +607,42 @@ apps:
 			Expect(err).NotTo(HaveOccurred())
 			deploy := deploys.Items[0]
 			Expect(deploy.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("{\"key\": \"value\"}"))
+		})
+
+		It("should run cluster with links", func() {
+			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
+			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil)
+			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil)
+
+			appDeploymentCluster1.Links = []*Deployment{appDeploymentCluster2}
+
+			mockedClusterWithLinks := &Cluster{
+				Username:       username,
+				Namespace:      namespace,
+				AppDeployments: []*Deployment{appDeploymentCluster1, appDeploymentCluster2},
+				SvcDeployments: []*Deployment{svcDeploymentCluster},
+				K8sServices: map[*Deployment]*Service{
+					appDeploymentCluster1: NewService("app1", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, false),
+					appDeploymentCluster2: NewService("app2", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, false),
+					svcDeploymentCluster: NewService("svc1", username, []*PortMap{
+						&PortMap{Port: 5000, TargetPort: 5000},
+					}, true),
+				},
+				Job: NewJob(username, &Setup{
+					Image:          "setup-img",
+					PeriodSeconds:  0,
+					TimeoutSeconds: 0,
+				}, []*EnvVar{}),
+				DeploymentReadiness: &mTest.MockReadiness{},
+				JobReadiness:        &mTest.MockReadiness{},
+			}
+
+			err := mockedClusterWithLinks.Create(nil, clientset)
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
