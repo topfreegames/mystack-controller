@@ -34,7 +34,7 @@ func (e *KubernetesError) Error() string {
 //Serialize returns the error serialized
 func (e *KubernetesError) Serialize() []byte {
 	g, _ := json.Marshal(map[string]interface{}{
-		"code":        "OFF-004",
+		"code":        "MST-004",
 		"error":       e.message,
 		"description": e.sourceError.Error(),
 	})

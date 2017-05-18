@@ -63,7 +63,7 @@ var _ = Describe("Healthcheck", func() {
 			Expect(recorder.Code).To(Equal(500))
 			bodyJSON := make(map[string]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
-			Expect(bodyJSON["code"]).To(Equal("OFF-003"))
+			Expect(bodyJSON["code"]).To(Equal("MST-003"))
 			Expect(bodyJSON["description"]).To(Equal("sql: database is closed"))
 			Expect(bodyJSON["error"]).To(Equal("database error"))
 

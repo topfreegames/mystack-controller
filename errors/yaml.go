@@ -34,7 +34,7 @@ func (e *YamlError) Error() string {
 //Serialize returns the error serialized
 func (e *YamlError) Serialize() []byte {
 	g, _ := json.Marshal(map[string]interface{}{
-		"code":        "OFF-004",
+		"code":        "MST-004",
 		"error":       e.message,
 		"description": e.sourceError.Error(),
 	})

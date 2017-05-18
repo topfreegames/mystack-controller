@@ -30,7 +30,7 @@ func (e *GenericError) Error() string {
 //Serialize returns the error serialized
 func (e *GenericError) Serialize() []byte {
 	g, _ := json.Marshal(map[string]interface{}{
-		"code":        "OFF-001",
+		"code":        "MST-001",
 		"error":       e.Message,
 		"description": e.SourceError.Error(),
 	})
