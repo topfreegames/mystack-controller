@@ -33,7 +33,7 @@ func (u *UserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, status, err := extensions.Authenticate(token, &models.OSCredentials{})
+	msg, status, err := extensions.Authenticate(token, &models.OSCredentials{}, u.App.DB)
 	if err != nil {
 		u.App.HandleError(w, Status(err), "user access error", err)
 		return

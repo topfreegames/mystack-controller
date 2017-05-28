@@ -73,7 +73,7 @@ func (a *App) listenTCP(url string) {
 		}
 		a.Logger.Infof("validated token")
 
-		email, _, err := extensions.Authenticate(token, &models.OSCredentials{})
+		email, _, err := extensions.Authenticate(token, &models.OSCredentials{}, a.DB)
 		if err != nil {
 			fmt.Fprintf(conn, "connection was not authenticated: %s", err)
 			continue

@@ -14,6 +14,7 @@ import (
 
 	"github.com/topfreegames/mystack-controller/extensions"
 	"github.com/topfreegames/mystack-controller/models"
+	"github.com/topfreegames/mystack-logger/errors"
 )
 
 //LoginHandler handles login url requests
@@ -82,9 +83,18 @@ func (l *LoginHandler) exchangeAccess(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//If the last error didn't occur, then the error from Authenticate method won't happen
-	email, _, _ := extensions.Authenticate(token, &models.OSCredentials{})
+	email, _, _ := extensions.Authenticate(token, &models.OSCredentials{}, l.App.DB)
+	if !l.App.verifyEmailDomain(email) {
+		logger.WithError(err).Error("Invalid email")
+		err := errors.NewAccessError(
+			"authorization access error",
+			fmt.Errorf("the email on OAuth authorization is not from domain %s", l.App.EmailDomain),
+		)
+		l.App.HandleError(w, http.StatusUnauthorized, "error validating access token", err)
+		return
+	}
 
-	err = extensions.SaveToken(token, email, l.App.DB)
+	err = extensions.SaveToken(token, email, token.AccessToken, l.App.DB)
 	if err != nil {
 		l.App.HandleError(w, http.StatusBadRequest, "", err)
 		return

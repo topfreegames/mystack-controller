@@ -198,7 +198,7 @@ iam
 				ExpectQuery(`
 				^SELECT access_token, refresh_token, expiry, token_type
 				FROM users
-				WHERE access_token = (.+)$`).
+				WHERE key_access_token = (.+)$`).
 				WillReturnError(fmt.Errorf("pq: no rows in result set"))
 
 			request.Header.Add("Authorization", "Bearer invalid-token")

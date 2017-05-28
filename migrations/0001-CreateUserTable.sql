@@ -7,6 +7,7 @@
 
 CREATE TABLE users (
     access_token varchar(255) UNIQUE NOT NULL CHECK (access_token <> ''),
+    key_access_token varchar(255) UNIQUE NOT NULL CHECK (key_access_token <> ''),
     refresh_token varchar(255) UNIQUE NOT NULL CHECK (refresh_token <> ''),
     expiry timestamp NOT NULL,
     token_type varchar(255) NOT NULL,

@@ -15,28 +15,30 @@ import (
 )
 
 //SaveToken writes the token parameters on DB
-func SaveToken(token *oauth2.Token, email string, db models.DB) error {
-	query := `INSERT INTO users(access_token, refresh_token, expiry, token_type, email) 
-						VALUES(:access_token, :refresh_token, :expiry, :token_type, :email)
-						ON CONFLICT(email) DO UPDATE
-							SET access_token = excluded.access_token,
-									refresh_token = excluded.refresh_token,
-									expiry = excluded.expiry;`
+func SaveToken(token *oauth2.Token, email, keyAccessToken string, db models.DB) error {
+	query := `INSERT INTO users(access_token, refresh_token, expiry, token_type, email, key_access_token) 
+	VALUES(:access_token, :refresh_token, :expiry, :token_type, :email, :key_access_token)
+	ON CONFLICT(email) DO UPDATE
+		SET access_token = excluded.access_token,
+				refresh_token = excluded.refresh_token,
+				expiry = excluded.expiry;`
 
 	if token.RefreshToken == "" {
 		query = `UPDATE users 
 		SET access_token = :access_token,
-				expiry = :expiry
+				expiry = :expiry,
+				key_access_token = :key_access_token
 		WHERE email = :email
 		`
 	}
 
 	values := map[string]interface{}{
-		"access_token":  token.AccessToken,
-		"refresh_token": token.RefreshToken,
-		"expiry":        token.Expiry,
-		"token_type":    token.TokenType,
-		"email":         email,
+		"access_token":     token.AccessToken,
+		"refresh_token":    token.RefreshToken,
+		"expiry":           token.Expiry,
+		"token_type":       token.TokenType,
+		"email":            email,
+		"key_access_token": keyAccessToken,
 	}
 	_, err := db.NamedExec(query, values)
 
@@ -51,7 +53,7 @@ func SaveToken(token *oauth2.Token, email string, db models.DB) error {
 func Token(accessToken string, db models.DB) (*oauth2.Token, error) {
 	query := `SELECT access_token, refresh_token, expiry, token_type
 						FROM users
-						WHERE access_token = $1`
+						WHERE key_access_token = $1`
 
 	destToken := struct {
 		AccessToken  string    `db:"access_token"`

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/topfreegames/mystack-controller/errors"
 	"github.com/topfreegames/mystack-controller/models"
@@ -77,7 +78,11 @@ func GetAccessToken(code string) (*oauth2.Token, error) {
 
 //Authenticate authenticates an access token or gets a new one with the refresh token
 //The returned string is either the error message or the user email
-func Authenticate(token *oauth2.Token, credentials models.Credentials) (string, int, error) {
+func Authenticate(
+	token *oauth2.Token,
+	credentials models.Credentials,
+	db models.DB,
+) (string, int, error) {
 	var email string
 	var status int
 
@@ -86,9 +91,14 @@ func Authenticate(token *oauth2.Token, credentials models.Credentials) (string, 
 		return email, status, errors.NewAccessError("error getting access token", err)
 	}
 
-	newToken, err := googleOauthConfig.TokenSource(oauth2.NoContext, token).Token()
-	if err != nil {
-		return email, status, errors.NewAccessError("error getting access token", err)
+	newToken := token
+	expired := time.Now().After(token.Expiry)
+	if expired {
+		var err error
+		newToken, err = googleOauthConfig.TokenSource(oauth2.NoContext, token).Token()
+		if err != nil {
+			return email, status, errors.NewAccessError("error getting access token", err)
+		}
 	}
 
 	client := googleOauthConfig.Client(oauth2.NoContext, newToken)
@@ -110,6 +120,12 @@ func Authenticate(token *oauth2.Token, credentials models.Credentials) (string, 
 	var bodyObj map[string]interface{}
 	json.Unmarshal(bts, &bodyObj)
 	email = bodyObj["email"].(string)
+	if expired {
+		err = SaveToken(newToken, email, token.AccessToken, db)
+		if err != nil {
+			return email, http.StatusInternalServerError, errors.NewDatabaseError(err)
+		}
+	}
 
 	return email, status, nil
 }

@@ -53,7 +53,7 @@ func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, status, err := extensions.Authenticate(token, &models.OSCredentials{})
+	msg, status, err := extensions.Authenticate(token, &models.OSCredentials{}, m.App.DB)
 	if err != nil {
 		logger.WithError(err).Error("error fetching googleapis")
 		m.App.HandleError(w, http.StatusInternalServerError, "Error fetching googleapis", err)

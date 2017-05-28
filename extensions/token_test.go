@@ -29,13 +29,13 @@ var _ = Describe("Token", func() {
 	Describe("SaveToken", func() {
 		It("should save valid token and email", func() {
 			mock.
-				ExpectExec(`^INSERT INTO users\(access_token, refresh_token, expiry, token_type, email\)
+				ExpectExec(`^INSERT INTO users\(access_token, refresh_token, expiry, token_type, email, key_access_token\)
 					VALUES\((.+)\)
 					ON CONFLICT\(email\) DO UPDATE
 						SET access_token = excluded.access_token,
 								refresh_token = excluded.refresh_token,
 								expiry = excluded.expiry;$`).
-				WithArgs(accessToken, refreshToken, expiry, tokenType, email).
+				WithArgs(accessToken, refreshToken, expiry, tokenType, email, accessToken).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
 			token := &oauth2.Token{
@@ -45,7 +45,7 @@ var _ = Describe("Token", func() {
 				TokenType:    tokenType,
 			}
 
-			err := SaveToken(token, email, sqlxDB)
+			err := SaveToken(token, email, accessToken, sqlxDB)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -57,9 +57,10 @@ var _ = Describe("Token", func() {
 			mock.
 				ExpectExec(`^UPDATE users 
 				SET access_token = (.+),
-						expiry = (.+)
+						expiry = (.+), 
+						key_access_token = (.+)
 				WHERE email = (.+)$`).
-				WithArgs(newAccessToken, newExpiry, email).
+				WithArgs(newAccessToken, newExpiry, accessToken, email).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
 			token := &oauth2.Token{
@@ -69,19 +70,19 @@ var _ = Describe("Token", func() {
 				TokenType:    tokenType,
 			}
 
-			err := SaveToken(token, email, sqlxDB)
+			err := SaveToken(token, email, accessToken, sqlxDB)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should return error if email not found", func() {
 			mock.
-				ExpectExec(`^INSERT INTO users\(access_token, refresh_token, expiry, token_type, email\)
+				ExpectExec(`^INSERT INTO users\(access_token, refresh_token, expiry, token_type, email, key_access_token\)
 					VALUES\((.+)\)
 					ON CONFLICT\(email\) DO UPDATE
 						SET access_token = excluded.access_token,
 								refresh_token = excluded.refresh_token,
 								expiry = excluded.expiry;$`).
-				WithArgs(accessToken, refreshToken, expiry, tokenType, email).
+				WithArgs(accessToken, refreshToken, expiry, tokenType, email, accessToken).
 				WillReturnError(fmt.Errorf("sql: no rows in result set"))
 
 			token := &oauth2.Token{
@@ -91,7 +92,7 @@ var _ = Describe("Token", func() {
 				TokenType:    tokenType,
 			}
 
-			err := SaveToken(token, email, sqlxDB)
+			err := SaveToken(token, email, accessToken, sqlxDB)
 			Expect(err).To(HaveOccurred())
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.DatabaseError"))
 		})
@@ -106,7 +107,7 @@ var _ = Describe("Token", func() {
 				ExpectQuery(`
 					^SELECT access_token, refresh_token, expiry, token_type
 					FROM users
-					WHERE access_token = (.+)$`).
+					WHERE key_access_token = (.+)$`).
 				WithArgs(accessToken).
 				WillReturnRows(rows)
 
@@ -123,7 +124,7 @@ var _ = Describe("Token", func() {
 				ExpectQuery(`
 					^SELECT access_token, refresh_token, expiry, token_type
 					FROM users
-					WHERE access_token = (.+)$`).
+					WHERE key_access_token = (.+)$`).
 				WithArgs(accessToken).
 				WillReturnError(fmt.Errorf("sql: no rows in result set"))
 
