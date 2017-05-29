@@ -91,7 +91,8 @@ func Authenticate(
 		return email, status, errors.NewAccessError("error getting access token", err)
 	}
 
-	newToken := token
+	newToken := new(oauth2.Token)
+	*newToken = *token
 	expired := time.Now().UTC().After(token.Expiry)
 	if expired {
 		var err error
