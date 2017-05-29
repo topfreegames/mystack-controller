@@ -92,7 +92,7 @@ func Authenticate(
 	}
 
 	newToken := token
-	expired := time.Now().After(token.Expiry)
+	expired := time.Now().UTC().After(token.Expiry)
 	if expired {
 		var err error
 		newToken, err = googleOauthConfig.TokenSource(oauth2.NoContext, token).Token()
