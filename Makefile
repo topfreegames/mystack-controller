@@ -73,6 +73,9 @@ drop-test:
 run:
 	@go run main.go start -v3 -c ./config/local.yaml
 
+run-out:
+	@go run main.go start -v3 -c ./config/local.yaml -o
+
 run-full: deps drop migrate run
 
 unit: unit-board clear-coverage-profiles unit-run gather-unit-profiles

@@ -8,17 +8,21 @@
 package cmd
 
 import (
+	"log"
+	"os/user"
+	"path"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/topfreegames/mystack-controller/api"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var host string
 var port int
-var debug bool
-var quiet bool
+var debug, quiet, out bool
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -81,7 +85,24 @@ environment variables to override configuration keys.`,
 }
 
 func getClientset() (kubernetes.Interface, error) {
-	config, err := rest.InClusterConfig()
+	var config *rest.Config
+	var err error
+
+	if out {
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		kubeconfig := path.Join(usr.HomeDir, ".kube", "config")
+
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		config, err = rest.InClusterConfig()
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -97,4 +118,5 @@ func init() {
 	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to bind mystack to")
 	startCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Debug mode")
 	startCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet mode (log level error)")
+	startCmd.Flags().BoolVarP(&out, "out", "o", false, "Run controller out-of-cluster")
 }
