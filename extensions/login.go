@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/topfreegames/mystack-controller/errors"
 	"github.com/topfreegames/mystack-controller/models"
 	"golang.org/x/oauth2"
@@ -91,10 +92,14 @@ func Authenticate(
 		return email, status, errors.NewAccessError("error getting access token", err)
 	}
 
+	log := logrus.New()
+	log.Info("current time", time.Now().UTC())
+
 	newToken := new(oauth2.Token)
 	*newToken = *token
 	expired := time.Now().UTC().After(token.Expiry)
 	if expired {
+		log.Info("getting new access token")
 		var err error
 		newToken, err = googleOauthConfig.TokenSource(oauth2.NoContext, token).Token()
 		if err != nil {
