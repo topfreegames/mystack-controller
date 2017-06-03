@@ -9,8 +9,9 @@ package models
 
 //Setup has the job config to run and configure services
 type Setup struct {
-	Image          string   `yaml:"image"`
-	Command        []string `yaml:"command"`
-	PeriodSeconds  int      `yaml:"periodSeconds"`
-	TimeoutSeconds int      `yaml:"timeoutSeconds"`
+	Image          string    `yaml:"image"`
+	Command        []string  `yaml:"command"`
+	PeriodSeconds  int       `yaml:"periodSeconds"`
+	Environment    []*EnvVar `yaml:"env"`
+	TimeoutSeconds int       `yaml:"timeoutSeconds"`
 }

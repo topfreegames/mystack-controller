@@ -66,13 +66,19 @@ func NewJob(username string, setup *Setup, environment []*EnvVar) *Job {
 	if setup == nil || len(setup.Image) == 0 {
 		return nil
 	}
-
+	var env []*EnvVar
+	for _, setupEnv := range setup.Environment {
+		env = append(env, setupEnv)
+	}
+	for _, environmentEnv := range environment {
+		env = append(env, environmentEnv)
+	}
 	namespace := usernameToNamespace(username)
 	return &Job{
 		Name:        "setup",
 		Namespace:   namespace,
 		Username:    username,
-		Environment: environment,
+		Environment: env,
 		Setup:       setup,
 	}
 }
