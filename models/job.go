@@ -38,6 +38,11 @@ spec:
       - name: {{.Name}}
         {{with .Setup}}
         image: {{.Image}}
+        {{if .Command}}
+        command:
+        {{range .Command}}
+          - "{{.}}"
+        {{end}}{{end}}
         {{end}}
         env:
           {{range .Environment}}
