@@ -41,6 +41,11 @@ spec:
       containers:
         - name: {{.Name}}
           image: {{.Image}}
+          {{if .Command}}
+          command:
+          {{range .Command}}
+            - "{{.}}"
+          {{end}}{{end}}
           env:
             {{range .Environment}}
             - name: {{.Name}}
@@ -79,6 +84,7 @@ type Deployment struct {
 	Name           string
 	Namespace      string
 	Username       string
+	Command        []string
 	Image          string
 	Ports          []int
 	Environment    []*EnvVar
