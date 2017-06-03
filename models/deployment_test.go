@@ -42,7 +42,7 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Deploy", func() {
 		It("should return error since namespace was not created", func() {
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
 			_, err := deployment.Deploy(clientset)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("namespace mystack-user not found"))
@@ -52,7 +52,7 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -85,7 +85,7 @@ var _ = Describe("Deployment", func() {
 				},
 			}
 
-			deployment := NewDeployment(name, username, image, ports, environment, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, environment, nil, nil, nil)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -101,7 +101,7 @@ var _ = Describe("Deployment", func() {
 				Command: []string{"echo", "ready"},
 			}
 
-			deployment := NewDeployment(name, username, image, ports, nil, probe, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, probe, nil, nil)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -123,11 +123,25 @@ var _ = Describe("Deployment", func() {
 				TimeoutSeconds: 180,
 			}
 
-			deployment := NewDeployment(name, username, image, ports, nil, probe, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, probe, nil, nil)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.Handler.Exec.Command).To(Equal(probe.Command))
 			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.PeriodSeconds).To(BeEquivalentTo(20))
+
+			dr := &mTest.MockReadiness{}
+			err = dr.WaitForCompletion(clientset, []*Deployment{deployment})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should create deployment with commands", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, []string{"cma1", "cmd2"})
+			deploy, err := deployment.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploy.Spec.Template.Spec.Containers[0].Command).To(BeEquivalentTo([]string{"cma1", "cmd2"}))
 
 			dr := &mTest.MockReadiness{}
 			err = dr.WaitForCompletion(clientset, []*Deployment{deployment})
@@ -143,7 +157,7 @@ var _ = Describe("Deployment", func() {
 				MountPath: "/data",
 			}
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, volume)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, volume, nil)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -159,7 +173,7 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
 			_, err = deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -173,11 +187,11 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
 			_, err = deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment2 := NewDeployment("test2", username, "new-image", []int{5000}, nil, nil, nil)
+			deployment2 := NewDeployment("test2", username, "new-image", []int{5000}, nil, nil, nil, nil)
 			_, err = deployment2.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -189,7 +203,7 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Delete", func() {
 		It("should return error if deployment wasn't deployed", func() {
-			deploy := NewDeployment(name, username, image, ports, nil, nil, nil)
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
 			err := deploy.Delete(clientset)
 			Expect(err).To(HaveOccurred())
 		})
@@ -198,7 +212,7 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deploy := NewDeployment(name, username, image, ports, nil, nil, nil)
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
 			_, err = deploy.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -214,11 +228,11 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deploy := NewDeployment(name, username, image, ports, nil, nil, nil)
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
 			_, err = deploy.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			deploy2 := NewDeployment("test2", username, image, ports, nil, nil, nil)
+			deploy2 := NewDeployment("test2", username, image, ports, nil, nil, nil, nil)
 			_, err = deploy2.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 

@@ -100,6 +100,7 @@ func NewDeployment(
 	environment []*EnvVar,
 	readinessProbe *Probe,
 	volume *VolumeMount,
+	command []string,
 ) *Deployment {
 	namespace := usernameToNamespace(username)
 
@@ -113,6 +114,7 @@ func NewDeployment(
 		ReadinessProbe: readinessProbe,
 		Volume:         volume,
 		Links:          []*Deployment{},
+		Command:        command,
 	}
 }
 

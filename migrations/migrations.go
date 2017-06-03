@@ -3,6 +3,7 @@
 // migrations/0001-CreateUserTable.sql
 // migrations/0002-CreateClusterTable.sql
 // migrations/0003-AlterUserTableColumnKeyAccessToken.sql
+// migrations/0004-AlterTableUsersExpiryWithTimestamp.sql
 // DO NOT EDIT!
 
 package migrations
@@ -85,7 +86,7 @@ func migrations0001CreateusertableSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0001-CreateUserTable.sql", size: 592, mode: os.FileMode(420), modTime: time.Unix(1496080064, 0)}
+	info := bindataFileInfo{name: "migrations/0001-CreateUserTable.sql", size: 592, mode: os.FileMode(420), modTime: time.Unix(1496087165, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -105,7 +106,7 @@ func migrations0002CreateclustertableSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0002-CreateClusterTable.sql", size: 475, mode: os.FileMode(420), modTime: time.Unix(1492030677, 0)}
+	info := bindataFileInfo{name: "migrations/0002-CreateClusterTable.sql", size: 475, mode: os.FileMode(420), modTime: time.Unix(1493215558, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -125,7 +126,27 @@ func migrations0003AlterusertablecolumnkeyaccesstokenSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0003-AlterUserTableColumnKeyAccessToken.sql", size: 502, mode: os.FileMode(420), modTime: time.Unix(1496093329, 0)}
+	info := bindataFileInfo{name: "migrations/0003-AlterUserTableColumnKeyAccessToken.sql", size: 502, mode: os.FileMode(420), modTime: time.Unix(1496087413, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _migrations0004AltertableusersexpirywithtimestampSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x8e\x41\x4e\x83\x40\x14\x86\xf7\x9c\xe2\xbf\xc0\x30\xea\xc2\x05\x1a\x23\x36\xa8\x24\xd0\x36\x3a\xc6\xe8\x8e\x0e\xaf\x30\x29\x30\x93\x99\x47\x90\x23\x79\x0d\x4f\x66\xb0\x75\xd5\xe5\xff\xe5\x7d\x2f\x9f\x10\xe8\xe7\xc0\x95\x3e\x08\x6d\x07\xf6\xb6\xeb\xc8\xa3\x72\x26\x12\x02\x2d\xb3\x0b\x89\x94\x8d\xe1\x76\xdc\xc5\xda\xf6\x92\xad\xdb\x7b\xa2\xa6\xea\x29\xc8\x73\x33\x12\x62\x11\x0b\xa3\x69\x08\x54\x63\x1c\x6a\xf2\xe0\x96\x50\xe6\x0a\xdd\x11\x27\xff\xbf\x13\x29\xa7\x69\x8a\xad\xa3\x21\xd8\xd1\x6b\x8a\xad\x6f\xe4\xe9\x2a\xc8\xde\xb0\x38\x8d\xc5\x58\x59\x37\x7b\xd3\xb4\x8c\x9f\x6f\x5c\x5d\x5c\x5e\x43\x59\x87\x47\x4f\x84\xa7\x25\x07\xb7\xbb\x4a\x1f\x68\xa8\xef\x79\xdf\x68\xbb\xe4\xde\x45\x51\x5a\xa8\xec\x05\x2a\x7d\x28\x32\x8c\x81\x7c\xc0\x91\xac\x36\xc5\x5b\xb9\x06\x7d\x39\xe3\x67\xa8\x8f\x6d\x06\x95\x97\xd9\xab\x4a\xcb\x2d\xde\x73\xf5\xfc\x37\xf1\xb9\x59\x67\x37\xd1\x6f\x00\x00\x00\xff\xff\x25\xe2\x3e\xa3\x26\x01\x00\x00")
+
+func migrations0004AltertableusersexpirywithtimestampSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migrations0004AltertableusersexpirywithtimestampSql,
+		"migrations/0004-AlterTableUsersExpiryWithTimestamp.sql",
+	)
+}
+
+func migrations0004AltertableusersexpirywithtimestampSql() (*asset, error) {
+	bytes, err := migrations0004AltertableusersexpirywithtimestampSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migrations/0004-AlterTableUsersExpiryWithTimestamp.sql", size: 294, mode: os.FileMode(420), modTime: time.Unix(1496458184, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -185,6 +206,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migrations/0001-CreateUserTable.sql": migrations0001CreateusertableSql,
 	"migrations/0002-CreateClusterTable.sql": migrations0002CreateclustertableSql,
 	"migrations/0003-AlterUserTableColumnKeyAccessToken.sql": migrations0003AlterusertablecolumnkeyaccesstokenSql,
+	"migrations/0004-AlterTableUsersExpiryWithTimestamp.sql": migrations0004AltertableusersexpirywithtimestampSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -231,6 +253,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"0001-CreateUserTable.sql": &bintree{migrations0001CreateusertableSql, map[string]*bintree{}},
 		"0002-CreateClusterTable.sql": &bintree{migrations0002CreateclustertableSql, map[string]*bintree{}},
 		"0003-AlterUserTableColumnKeyAccessToken.sql": &bintree{migrations0003AlterusertablecolumnkeyaccesstokenSql, map[string]*bintree{}},
+		"0004-AlterTableUsersExpiryWithTimestamp.sql": &bintree{migrations0004AltertableusersexpirywithtimestampSql, map[string]*bintree{}},
 	}},
 }}
 

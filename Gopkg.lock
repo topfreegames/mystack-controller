@@ -46,7 +46,7 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   branch = "master"
   name = "github.com/coreos/go-oidc"
   packages = ["http","jose","key","oauth2","oidc"]
-  revision = "5157aa730c25a7531d4b99483e6a440d4ab735a0"
+  revision = "c797a55f1c1001ec3169f1d0fbb4c5523563bec6"
 
 [[projects]]
   name = "github.com/coreos/pkg"
@@ -106,7 +106,7 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   branch = "master"
   name = "github.com/go-openapi/swag"
   packages = ["."]
-  revision = "24ebf76d720bab64f62824d76bced3184a65490d"
+  revision = "e43299b4afa7bc7f22e5e82e3d48607230e4c177"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -123,8 +123,8 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
 [[projects]]
   branch = "master"
   name = "github.com/golang/protobuf"
-  packages = ["proto"]
-  revision = "2bba0603135d7d7f5cb73b2125beeda19c09f4ef"
+  packages = ["proto","ptypes/any"]
+  revision = "5a0f697c9ed9d68fef0116532c6e05cfeae00e55"
 
 [[projects]]
   branch = "master"
@@ -147,14 +147,26 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
 [[projects]]
   name = "github.com/gorilla/mux"
   packages = ["."]
-  revision = "392c28fe23e1c45ddba891b0320b3b5df220beea"
-  version = "v1.3.0"
+  revision = "bcd8bc72b08df0f70df986b97f95590779502d31"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
-  revision = "7fa7fff964d035e8a162cce3a164b3ad02ad651b"
+  revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/howeyc/gopass"
+  packages = ["."]
+  revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
+
+[[projects]]
+  name = "github.com/imdario/mergo"
+  packages = ["."]
+  revision = "3e95a51e0639b4cf372f2ccf74c86749d747fbdc"
+  version = "0.2.2"
 
 [[projects]]
   branch = "master"
@@ -178,7 +190,7 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   branch = "master"
   name = "github.com/jmoiron/sqlx"
   packages = [".","reflectx"]
-  revision = "3564e3a314b957a161fefa0e7aea85b4d741c94e"
+  revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
 
 [[projects]]
   name = "github.com/jonboulle/clockwork"
@@ -190,13 +202,13 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   branch = "master"
   name = "github.com/juju/ratelimit"
   packages = ["."]
-  revision = "acf38b000a03e4ab89e40f20f1e548f4e6ac7f72"
+  revision = "5b9ff866471762aa2ab2dced63c9fb6f53921342"
 
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
   packages = [".","oid"]
-  revision = "2704adc878c21e1329f46f6e56a1c387d788ff94"
+  revision = "91f10e40ba0dd2d0bf9f93ec1d4077711a78df88"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -208,19 +220,25 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   branch = "master"
   name = "github.com/mailru/easyjson"
   packages = ["buffer","jlexer","jwriter"]
-  revision = "3f09c2282fc5ad74b3d04a485311f3173c2431d3"
+  revision = "44c0351a5bc860bcb2608d54aa03ea686c4e7b25"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "cc8532a8e9a55ea36402aa21efdf403a60d34096"
+  revision = "d0303fe809921458f417bcf828397a65db30a7e4"
 
 [[projects]]
   branch = "master"
   name = "github.com/onsi/ginkgo"
   packages = [".","config","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
-  revision = "6adbc2648389a46e8ff0e96d07a07a9a9eb432de"
+  revision = "a1f616c97771e46da1722d3aa9dcde0a43f55682"
 
 [[projects]]
   name = "github.com/onsi/gomega"
@@ -243,8 +261,8 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
 [[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
-  revision = "13d49d4606eb801b8f01ae542b4afc4c6ee3d84a"
-  version = "v0.5.0"
+  revision = "5ccdfb18c776b740aecaf085c4d9a2779199c279"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -268,19 +286,19 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "3d7bff8a321b0a0f88b115558bb7e21bec9124ab"
+  revision = "8d4ce3549a0bf0e3569df3aae7423b7743cd05a9"
 
 [[projects]]
   branch = "master"
   name = "github.com/spf13/jwalterweatherman"
   packages = ["."]
-  revision = "fa7ca7e836cf3a8bb4ebf799f472c12d7e903d66"
+  revision = "0efa5202c04663c757d84f90f5219c1250baf94f"
 
 [[projects]]
   branch = "master"
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "f1d95a35e132e8a1868023a08932b14f0b8b8fcb"
+  revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
 
 [[projects]]
   branch = "master"
@@ -304,31 +322,31 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "7e9105388ebff089b3f99f0ef676ea55a6da3a7e"
+  revision = "e1a4589e7d3ea14a3352255d04b6f1a418845e5e"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
-  revision = "da118f7b8e5954f39d0d2130ab35d4bf0e3cb344"
+  revision = "e4fa1c5465ad6111f206fc92186b8c83d64adbe1"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/oauth2"
   packages = [".","google","internal","jws","jwt"]
-  revision = "a6bd8cefa1811bd24b86f8902872e4e8225f74c4"
+  revision = "f047394b6d14284165300fd82dad67edb3a4d7f6"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "9ccfe848b9db8435a24c424abbc07a921adf1df5"
+  revision = "b90f89a1e7a9c1f6b918820b3daa7f08488c8594"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["internal/gen","internal/triegen","internal/ucd","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable","width"]
-  revision = "470f45bf29f4147d6fbd7dfd0a02a848e49f5bf4"
+  revision = "ccbd3f7822129ff389f8ca4858a9b9d4d910531c"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -337,10 +355,16 @@ memo = "ac9f5121fd71e649fbae4428615756af000ee5f1dfc8cbd44ddd11b22b1e6b68"
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  revision = "aa2eb687b4d3e17154372564ad8d6bf11c3cf21f"
+
+[[projects]]
   name = "google.golang.org/grpc"
-  packages = [".","codes","credentials","grpclog","internal","keepalive","metadata","naming","peer","stats","tap","transport"]
-  revision = "8050b9cbc271307e5a716a9d782803d09b0d6f2d"
-  version = "v1.2.1"
+  packages = [".","codes","credentials","grpclb/grpc_lb_v1","grpclog","internal","keepalive","metadata","naming","peer","stats","status","tap","transport"]
+  revision = "d2e1b51f33ff8c5e4a15560ff049d200e83726c5"
+  version = "v1.3.0"
 
 [[projects]]
   name = "gopkg.in/DATA-DOG/go-sqlmock.v1"

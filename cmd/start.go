@@ -102,7 +102,6 @@ func getClientset() (kubernetes.Interface, error) {
 	} else {
 		config, err = rest.InClusterConfig()
 	}
-
 	if err != nil {
 		return nil, err
 	}

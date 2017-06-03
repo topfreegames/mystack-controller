@@ -266,10 +266,13 @@ func (a *App) ListenAndServe() (io.Closer, error) {
 }
 
 func (a *App) verifyEmailDomain(email string) bool {
+	l := a.Logger.WithField("acceptedDomain", a.EmailDomain)
+	l.Debugf("verifying email domain")
 	for _, domain := range a.EmailDomain {
 		if strings.HasSuffix(email, domain) {
 			return true
 		}
+		l.Errorf("email %s not authorized", email)
 	}
 	return false
 }

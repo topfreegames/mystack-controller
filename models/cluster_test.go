@@ -148,17 +148,17 @@ apps:
 	mockCluster := func(period, timeout int, username string) *Cluster {
 		namespace := fmt.Sprintf("mystack-%s", username)
 
-		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil)
-		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil)
+		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil, nil)
+		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil, nil)
 		appDeployment3 := NewDeployment("test3", username, "app3", ports, []*EnvVar{
 			&EnvVar{Name: "VARIABLE_1", Value: "100"},
-		}, nil, nil)
+		}, nil, nil, nil)
 
 		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, &Probe{
 			Command:        []string{"echo", "ready"},
 			TimeoutSeconds: timeout,
 			PeriodSeconds:  period,
-		}, nil)
+		}, nil, nil)
 
 		return &Cluster{
 			Username:       username,
@@ -187,8 +187,8 @@ apps:
 		}
 	}
 
-	appDeploymentClusterWithVolume := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
-	svcDeploymentClusterWithVolume := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, &VolumeMount{Name: "svc-volume", MountPath: "/data"})
+	appDeploymentClusterWithVolume := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
+	svcDeploymentClusterWithVolume := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, &VolumeMount{Name: "svc-volume", MountPath: "/data"}, nil)
 
 	mockedClusterWithVolume := &Cluster{
 		Username:  username,
@@ -332,9 +332,9 @@ apps:
     ports: 
       - "5000"
 `
-			appDeploymentCluster := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
-			svcDeploymentCluster1 := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil)
-			svcDeploymentCluster2 := NewDeployment("svc2", username, "svc2", []int{5000}, nil, nil, nil)
+			appDeploymentCluster := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
+			svcDeploymentCluster1 := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil)
+			svcDeploymentCluster2 := NewDeployment("svc2", username, "svc2", []int{5000}, nil, nil, nil, nil)
 
 			svcDeploymentCluster1.Links = []*Deployment{svcDeploymentCluster2}
 
@@ -401,9 +401,9 @@ apps:
     ports: 
       - "5000"
 `
-			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
-			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil)
-			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil)
+			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
+			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil, nil)
+			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil)
 
 			appDeploymentCluster1.Links = []*Deployment{appDeploymentCluster2}
 
@@ -588,7 +588,7 @@ apps:
 			obj := "{\\\"key\\\": \\\"value\\\"}"
 			appDeployment := NewDeployment("test1", username, "app1", ports, []*EnvVar{
 				&EnvVar{Name: "VARIABLE_1", Value: obj},
-			}, nil, nil)
+			}, nil, nil, nil)
 
 			cluster := &Cluster{
 				Username:       username,
@@ -610,9 +610,9 @@ apps:
 		})
 
 		It("should run cluster with links", func() {
-			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil)
-			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil)
-			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil)
+			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
+			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil, nil)
+			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil)
 
 			appDeploymentCluster1.Links = []*Deployment{appDeploymentCluster2}
 

@@ -35,7 +35,7 @@ var _ = Describe("DeploymentReadiness", func() {
 			PeriodSeconds:  1,
 			TimeoutSeconds: 1,
 		}
-		deploy := NewDeployment("app", "user", "image", nil, nil, probe, nil)
+		deploy := NewDeployment("app", "user", "image", nil, nil, probe, nil, nil)
 		_, err := deploy.Deploy(clientset)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -53,7 +53,7 @@ var _ = Describe("DeploymentReadiness", func() {
 			TimeoutSeconds: 1,
 		}
 		deployments := []*Deployment{
-			NewDeployment("app", "user", "image", nil, nil, probe, nil),
+			NewDeployment("app", "user", "image", nil, nil, probe, nil, nil),
 		}
 
 		readiness := &DeploymentReadiness{}

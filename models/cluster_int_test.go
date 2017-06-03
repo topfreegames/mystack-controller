@@ -51,10 +51,10 @@ apps:
 	)
 
 	mockCluster := func(username string) *Cluster {
-		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, nil, nil)
-		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil)
-		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil)
-		appDeployment3 := NewDeployment("test3", username, "app3", ports, nil, nil, nil)
+		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, nil, nil, nil)
+		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil, nil)
+		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil, nil)
+		appDeployment3 := NewDeployment("test3", username, "app3", ports, nil, nil, nil, nil)
 
 		return &Cluster{
 			Username:       username,

@@ -141,7 +141,7 @@ func buildDeployments(
 				if err != nil {
 					return nil, environment, err
 				}
-				deployment := NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount)
+				deployment := NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount, config.Command)
 				for _, link := range config.Links {
 					deployment.Links = append(deployment.Links, createdDeployments[link])
 				}
