@@ -8,4 +8,4 @@
 package metadata
 
 //Version of the mystack-controller API
-var Version = "0.4.0"
+var Version = "0.4.3"

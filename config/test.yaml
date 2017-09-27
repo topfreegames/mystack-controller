@@ -13,3 +13,12 @@ oauth:
 kubernetes:
   service-domain-suffix: mystack.com
   port-forward-tcp-port: 28000
+  deployments:
+    default:
+      resources:
+        limits:
+          cpu: 10m
+          memory: 300Mi
+        requests:
+          cpu: 5m
+          memory: 100Mi

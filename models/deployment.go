@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/spf13/viper"
 	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
@@ -71,6 +72,13 @@ spec:
             - name: {{.Name}}
               mountPath: {{.MountPath}}
           {{end}}
+          resources:
+            limits:
+              memory: "{{.Resources.Limits.Memory}}"
+              cpu: "{{.Resources.Limits.CPU}}"
+            requests:
+              memory: "{{.Resources.Requests.Memory}}"
+              cpu: "{{.Resources.Requests.CPU}}"
       {{with .Volume}}
       volumes: 
         - name: {{.Name}}
@@ -91,6 +99,7 @@ type Deployment struct {
 	ReadinessProbe *Probe
 	Volume         *VolumeMount
 	Links          []*Deployment
+	Resources      *Resources
 }
 
 //NewDeployment is the deployment ctor
@@ -101,8 +110,12 @@ func NewDeployment(
 	readinessProbe *Probe,
 	volume *VolumeMount,
 	command []string,
+	resources *Resources,
+	config *viper.Viper,
 ) *Deployment {
 	namespace := usernameToNamespace(username)
+
+	resources = addDefaultValuesIfNecessary(resources, config)
 
 	return &Deployment{
 		Name:           name,
@@ -115,7 +128,48 @@ func NewDeployment(
 		Volume:         volume,
 		Links:          []*Deployment{},
 		Command:        command,
+		Resources:      resources,
 	}
+}
+
+func addDefaultValuesIfNecessary(resources *Resources, config *viper.Viper) *Resources {
+	if resources == nil {
+		resources = &Resources{
+			Limits:   &MemoryAndCPUResource{},
+			Requests: &MemoryAndCPUResource{},
+		}
+	}
+
+	if resources.Limits == nil {
+		resources.Limits = &MemoryAndCPUResource{}
+	}
+
+	if resources.Requests == nil {
+		resources.Requests = &MemoryAndCPUResource{}
+	}
+
+	prefix := "kubernetes.deployments.default.resources"
+	if resources.Limits.CPU == "" {
+		key := fmt.Sprintf("%s.limits.cpu", prefix)
+		resources.Limits.CPU = config.GetString(key)
+	}
+
+	if resources.Limits.Memory == "" {
+		key := fmt.Sprintf("%s.limits.memory", prefix)
+		resources.Limits.Memory = config.GetString(key)
+	}
+
+	if resources.Requests.CPU == "" {
+		key := fmt.Sprintf("%s.requests.cpu", prefix)
+		resources.Requests.CPU = config.GetString(key)
+	}
+
+	if resources.Requests.Memory == "" {
+		key := fmt.Sprintf("%s.requests.memory", prefix)
+		resources.Requests.Memory = config.GetString(key)
+	}
+
+	return resources
 }
 
 //Deploy creates a deployment from yaml

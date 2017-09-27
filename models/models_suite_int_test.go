@@ -12,6 +12,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 
 	"testing"
 
@@ -23,6 +24,7 @@ import (
 var conn *sqlx.DB
 var db *sqlx.Tx
 var err error
+var config *viper.Viper
 
 func TestModels(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -34,6 +36,9 @@ var _ = BeforeSuite(func() {
 	l.Level = logrus.FatalLevel
 
 	conn, err = oTesting.GetTestDB()
+	Expect(err).NotTo(HaveOccurred())
+
+	config, err = oTesting.GetDefaultConfig()
 	Expect(err).NotTo(HaveOccurred())
 })
 

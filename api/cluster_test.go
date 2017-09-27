@@ -18,6 +18,10 @@ import (
 
 	mTest "github.com/topfreegames/mystack-controller/testing"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+	"k8s.io/client-go/pkg/api/resource"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/fields"
+	"k8s.io/client-go/pkg/labels"
 	"net/http"
 	"net/http/httptest"
 )
@@ -75,6 +79,31 @@ apps:
         value: postgresql://derp:1234@example.com
       - name: USERNAME
         value: derp
+`
+		yamlWithLimitsAndResources = `
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+    resources:
+      limits:
+        cpu: "20m"
+        memory: "600Mi"
+      requests:
+        cpu: "10m"
+        memory: "200Mi"
+`
+		yamlWithLimits = `
+apps:
+  app1:
+    image: app1
+    ports:
+      - 5000:5001
+    resources:
+      limits:
+        cpu: "20m"
+        memory: "600Mi"
 `
 	)
 
@@ -148,6 +177,62 @@ apps:
 			bodyJSON := make(map[string]map[string][]string)
 			json.Unmarshal(recorder.Body.Bytes(), &bodyJSON)
 			Expect(bodyJSON["domains"]["app1"]).To(Equal([]string{"app1.mystack-user.mystack.com"}))
+		})
+
+		It("should create cluster with requests and limits", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithLimitsAndResources))
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments("mystack-user").List(v1.ListOptions{
+				LabelSelector: labels.Set{"mystack/routable": "true"}.AsSelector().String(),
+				FieldSelector: fields.Everything().String(),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			k8sDeploy := deploys.Items[0]
+			limitCPU, _ := resource.ParseQuantity("20m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["cpu"]).To(Equal(limitCPU))
+			limitMemory, _ := resource.ParseQuantity("600Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["memory"]).To(Equal(limitMemory))
+			requestCPU, _ := resource.ParseQuantity("10m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["cpu"]).To(Equal(requestCPU))
+			requestMemory, _ := resource.ParseQuantity("200Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["memory"]).To(Equal(requestMemory))
+		})
+
+		It("should create cluster with limits", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithLimits))
+
+			ctx := NewContextWithEmail(request.Context(), "user@example.com")
+			clusterHandler.ServeHTTP(recorder, request.WithContext(ctx))
+
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments("mystack-user").List(v1.ListOptions{
+				LabelSelector: labels.Set{"mystack/routable": "true"}.AsSelector().String(),
+				FieldSelector: fields.Everything().String(),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			k8sDeploy := deploys.Items[0]
+			limitCPU, _ := resource.ParseQuantity("20m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["cpu"]).To(Equal(limitCPU))
+			limitMemory, _ := resource.ParseQuantity("600Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["memory"]).To(Equal(limitMemory))
+			requestCPU, _ := resource.ParseQuantity("5m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["cpu"]).To(Equal(requestCPU))
+			requestMemory, _ := resource.ParseQuantity("100Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["memory"]).To(Equal(requestMemory))
 		})
 
 		It("should not create cluster twice", func() {
@@ -225,7 +310,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -248,7 +333,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithVolume))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -289,7 +374,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnError(fmt.Errorf("sql: no rows in result set"))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -331,7 +416,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -356,7 +441,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			_, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			_, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx := NewContextWithEmail(request.Context(), "user@example.com")
@@ -400,7 +485,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			err = cluster.Create(app.Logger, app.Clientset)
 			Expect(err).NotTo(HaveOccurred())
@@ -425,7 +510,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			_, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			_, err := models.NewCluster(app.DB, "user", clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx := NewContextWithEmail(request.Context(), "user@example.com")

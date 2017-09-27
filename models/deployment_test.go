@@ -16,6 +16,7 @@ import (
 
 	mTest "github.com/topfreegames/mystack-controller/testing"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/pkg/api/resource"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/pkg/labels"
@@ -42,7 +43,7 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Deploy", func() {
 		It("should return error since namespace was not created", func() {
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
 			_, err := deployment.Deploy(clientset)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("namespace mystack-user not found"))
@@ -52,7 +53,7 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -85,7 +86,7 @@ var _ = Describe("Deployment", func() {
 				},
 			}
 
-			deployment := NewDeployment(name, username, image, ports, environment, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, environment, nil, nil, nil, nil, config)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -101,7 +102,7 @@ var _ = Describe("Deployment", func() {
 				Command: []string{"echo", "ready"},
 			}
 
-			deployment := NewDeployment(name, username, image, ports, nil, probe, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, probe, nil, nil, nil, config)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -123,7 +124,7 @@ var _ = Describe("Deployment", func() {
 				TimeoutSeconds: 180,
 			}
 
-			deployment := NewDeployment(name, username, image, ports, nil, probe, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, probe, nil, nil, nil, config)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy.Spec.Template.Spec.Containers[0].ReadinessProbe.Handler.Exec.Command).To(Equal(probe.Command))
@@ -138,7 +139,7 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, []string{"cma1", "cmd2"})
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, []string{"cma1", "cmd2"}, nil, config)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy.Spec.Template.Spec.Containers[0].Command).To(BeEquivalentTo([]string{"cma1", "cmd2"}))
@@ -157,7 +158,7 @@ var _ = Describe("Deployment", func() {
 				MountPath: "/data",
 			}
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, volume, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, volume, nil, nil, config)
 			deploy, err := deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploy).NotTo(BeNil())
@@ -173,7 +174,7 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
 			_, err = deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -187,11 +188,11 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
+			deployment := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
 			_, err = deployment.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment2 := NewDeployment("test2", username, "new-image", []int{5000}, nil, nil, nil, nil)
+			deployment2 := NewDeployment("test2", username, "new-image", []int{5000}, nil, nil, nil, nil, nil, config)
 			_, err = deployment2.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -203,7 +204,7 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Delete", func() {
 		It("should return error if deployment wasn't deployed", func() {
-			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
 			err := deploy.Delete(clientset)
 			Expect(err).To(HaveOccurred())
 		})
@@ -212,7 +213,7 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
 			_, err = deploy.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -228,11 +229,11 @@ var _ = Describe("Deployment", func() {
 			err := CreateNamespace(clientset, username)
 			Expect(err).NotTo(HaveOccurred())
 
-			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil)
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
 			_, err = deploy.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
-			deploy2 := NewDeployment("test2", username, image, ports, nil, nil, nil, nil)
+			deploy2 := NewDeployment("test2", username, image, ports, nil, nil, nil, nil, nil, config)
 			_, err = deploy2.Deploy(clientset)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -242,6 +243,81 @@ var _ = Describe("Deployment", func() {
 			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deploys.Items).To(HaveLen(1))
+		})
+
+		It("should create deployments with default requests and limtis", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil, nil, config)
+			_, err = deploy.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(1))
+
+			k8sDeploy := deploys.Items[0]
+			limitCPU, _ := resource.ParseQuantity("10m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["cpu"]).To(Equal(limitCPU))
+			limitMemory, _ := resource.ParseQuantity("300Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["memory"]).To(Equal(limitMemory))
+			requestCPU, _ := resource.ParseQuantity("5m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["cpu"]).To(Equal(requestCPU))
+			requestMemory, _ := resource.ParseQuantity("100Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["memory"]).To(Equal(requestMemory))
+		})
+
+		It("should create deployments with informed requests and limtis", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil, &Resources{
+				Limits:   &MemoryAndCPUResource{CPU: "20m", Memory: "100Mi"},
+				Requests: &MemoryAndCPUResource{CPU: "10m", Memory: "10Mi"},
+			}, config)
+			_, err = deploy.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(1))
+
+			k8sDeploy := deploys.Items[0]
+			limitCPU, _ := resource.ParseQuantity("20m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["cpu"]).To(Equal(limitCPU))
+			limitMemory, _ := resource.ParseQuantity("100Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["memory"]).To(Equal(limitMemory))
+			requestCPU, _ := resource.ParseQuantity("10m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["cpu"]).To(Equal(requestCPU))
+			requestMemory, _ := resource.ParseQuantity("10Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["memory"]).To(Equal(requestMemory))
+		})
+
+		It("should create deployments with partial informed requests and limtis", func() {
+			err := CreateNamespace(clientset, username)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploy := NewDeployment(name, username, image, ports, nil, nil, nil, nil, &Resources{
+				Limits:   &MemoryAndCPUResource{CPU: "20m"},
+				Requests: &MemoryAndCPUResource{Memory: "10Mi"},
+			}, config)
+			_, err = deploy.Deploy(clientset)
+			Expect(err).NotTo(HaveOccurred())
+
+			deploys, err := clientset.ExtensionsV1beta1().Deployments(namespace).List(listOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deploys.Items).To(HaveLen(1))
+
+			k8sDeploy := deploys.Items[0]
+			limitCPU, _ := resource.ParseQuantity("20m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["cpu"]).To(Equal(limitCPU))
+			limitMemory, _ := resource.ParseQuantity("300Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Limits["memory"]).To(Equal(limitMemory))
+			requestCPU, _ := resource.ParseQuantity("5m")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["cpu"]).To(Equal(requestCPU))
+			requestMemory, _ := resource.ParseQuantity("10Mi")
+			Expect(k8sDeploy.Spec.Template.Spec.Containers[0].Resources.Requests["memory"]).To(Equal(requestMemory))
 		})
 	})
 })

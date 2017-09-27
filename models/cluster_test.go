@@ -98,6 +98,36 @@ apps:
       - name: VARIABLE_1
         value: 100
 `
+		yamlWithResources = `
+setup:
+  image: setup-img
+  timeoutSeconds: 180
+  periodSeconds: 10
+services:
+  test0:
+    image: svc1
+    ports: 
+      - "5000"
+      - "5001:5002"
+    readinessProbe:
+      command:
+        - echo
+        - ready
+      periodSeconds: 10
+      startDeploymentTimeoutSeconds: 180
+apps:
+  test1:
+    image: app1
+    ports: 
+      - "5000"
+      - "5001:5002"
+    resources:
+      limits:
+        memory:
+          "50Mi"
+        cpu:
+          "10m"
+`
 		invalidYaml1 = `
 services:
   postgres:
@@ -122,6 +152,42 @@ apps:
     ports:
       - 5000:5001
 `
+		yamlWithLimitsAndResources = `
+setup:
+  image: setup-img
+services:
+  test0:
+    image: svc1
+    ports: 
+      - "5000"
+      - "5001:5002"
+    readinessProbe:
+      command:
+        - echo
+        - ready
+apps:
+  test1:
+    image: app1
+    ports: 
+      - "5000"
+      - "5001:5002"
+    resources:
+      limits:
+        cpu: "20m"
+        memory: "600Mi"
+      requests:
+        cpu: "10m"
+        memory: "200Mi"
+  test2:
+    image: app2
+    ports: 
+      - "5000"
+      - "5001:5002"
+    resources:
+      limits:
+        cpu: "20m"
+        memory: "600Mi"
+`
 	)
 	var (
 		db          *sql.DB
@@ -143,22 +209,25 @@ apps:
 			LabelSelector: labelMap.AsSelector().String(),
 			FieldSelector: fields.Everything().String(),
 		}
+		appDeploymentClusterWithVolume *Deployment
+		svcDeploymentClusterWithVolume *Deployment
+		mockedClusterWithVolume        *Cluster
 	)
 
 	mockCluster := func(period, timeout int, username string) *Cluster {
 		namespace := fmt.Sprintf("mystack-%s", username)
 
-		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil, nil)
-		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil, nil)
+		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil, nil, nil, config)
+		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil, nil, nil, config)
 		appDeployment3 := NewDeployment("test3", username, "app3", ports, []*EnvVar{
 			&EnvVar{Name: "VARIABLE_1", Value: "100"},
-		}, nil, nil, nil)
+		}, nil, nil, nil, nil, config)
 
 		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, &Probe{
 			Command:        []string{"echo", "ready"},
 			TimeoutSeconds: timeout,
 			PeriodSeconds:  period,
-		}, nil, nil)
+		}, nil, nil, nil, config)
 
 		return &Cluster{
 			Username:       username,
@@ -187,36 +256,36 @@ apps:
 		}
 	}
 
-	appDeploymentClusterWithVolume := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
-	svcDeploymentClusterWithVolume := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, &VolumeMount{Name: "svc-volume", MountPath: "/data"}, nil)
-
-	mockedClusterWithVolume := &Cluster{
-		Username:  username,
-		Namespace: namespace,
-		PersistentVolumeClaims: []*PersistentVolumeClaim{
-			&PersistentVolumeClaim{Name: "svc-volume", Storage: "1Gi", Namespace: namespace},
-		},
-		AppDeployments: []*Deployment{appDeploymentClusterWithVolume},
-		SvcDeployments: []*Deployment{svcDeploymentClusterWithVolume},
-		K8sServices: map[*Deployment]*Service{
-			appDeploymentClusterWithVolume: NewService("app1", username, []*PortMap{
-				&PortMap{Port: 5000, TargetPort: 5000},
-			}, false),
-			svcDeploymentClusterWithVolume: NewService("svc1", username, []*PortMap{
-				&PortMap{Port: 5000, TargetPort: 5000},
-			}, true),
-		},
-		Job: NewJob(username, &Setup{
-			Image:          "setup-img",
-			PeriodSeconds:  0,
-			TimeoutSeconds: 0,
-		}, []*EnvVar{}),
-		DeploymentReadiness: &mTest.MockReadiness{},
-		JobReadiness:        &mTest.MockReadiness{},
-	}
-
 	BeforeEach(func() {
 		clientset = fake.NewSimpleClientset()
+
+		appDeploymentClusterWithVolume = NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil, nil, config)
+		svcDeploymentClusterWithVolume = NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, &VolumeMount{Name: "svc-volume", MountPath: "/data"}, nil, nil, config)
+
+		mockedClusterWithVolume = &Cluster{
+			Username:  username,
+			Namespace: namespace,
+			PersistentVolumeClaims: []*PersistentVolumeClaim{
+				&PersistentVolumeClaim{Name: "svc-volume", Storage: "1Gi", Namespace: namespace},
+			},
+			AppDeployments: []*Deployment{appDeploymentClusterWithVolume},
+			SvcDeployments: []*Deployment{svcDeploymentClusterWithVolume},
+			K8sServices: map[*Deployment]*Service{
+				appDeploymentClusterWithVolume: NewService("app1", username, []*PortMap{
+					&PortMap{Port: 5000, TargetPort: 5000},
+				}, false),
+				svcDeploymentClusterWithVolume: NewService("svc1", username, []*PortMap{
+					&PortMap{Port: 5000, TargetPort: 5000},
+				}, true),
+			},
+			Job: NewJob(username, &Setup{
+				Image:          "setup-img",
+				PeriodSeconds:  0,
+				TimeoutSeconds: 0,
+			}, []*EnvVar{}),
+			DeploymentReadiness: &mTest.MockReadiness{},
+			JobReadiness:        &mTest.MockReadiness{},
+		}
 	})
 
 	Describe("NewCluster", func() {
@@ -224,6 +293,9 @@ apps:
 			db, mock, err = sqlmock.New()
 			Expect(err).NotTo(HaveOccurred())
 			sqlxDB = sqlx.NewDb(db, "postgres")
+
+			config, err = mTest.GetDefaultConfig()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -240,7 +312,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
@@ -260,7 +332,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml2))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
@@ -298,7 +370,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithVolume))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedClusterWithVolume.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedClusterWithVolume.SvcDeployments))
@@ -332,9 +404,9 @@ apps:
     ports: 
       - "5000"
 `
-			appDeploymentCluster := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
-			svcDeploymentCluster1 := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil)
-			svcDeploymentCluster2 := NewDeployment("svc2", username, "svc2", []int{5000}, nil, nil, nil, nil)
+			appDeploymentCluster := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil, nil, config)
+			svcDeploymentCluster1 := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil, nil, config)
+			svcDeploymentCluster2 := NewDeployment("svc2", username, "svc2", []int{5000}, nil, nil, nil, nil, nil, config)
 
 			svcDeploymentCluster1.Links = []*Deployment{svcDeploymentCluster2}
 
@@ -368,7 +440,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithLinks))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedClusterWithLinks.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedClusterWithLinks.SvcDeployments))
@@ -401,9 +473,9 @@ apps:
     ports: 
       - "5000"
 `
-			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
-			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil, nil)
-			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil)
+			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil, nil, config)
+			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil, nil, nil, config)
+			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil, nil, config)
 
 			appDeploymentCluster1.Links = []*Deployment{appDeploymentCluster2}
 
@@ -437,7 +509,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithLinks))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cluster.AppDeployments).To(ConsistOf(mockedClusterWithLinks.AppDeployments))
 			Expect(cluster.SvcDeployments).To(ConsistOf(mockedClusterWithLinks.SvcDeployments))
@@ -449,13 +521,63 @@ apps:
 			Expect(cluster.Job).To(Equal(mockedClusterWithLinks.Job))
 		})
 
+		It("should return cluster with deployments with default limits and requests", func() {
+			mockedCluster := mockCluster(0, 0, username)
+
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yaml1))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cluster.AppDeployments).To(ConsistOf(mockedCluster.AppDeployments))
+			Expect(cluster.SvcDeployments).To(ConsistOf(mockedCluster.SvcDeployments))
+
+			for _, deploy := range cluster.AppDeployments {
+				Expect(deploy.Resources.Limits.CPU).To(Equal("10m"))
+				Expect(deploy.Resources.Limits.Memory).To(Equal("300Mi"))
+				Expect(deploy.Resources.Requests.CPU).To(Equal("5m"))
+				Expect(deploy.Resources.Requests.Memory).To(Equal("100Mi"))
+			}
+		})
+
+		It("should return cluster with deployments with informed limits and requests", func() {
+			mock.
+				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
+				WithArgs(clusterName).
+				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(yamlWithLimitsAndResources))
+
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, deploy := range cluster.AppDeployments {
+				if deploy.Name == "test1" {
+					Expect(deploy.Resources.Limits.CPU).To(Equal("20m"))
+					Expect(deploy.Resources.Limits.Memory).To(Equal("600Mi"))
+					Expect(deploy.Resources.Requests.CPU).To(Equal("10m"))
+					Expect(deploy.Resources.Requests.Memory).To(Equal("200Mi"))
+				} else if deploy.Name == "test2" {
+					Expect(deploy.Resources.Limits.CPU).To(Equal("20m"))
+					Expect(deploy.Resources.Limits.Memory).To(Equal("600Mi"))
+					Expect(deploy.Resources.Requests.CPU).To(Equal("5m"))
+					Expect(deploy.Resources.Requests.Memory).To(Equal("100Mi"))
+				} else {
+					Expect(deploy.Resources.Limits.CPU).To(Equal("10m"))
+					Expect(deploy.Resources.Limits.Memory).To(Equal("300Mi"))
+					Expect(deploy.Resources.Requests.CPU).To(Equal("5m"))
+					Expect(deploy.Resources.Requests.Memory).To(Equal("100Mi"))
+				}
+			}
+		})
+
 		It("should return error if clusterName doesn't exists on DB", func() {
 			mock.
 				ExpectQuery("^SELECT yaml FROM clusters WHERE name = (.+)$").
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
@@ -467,7 +589,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}))
 
-			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(cluster).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("sql: no rows in result set"))
@@ -479,7 +601,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(invalidYaml1))
 
-			_, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			_, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
 			Expect(err.Error()).To(Equal("strconv.Atoi: parsing \"8!asd\": invalid syntax"))
 		})
@@ -490,7 +612,7 @@ apps:
 				WithArgs(clusterName).
 				WillReturnRows(sqlmock.NewRows([]string{"yaml"}).AddRow(invalidYaml2))
 
-			_, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			_, err := NewCluster(sqlxDB, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(fmt.Sprintf("%T", err)).To(Equal("*errors.YamlError"))
 			Expect(err.Error()).To(Equal("strconv.Atoi: parsing \"8!asd\": invalid syntax"))
 		})
@@ -588,7 +710,7 @@ apps:
 			obj := "{\\\"key\\\": \\\"value\\\"}"
 			appDeployment := NewDeployment("test1", username, "app1", ports, []*EnvVar{
 				&EnvVar{Name: "VARIABLE_1", Value: obj},
-			}, nil, nil, nil)
+			}, nil, nil, nil, nil, config)
 
 			cluster := &Cluster{
 				Username:       username,
@@ -610,9 +732,9 @@ apps:
 		})
 
 		It("should run cluster with links", func() {
-			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil)
-			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil, nil)
-			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil)
+			appDeploymentCluster1 := NewDeployment("app1", username, "app1", []int{5000}, nil, nil, nil, nil, nil, config)
+			appDeploymentCluster2 := NewDeployment("app2", username, "app2", []int{5000}, nil, nil, nil, nil, nil, config)
+			svcDeploymentCluster := NewDeployment("svc1", username, "svc1", []int{5000}, nil, nil, nil, nil, nil, config)
 
 			appDeploymentCluster1.Links = []*Deployment{appDeploymentCluster2}
 

@@ -48,6 +48,7 @@ func (c *ClusterHandler) create(w http.ResponseWriter, r *http.Request) {
 		clusterName,
 		c.App.DeploymentReadiness,
 		c.App.JobReadiness,
+		c.App.Config,
 	)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "create cluster error", err)
@@ -92,6 +93,7 @@ func (c *ClusterHandler) deleteCluster(w http.ResponseWriter, r *http.Request) {
 		clusterName,
 		c.App.DeploymentReadiness,
 		c.App.JobReadiness,
+		c.App.Config,
 	)
 	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
 		cluster = &models.Cluster{Username: username}
@@ -118,7 +120,7 @@ func (c *ClusterHandler) getApps(w http.ResponseWriter, r *http.Request) {
 	log(logger, "Cluster apps for user %s", username)
 	clusterName := GetClusterName(r)
 
-	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil)
+	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil, c.App.Config)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "get apps error", err)
 		return
@@ -149,7 +151,7 @@ func (c *ClusterHandler) getServices(w http.ResponseWriter, r *http.Request) {
 	log(logger, "Cluster services for user %s", username)
 	clusterName := GetClusterName(r)
 
-	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil)
+	cluster, err := models.NewCluster(c.App.DB, username, clusterName, nil, nil, c.App.Config)
 	if err != nil {
 		c.App.HandleError(w, Status(err), "get services error", err)
 		return

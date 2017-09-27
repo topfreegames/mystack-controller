@@ -28,4 +28,5 @@ type ClusterAppConfig struct {
 	ReadinessProbe *Probe       `yaml:"readinessProbe"`
 	VolumeMount    *VolumeMount `yaml:"volumeMount"`
 	Links          []string     `yaml:"links"`
+	Resources      *Resources   `yaml:"resources"`
 }

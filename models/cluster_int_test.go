@@ -51,10 +51,10 @@ apps:
 	)
 
 	mockCluster := func(username string) *Cluster {
-		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, nil, nil, nil)
-		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil, nil)
-		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil, nil)
-		appDeployment3 := NewDeployment("test3", username, "app3", ports, nil, nil, nil, nil)
+		svcDeployment1 := NewDeployment("test0", username, "svc1", ports, nil, nil, nil, nil, nil, config)
+		appDeployment1 := NewDeployment("test1", username, "app1", ports, nil, nil, nil, nil, nil, config)
+		appDeployment2 := NewDeployment("test2", username, "app2", ports, nil, nil, nil, nil, nil, config)
+		appDeployment3 := NewDeployment("test3", username, "app3", ports, nil, nil, nil, nil, nil, config)
 
 		return &Cluster{
 			Username:       username,
@@ -75,7 +75,7 @@ apps:
 			err = WriteClusterConfig(db, clusterName, yaml1)
 			Expect(err).NotTo(HaveOccurred())
 
-			cluster, err := NewCluster(db, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(db, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).NotTo(HaveOccurred())
 
 			mockedCluster := mockCluster(username)
@@ -87,7 +87,7 @@ apps:
 		})
 
 		It("should return error if cluster name not found", func() {
-			cluster, err := NewCluster(db, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{})
+			cluster, err := NewCluster(db, username, clusterName, &mTest.MockReadiness{}, &mTest.MockReadiness{}, config)
 			Expect(err).To(HaveOccurred())
 			Expect(cluster).To(BeNil())
 		})

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/spf13/viper"
 	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
@@ -39,6 +40,7 @@ func NewCluster(
 	db DB,
 	username, clusterName string,
 	deploymentReadiness, jobReadiness Readiness,
+	config *viper.Viper,
 ) (*Cluster, error) {
 	namespace := usernameToNamespace(username)
 
@@ -49,11 +51,11 @@ func NewCluster(
 
 	portMap := make(map[string][]*PortMap)
 	environment := []*EnvVar{}
-	k8sAppDeployments, environment, err := buildDeployments(clusterConfig.Apps, username, portMap, environment)
+	k8sAppDeployments, environment, err := buildDeployments(clusterConfig.Apps, username, portMap, environment, config)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
-	k8sSvcDeployments, environment, err := buildDeployments(clusterConfig.Services, username, portMap, environment)
+	k8sSvcDeployments, environment, err := buildDeployments(clusterConfig.Services, username, portMap, environment, config)
 	if err != nil {
 		return nil, errors.NewYamlError("parse yaml error", err)
 	}
@@ -123,6 +125,7 @@ func buildDeployments(
 	username string,
 	portMap map[string][]*PortMap,
 	environment []*EnvVar,
+	appConfig *viper.Viper,
 ) ([]*Deployment, []*EnvVar, error) {
 	deployments := make([]*Deployment, len(types))
 	createdDeployments := make(map[string]*Deployment)
@@ -141,7 +144,7 @@ func buildDeployments(
 				if err != nil {
 					return nil, environment, err
 				}
-				deployment := NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount, config.Command)
+				deployment := NewDeployment(name, username, config.Image, ports, config.Environment, config.ReadinessProbe, config.VolumeMount, config.Command, config.Resources, appConfig)
 				for _, link := range config.Links {
 					deployment.Links = append(deployment.Links, createdDeployments[link])
 				}
