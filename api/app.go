@@ -92,35 +92,35 @@ func (a *App) getRouter() *mux.Router {
 		&ClusterHandler{App: a, Method: "create"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 	)).Methods("PUT").Name("cluster")
 
 	r.Handle("/clusters/{name}/delete", Chain(
 		&ClusterHandler{App: a, Method: "delete"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 	)).Methods("DELETE").Name("cluster")
 
 	r.Handle("/clusters/{name}/apps", Chain(
 		&ClusterHandler{App: a, Method: "apps"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 	)).Methods("GET").Name("cluster")
 
 	r.Handle("/clusters/{name}/services", Chain(
 		&ClusterHandler{App: a, Method: "services"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 	)).Methods("GET").Name("cluster")
 
 	r.Handle("/cluster-configs/{name}/create", Chain(
 		&ClusterConfigHandler{App: a, Method: "create"},
 		&VersionMiddleware{},
 		&LoggingMiddleware{App: a},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 		&PayloadMiddleware{App: a},
 	)).Methods("PUT").Name("cluster-config")
 
@@ -128,21 +128,21 @@ func (a *App) getRouter() *mux.Router {
 		&ClusterConfigHandler{App: a, Method: "remove"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 	)).Methods("DELETE").Name("cluster-config")
 
 	r.Handle("/cluster-configs", Chain(
 		&ClusterConfigHandler{App: a, Method: "list"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 	)).Methods("GET").Name("cluster-config")
 
 	r.Handle("/cluster-configs/{name}", Chain(
 		&ClusterConfigHandler{App: a, Method: "info"},
 		&LoggingMiddleware{App: a},
 		&VersionMiddleware{},
-		&AccessMiddleware{App: a},
+		NewAccessMiddleware(a),
 	)).Methods("GET").Name("cluster-config")
 
 	r.Handle("/users", Chain(

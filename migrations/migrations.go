@@ -86,7 +86,7 @@ func migrations0001CreateusertableSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0001-CreateUserTable.sql", size: 592, mode: os.FileMode(420), modTime: time.Unix(1496080064, 0)}
+	info := bindataFileInfo{name: "migrations/0001-CreateUserTable.sql", size: 592, mode: os.FileMode(420), modTime: time.Unix(1533668578, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -106,7 +106,7 @@ func migrations0002CreateclustertableSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0002-CreateClusterTable.sql", size: 475, mode: os.FileMode(420), modTime: time.Unix(1492030677, 0)}
+	info := bindataFileInfo{name: "migrations/0002-CreateClusterTable.sql", size: 475, mode: os.FileMode(420), modTime: time.Unix(1533668578, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -126,7 +126,7 @@ func migrations0003AlterusertablecolumnkeyaccesstokenSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0003-AlterUserTableColumnKeyAccessToken.sql", size: 502, mode: os.FileMode(420), modTime: time.Unix(1496093329, 0)}
+	info := bindataFileInfo{name: "migrations/0003-AlterUserTableColumnKeyAccessToken.sql", size: 502, mode: os.FileMode(420), modTime: time.Unix(1533668578, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -146,7 +146,7 @@ func migrations0004AltertableusersexpirywithtimestampSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations/0004-AlterTableUsersExpiryWithTimestamp.sql", size: 294, mode: os.FileMode(420), modTime: time.Unix(1496113159, 0)}
+	info := bindataFileInfo{name: "migrations/0004-AlterTableUsersExpiryWithTimestamp.sql", size: 294, mode: os.FileMode(420), modTime: time.Unix(1533668578, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

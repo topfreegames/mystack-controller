@@ -19,8 +19,17 @@ import (
 
 //AccessMiddleware guarantees that the user is logged
 type AccessMiddleware struct {
-	App  *App
-	next http.Handler
+	App     *App
+	next    http.Handler
+	enabled bool
+}
+
+// NewAccessMiddleware is the AccessMiddleware constructor
+func NewAccessMiddleware(app *App) *AccessMiddleware {
+	return &AccessMiddleware{
+		App:     app,
+		enabled: app.Config.GetBool("oauth.enabled"),
+	}
 }
 
 const emailKey = contextKey("emailKey")
@@ -41,6 +50,12 @@ func emailFromCtx(ctx context.Context) string {
 
 //ServeHTTP methods
 func (m *AccessMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !m.enabled {
+		ctx := NewContextWithEmail(r.Context(), "dev@email.com")
+		m.next.ServeHTTP(w, r.WithContext(ctx))
+		return
+	}
+
 	logger := loggerFromContext(r.Context())
 	log(logger, "Checking access token")
 

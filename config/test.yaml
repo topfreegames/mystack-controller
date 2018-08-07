@@ -6,10 +6,13 @@ postgres:
   sslMode: "disable"
   maxIdleConns: 10
   maxOpenConns: 10
+
 oauth:
+  enabled: true
   acceptedDomains: 
   - "example.com"
   - "other.com"
+
 kubernetes:
   service-domain-suffix: mystack.com
   port-forward-tcp-port: 28000
