@@ -318,6 +318,7 @@ func (c *Cluster) startDeploymentsAndItsServices(
 		service := services[deployment]
 		_, err = service.Expose(clientset)
 		if err != nil {
+			logger.WithError(err).Errorf("failed to create service: %s", deployment)
 			return rollback(clientset, c.Username, err)
 		}
 	}
