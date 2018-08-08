@@ -77,6 +77,8 @@ run-out:
 	@go run main.go start -v3 -c ./config/local.yaml -o
 
 run-dev:
+	@mkdir -p ~/.mystack
+	@echo '{"controllerUrl": "http://localhost:8080"}' > ~/.mystack/mystack-dev.json
 	@MYSTACK_OAUTH_ENABLED=false go run main.go start -v3 -c ./config/local.yaml -o
 
 run-full: deps drop migrate run
