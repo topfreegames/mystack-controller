@@ -110,6 +110,9 @@ func Authenticate(
 	client := googleOauthConfig.Client(oauth2.NoContext, newToken)
 	url := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s", newToken.AccessToken)
 	resp, err := client.Get(url)
+	if err != nil {
+		return email, status, err
+	}
 
 	defer resp.Body.Close()
 
