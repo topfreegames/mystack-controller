@@ -302,6 +302,7 @@ func (c *Cluster) startDeploymentsAndItsServices(
 	for _, deployment := range deployments {
 		_, err := deployment.Deploy(clientset)
 		if err != nil {
+			logger.WithError(err).Errorf("failed to create deployment: %s", deployment)
 			return rollback(clientset, c.Username, err)
 		}
 	}
