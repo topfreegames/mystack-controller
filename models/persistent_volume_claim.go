@@ -53,6 +53,7 @@ func NewPVC(name, username, storage string) *PersistentVolumeClaim {
 	}
 }
 
+// Start ...
 func (p *PersistentVolumeClaim) Start(clientset kubernetes.Interface) (*v1.PersistentVolumeClaim, error) {
 	if !NamespaceExists(clientset, p.Namespace) {
 		err := fmt.Errorf("namespace %s not found", p.Namespace)

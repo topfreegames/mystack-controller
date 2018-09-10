@@ -29,7 +29,7 @@ type Cluster struct {
 	AppDeployments         []*Deployment
 	SvcDeployments         []*Deployment
 	K8sServices            map[*Deployment]*Service
-	Job                    *Job
+	Job, PostJob           *Job
 	PersistentVolumeClaims []*PersistentVolumeClaim
 	DeploymentReadiness    Readiness
 	JobReadiness           Readiness
@@ -65,6 +65,7 @@ func NewCluster(
 	clusterServices = buildServices(k8sSvcDeployments, username, portMap, true, clusterServices)
 
 	k8sJob := NewJob(username, clusterConfig.Setup, environment)
+	k8sPostJob := NewJob(username, clusterConfig.PostSetup, environment)
 
 	k8sPersistentVolumeClaims := buildPersistentVolumeClaims(clusterConfig.Volumes, username)
 
@@ -75,6 +76,7 @@ func NewCluster(
 		SvcDeployments:         k8sSvcDeployments,
 		K8sServices:            clusterServices,
 		Job:                    k8sJob,
+		PostJob:                k8sPostJob,
 		DeploymentReadiness:    deploymentReadiness,
 		JobReadiness:           jobReadiness,
 		PersistentVolumeClaims: k8sPersistentVolumeClaims,
@@ -212,7 +214,7 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	log(logger, "creating namespace")
 	err := CreateNamespace(clientset, c.Username)
 	if err != nil {
-		return err
+		return rollback(clientset, c.Username, err)
 	}
 	log(logger, "done creating namespace")
 
@@ -220,6 +222,7 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 	for _, pvc := range c.PersistentVolumeClaims {
 		_, err = pvc.Start(clientset)
 		if err != nil {
+			logger.WithError(err).Error("failed to create PVC")
 			return rollback(clientset, c.Username, err)
 		}
 	}
@@ -230,22 +233,47 @@ func (c *Cluster) Create(logger logrus.FieldLogger, clientset kubernetes.Interfa
 		return rollback(clientset, c.Username, err)
 	}
 
-	log(logger, "creating setup job")
-	_, err = c.Job.Run(clientset)
+	err = c.runJob(logger, clientset, c.Job)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
-	log(logger, "waiting job completion")
-	err = c.JobReadiness.WaitForCompletion(clientset, c.Job)
-	if err != nil {
-		return rollback(clientset, c.Username, err)
-	}
-	log(logger, "done job setup")
 
 	err = c.startDeploymentsAndItsServicesWithLinks(logger, clientset, c.AppDeployments)
 	if err != nil {
 		return rollback(clientset, c.Username, err)
 	}
+
+	log(logger, "creating post-setup job")
+	_, err = c.PostJob.Run(clientset)
+	if err != nil {
+		logger.WithError(err).Error("failed to run post job")
+		return rollback(clientset, c.Username, err)
+	}
+
+	return nil
+}
+
+func (c *Cluster) runJob(
+	logger logrus.FieldLogger,
+	clientset kubernetes.Interface,
+	job *Job,
+) error {
+	log(logger, "creating job")
+
+	_, err := job.Run(clientset)
+	if err != nil {
+		logger.WithError(err).Error("failed to run job")
+		return rollback(clientset, c.Username, err)
+	}
+
+	log(logger, "waiting for job completion")
+	err = c.JobReadiness.WaitForCompletion(clientset, job)
+	if err != nil {
+		logger.WithError(err).Error("failed to run job")
+		return err
+	}
+
+	log(logger, "finished job")
 
 	return nil
 }
@@ -271,6 +299,7 @@ func (c *Cluster) startDeploymentsAndItsServicesWithLinks(
 
 		err := c.startDeploymentsAndItsServices(logger, clientset, runnableDeployments, c.K8sServices)
 		if err != nil {
+			logger.WithError(err).Error("failed to create deployment and service")
 			return err
 		}
 

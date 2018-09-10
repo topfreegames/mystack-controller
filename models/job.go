@@ -121,7 +121,7 @@ func (j *Job) Run(clientset kubernetes.Interface) (*v1.Job, error) {
 
 	job, err := clientset.BatchV1().Jobs(j.Namespace).Create(dst)
 	if err != nil {
-		return nil, errors.NewKubernetesError("create deployment error", err)
+		return nil, errors.NewKubernetesError("create job error", err)
 	}
 
 	return job, nil
