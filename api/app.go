@@ -131,6 +131,14 @@ func (a *App) getRouter() *mux.Router {
 		NewAccessMiddleware(a),
 	)).Methods("DELETE").Name("cluster-config")
 
+	r.Handle("/cluster-configs/{name}/update", Chain(
+		&ClusterConfigHandler{App: a, Method: "update"},
+		&VersionMiddleware{},
+		&LoggingMiddleware{App: a},
+		NewAccessMiddleware(a),
+		&PayloadMiddleware{App: a},
+	)).Methods("PUT").Name("cluster-config")
+
 	r.Handle("/cluster-configs", Chain(
 		&ClusterConfigHandler{App: a, Method: "list"},
 		&LoggingMiddleware{App: a},

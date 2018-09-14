@@ -21,12 +21,13 @@ type VolumeMount struct {
 
 //ClusterAppConfig defines the configuration of an app and service
 type ClusterAppConfig struct {
-	Image          string       `yaml:"image"`
-	Command        []string     `yaml:"command"`
-	Ports          []string     `yaml:"ports"`
-	Environment    []*EnvVar    `yaml:"env,flow"`
-	ReadinessProbe *Probe       `yaml:"readinessProbe"`
-	VolumeMount    *VolumeMount `yaml:"volumeMount"`
-	Links          []string     `yaml:"links"`
-	Resources      *Resources   `yaml:"resources"`
+	Image           string       `yaml:"image"`
+	ImagePullPolicy string       `yaml:"imagePullPolicy"`
+	Command         []string     `yaml:"command"`
+	Ports           []string     `yaml:"ports"`
+	Environment     []*EnvVar    `yaml:"env,flow"`
+	ReadinessProbe  *Probe       `yaml:"readinessProbe"`
+	VolumeMount     *VolumeMount `yaml:"volumeMount"`
+	Links           []string     `yaml:"links"`
+	Resources       *Resources   `yaml:"resources"`
 }

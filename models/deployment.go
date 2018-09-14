@@ -42,6 +42,7 @@ spec:
       containers:
         - name: {{.Name}}
           image: {{.Image}}
+          imagePullPolicy: {{.ImagePullPolicy}}
           {{if .Command}}
           command:
           {{range .Command}}
@@ -89,17 +90,18 @@ spec:
 
 //Deployment represents a deployment
 type Deployment struct {
-	Name           string
-	Namespace      string
-	Username       string
-	Command        []string
-	Image          string
-	Ports          []int
-	Environment    []*EnvVar
-	ReadinessProbe *Probe
-	Volume         *VolumeMount
-	Links          []*Deployment
-	Resources      *Resources
+	Name            string
+	Namespace       string
+	Username        string
+	Command         []string
+	Image           string
+	ImagePullPolicy string
+	Ports           []int
+	Environment     []*EnvVar
+	ReadinessProbe  *Probe
+	Volume          *VolumeMount
+	Links           []*Deployment
+	Resources       *Resources
 }
 
 //NewDeployment is the deployment ctor

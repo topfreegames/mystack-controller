@@ -38,6 +38,7 @@ spec:
       - name: {{.Name}}
         {{with .Setup}}
         image: {{.Image}}
+        imagePullPolicy: {{.ImagePullPolicy}}
         {{if .Command}}
         command:
         {{range .Command}}

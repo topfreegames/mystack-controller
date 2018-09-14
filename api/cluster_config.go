@@ -33,6 +33,9 @@ func (c *ClusterConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	case "info":
 		c.info(w, r)
 		break
+	case "update":
+		c.update(w, r)
+		break
 	}
 }
 
