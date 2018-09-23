@@ -73,10 +73,11 @@ func NewService(name, username string, ports []*PortMap, isMystackSvc, isSocket 
 
 	var socketPorts []string
 	if isSocket {
-		socketPorts := make([]string, len(ports))
+		socketPorts = make([]string, len(ports))
 		for idx := range ports {
 			r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
-			socketPorts[idx] = fmt.Sprintf("%d", r1.Intn(20000)+40000)
+			socketPort := r1.Intn(20000) + 40000
+			socketPorts[idx] = fmt.Sprintf("%d", socketPort)
 		}
 	}
 
