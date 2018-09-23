@@ -61,8 +61,8 @@ func NewCluster(
 	}
 
 	clusterServices := make(map[*Deployment]*Service)
-	clusterServices = buildServices(k8sAppDeployments, username, portMap, false, clusterServices)
-	clusterServices = buildServices(k8sSvcDeployments, username, portMap, true, clusterServices)
+	clusterServices = buildServices(k8sAppDeployments, clusterConfig.Apps, username, portMap, false, clusterServices)
+	clusterServices = buildServices(k8sSvcDeployments, clusterConfig.Services, username, portMap, true, clusterServices)
 
 	k8sJob := NewJob(username, clusterConfig.Setup, environment)
 	k8sPostJob := NewJob(username, clusterConfig.PostSetup, environment)
@@ -166,13 +166,14 @@ func buildDeployments(
 
 func buildServices(
 	deploys []*Deployment,
+	appConfigs map[string]*ClusterAppConfig,
 	username string,
 	portMap map[string][]*PortMap,
 	isMystackSvc bool,
 	services map[*Deployment]*Service,
 ) map[*Deployment]*Service {
 	for _, deploy := range deploys {
-		services[deploy] = NewService(deploy.Name, username, portMap[deploy.Name], isMystackSvc)
+		services[deploy] = NewService(deploy.Name, username, portMap[deploy.Name], isMystackSvc, appConfigs[deploy.Name].IsSocket)
 	}
 	return services
 }
@@ -393,7 +394,7 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 		if time.Now().Sub(start) > timeout {
 			return errors.NewKubernetesError(
 				"delete cluster error",
-				fmt.Errorf("delete cluster reached timeout", c.Username),
+				fmt.Errorf("delete cluster reached timeout: %s", c.Username),
 			)
 		}
 		time.Sleep(5)

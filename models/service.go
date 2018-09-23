@@ -10,7 +10,10 @@ package models
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
+	"strings"
 	"text/template"
+	"time"
 
 	"github.com/topfreegames/mystack-controller/errors"
 	"k8s.io/client-go/kubernetes"
@@ -27,6 +30,8 @@ metadata:
   labels:
     mystack/routable: "true"
     mystack/service: "{{.IsMystackSvc}}"
+		mystack/socket: "{{.IsSocket}}"
+		mystack/socketPorts: "{{.SocketPorts}}"
 spec:
   selector:
     app: {{.Name}}
@@ -53,21 +58,35 @@ type Service struct {
 	Namespace    string
 	Ports        []*PortMap
 	IsMystackSvc bool
+	SocketPorts  string
+	IsSocket     bool
 }
 
 //NewService is the service ctor
-func NewService(name, username string, ports []*PortMap, isMystackSvc bool) *Service {
+func NewService(name, username string, ports []*PortMap, isMystackSvc, isSocket bool) *Service {
 	namespace := usernameToNamespace(username)
 	for i, port := range ports {
 		if len(port.Name) == 0 {
 			port.Name = fmt.Sprintf("port-%d", i)
 		}
 	}
+
+	var socketPorts []string
+	if isSocket {
+		socketPorts := make([]string, len(ports))
+		for idx := range ports {
+			r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
+			socketPorts[idx] = fmt.Sprintf("%d", r1.Intn(20000)+40000)
+		}
+	}
+
 	return &Service{
 		Name:         name,
 		Namespace:    namespace,
 		Ports:        ports,
 		IsMystackSvc: isMystackSvc,
+		IsSocket:     isSocket,
+		SocketPorts:  strings.Join(socketPorts, ","),
 	}
 }
 
@@ -119,6 +138,7 @@ func (s *Service) Delete(clientset kubernetes.Interface) error {
 	return nil
 }
 
+// ServicePort ...
 func ServicePort(clientset kubernetes.Interface, name, username string) (int, error) {
 	namespace := usernameToNamespace(username)
 	service, err := clientset.CoreV1().Services(namespace).Get(name)

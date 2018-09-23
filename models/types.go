@@ -30,4 +30,5 @@ type ClusterAppConfig struct {
 	VolumeMount     *VolumeMount `yaml:"volumeMount"`
 	Links           []string     `yaml:"links"`
 	Resources       *Resources   `yaml:"resources"`
+	IsSocket        bool         `yaml:"isSocket"`
 }
