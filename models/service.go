@@ -30,8 +30,8 @@ metadata:
   labels:
     mystack/routable: "true"
     mystack/service: "{{.IsMystackSvc}}"
-		mystack/socket: "{{.IsSocket}}"
-		mystack/socketPorts: "{{.SocketPorts}}"
+    mystack/socket: "{{.IsSocket}}"
+    mystack/socketPorts: "{{.SocketPorts}}"
 spec:
   selector:
     app: {{.Name}}
