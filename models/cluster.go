@@ -404,7 +404,11 @@ func (c *Cluster) Delete(clientset kubernetes.Interface) error {
 }
 
 //Apps returns a list of cluster apps
-func (c *Cluster) Apps(clientset kubernetes.Interface, k8sDomain string) (map[string][]string, error) {
+func (c *Cluster) Apps(
+	config *viper.Viper,
+	clientset kubernetes.Interface,
+	k8sDomain string,
+) (map[string][]string, error) {
 	if !NamespaceExists(clientset, c.Namespace) {
 		return nil, errors.NewKubernetesError(
 			"get apps error",
@@ -433,6 +437,10 @@ func (c *Cluster) Apps(clientset kubernetes.Interface, k8sDomain string) (map[st
 	domains := make(map[string][]string)
 
 	for _, service := range services.Items {
+		if service.GetLabels()["mystack/socket"] == "true" {
+			domains[service.Name] = []string{fmt.Sprintf("%s:%d", config.GetString("kubernetes.service-domain-suffix"), service.Spec.Ports[0].Port)}
+			continue
+		}
 		domains[service.Name] = []string{fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, k8sDomain)}
 	}
 
