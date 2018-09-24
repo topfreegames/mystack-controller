@@ -438,7 +438,7 @@ func (c *Cluster) Apps(
 
 	for _, service := range services.Items {
 		if service.GetLabels()["mystack/socket"] == "true" {
-			domains[service.Name] = []string{fmt.Sprintf("%s:%d", config.GetString("kubernetes.service-domain-suffix"), service.Spec.Ports[0].Port)}
+			domains[service.Name] = []string{fmt.Sprintf("controller.%s:%d", config.GetString("kubernetes.service-domain-suffix"), service.Spec.Ports[0].Port)}
 			continue
 		}
 		domains[service.Name] = []string{fmt.Sprintf("%s.%s.%s", service.Name, service.Namespace, k8sDomain)}
