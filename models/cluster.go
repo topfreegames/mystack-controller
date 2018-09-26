@@ -64,8 +64,8 @@ func NewCluster(
 	clusterServices = buildServices(k8sAppDeployments, clusterConfig.Apps, username, portMap, false, clusterServices)
 	clusterServices = buildServices(k8sSvcDeployments, clusterConfig.Services, username, portMap, true, clusterServices)
 
-	k8sJob := NewJob(username, clusterConfig.Setup, environment)
-	k8sPostJob := NewJob(username, clusterConfig.PostSetup, environment)
+	k8sJob := NewJob("setup", username, clusterConfig.Setup, environment)
+	k8sPostJob := NewJob("post-setup", username, clusterConfig.PostSetup, environment)
 
 	k8sPersistentVolumeClaims := buildPersistentVolumeClaims(clusterConfig.Volumes, username)
 
