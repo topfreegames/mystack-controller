@@ -25,7 +25,7 @@ metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
   annotations:
-    volume.alpha.kubernetes.io/storage-class: "gp2"
+    volume.beta.kubernetes.io/storage-class: aws-efs
   labels:
     mystack/routable: "true"
     app: {{.Name}}
