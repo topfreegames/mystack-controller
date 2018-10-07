@@ -69,21 +69,27 @@ func (l *LoginHandler) generateURL(w http.ResponseWriter, r *http.Request) {
 func (l *LoginHandler) exchangeAccess(w http.ResponseWriter, r *http.Request) {
 	logger := loggerFromContext(r.Context())
 	log(logger, "Getting access token")
-
 	authCode := r.FormValue("code")
 	if len(authCode) == 0 {
 		l.App.HandleError(w, http.StatusBadRequest, "code must not be empty", fmt.Errorf("state must not be empty"))
 		return
 	}
 
+	logger.Infof("getting access token from auth code")
 	token, err := extensions.GetAccessToken(authCode)
 	if err != nil {
 		l.App.HandleError(w, http.StatusBadRequest, "failed to get access token", fmt.Errorf("failed to get access token"))
 		return
 	}
 
-	//If the last error didn't occur, then the error from Authenticate method won't happen
-	email, _, _ := extensions.Authenticate(token, &models.OSCredentials{}, l.App.DB)
+	logger.Infof("authenticating email")
+	email, status, err := extensions.Authenticate(token, &models.OSCredentials{}, l.App.DB)
+	if err != nil {
+		logger.WithError(err).Error("failed to authenticate")
+		return
+	}
+
+	logger.Infof("authenticated email %s with status %d\n", email, status)
 	if !l.App.verifyEmailDomain(email) {
 		logger.WithError(err).Error("Invalid email")
 		err := errors.NewAccessError(
@@ -94,8 +100,10 @@ func (l *LoginHandler) exchangeAccess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger.Info("saving token on database")
 	err = extensions.SaveToken(token, email, token.AccessToken, l.App.DB)
 	if err != nil {
+		logger.WithError(err).Error("failed to save token on database")
 		l.App.HandleError(w, http.StatusBadRequest, "", err)
 		return
 	}
